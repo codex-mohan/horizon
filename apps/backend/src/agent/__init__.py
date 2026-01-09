@@ -1,36 +1,10 @@
-"""Horizon LangGraph Agent.
-
-A conversational AI agent built on LangGraph with tool calling capabilities.
+"""
+Agent Middleware System
+Export the compiled graph for integration with existing LangGraph apps.
 """
 
-from .graph import (
-    graph,
-    State,
-    Context,
-    create_graph,
-    get_graph,
-    create_llm,
-    run_agent,
-)
-from .tools import (
-    DEFAULT_TOOLS,
-    get_current_time,
-    calculate,
-    get_length,
-    echo,
-)
+from agent.graph import graph, build_graph
+from agent.config import AgentConfig
+from agent.state import AgentState
 
-__all__ = [
-    "graph",
-    "State",
-    "Context",
-    "create_graph",
-    "get_graph",
-    "create_llm",
-    "run_agent",
-    "DEFAULT_TOOLS",
-    "get_current_time",
-    "calculate",
-    "get_length",
-    "echo",
-]
+__all__ = ["graph", "build_graph", "AgentConfig", "AgentState"]

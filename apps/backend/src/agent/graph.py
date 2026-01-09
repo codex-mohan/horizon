@@ -1,253 +1,298 @@
-"""LangGraph agent with LLM integration and tool calling capabilities.
+# ============================================================================
+# graph.py
+# ============================================================================
+"""Main graph construction with multi-provider LLM support and todo feedback loops."""
 
-This module provides a basic conversational agent built on LangGraph,
-supporting message history, tool calls, and configurable LLM backends.
-"""
+from langgraph.graph import StateGraph, START, END
+from typing import Literal, Optional
 
-from __future__ import annotations
-
-import os
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
-
-from langchain_core.messages import (
-    BaseMessage,
-    HumanMessage,
-    AIMessage,
-    SystemMessage,
-    ToolMessage,
+from agent.state import AgentState
+from agent.config import AgentConfig
+from agent.llm_loader import create_llm, LLMConfig
+from agent.tools import get_all_tools
+from agent.middleware.memory import MemoryLoaderMiddleware
+from agent.middleware.summarization import SummarizationMiddleware
+from agent.middleware.model_call import ModelCallMiddleware
+from agent.middleware.todo import (
+    TodoMiddleware, 
+    TodoPlannerMiddleware, 
+    TodoProgressMiddleware,
+    TodoCheckerMiddleware,
+    ComplexityApproach
 )
-from langchain_core.tools import BaseTool
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph
-from langgraph.prebuilt import ToolNode
-from langgraph.runtime import Runtime
-from typing_extensions import TypedDict
+from agent.middleware.tracking import (
+    StartMiddleware,
+    TokenCountMiddleware,
+    PIIDetectionMiddleware,
+    EndMiddleware
+)
+from agent.middleware.tools import ToolNodeWithMiddleware
 
 
-class Context(TypedDict):
-    """Context parameters for the agent.
+# ============================================================================
+# Conditional Edge Functions
+# ============================================================================
 
-    Set these when creating assistants OR when invoking the graph.
-    See: https://langchain-ai.github.io/langgraph/cloud/how-tos/configuration_cloud/
-    """
-
-    llm_model: str
-    llm_temperature: float
-    system_prompt: str
-
-
-@dataclass
-class State:
-    """Input state for the agent.
-
-    Defines the initial structure of incoming data.
-    See: https://langchain-ai.github.io/langgraph/concepts/low_level/#state
-    """
-
-    messages: List[BaseMessage] = field(default_factory=list)
-    user_id: str = ""
-    conversation_id: str = ""
-    context: Dict[str, Any] = field(default_factory=dict)
-
-
-def create_llm(
-    model: str = "gemini-1.5-flash",
-    temperature: float = 0.7,
-    api_key: Optional[str] = None,
-    provider: str = "gemini",
-) -> Union[ChatGoogleGenerativeAI, ChatOpenAI]:
-    """Create an LLM instance for the agent.
-
-    Args:
-        model: The model name to use (e.g., "gemini-1.5-flash", "gpt-4o")
-        temperature: The temperature for generation (0.0-1.0)
-        api_key: Optional API key, will use env var if not provided
-        provider: LLM provider ("gemini" or "openai")
-
-    Returns:
-        Configured LLM instance
-    """
-    if provider == "gemini":
-        gemini_api_key = api_key or os.getenv("GEMINI_API_KEY")
-        if not gemini_api_key:
-            raise ValueError("GEMINI_API_KEY environment variable is not set")
-        return ChatGoogleGenerativeAI(
-            model=model,
-            temperature=temperature,
-            api_key=gemini_api_key,
-        )
-    else:
-        return ChatOpenAI(
-            model=model,
-            temperature=temperature,
-            api_key=api_key,
-        )
-
-
-def create_agent_node(
-    llm: Union[ChatGoogleGenerativeAI, ChatOpenAI],
-    tools: Optional[List[BaseTool]] = None,
-) -> callable:
-    """Create an agent node that can use tools.
-
-    Args:
-        llm: The language model to use
-        tools: Optional list of tools available to the agent
-
-    Returns:
-        An async function that processes state and returns updates
-    """
-    if tools:
-        llm_with_tools = llm.bind_tools(tools)
-
-        async def agent_node(state: State, runtime: Runtime[Context]) -> Dict[str, Any]:
-            """Process input and returns output with optional tool calls."""
-            system_prompt = runtime.context.get("system_prompt", "") if runtime.context else ""
-            messages = list(state.messages)
-
-            if system_prompt and not any(isinstance(m, SystemMessage) for m in messages):
-                messages.insert(0, SystemMessage(content=system_prompt))
-
-            response = await llm_with_tools.ainvoke(messages)
-
-            return {
-                "messages": [response],
-            }
-    else:
-        async def agent_node(state: State, runtime: Runtime[Context]) -> Dict[str, Any]:
-            """Process input and returns output without tools."""
-            system_prompt = runtime.context.get("system_prompt", "") if runtime.context else ""
-            messages = list(state.messages)
-
-            if system_prompt and not any(isinstance(m, SystemMessage) for m in messages):
-                messages.insert(0, SystemMessage(content=system_prompt))
-
-            response = await llm.ainvoke(messages)
-
-            return {
-                "messages": [response],
-            }
-
-    return agent_node
-
-
-def should_continue_tools(state: State) -> str:
-    """Determine if we should continue to tool node or end.
-
-    Args:
-        state: The current graph state
-
-    Returns:
-        "tools" if the last message contains tool calls, "__end__" otherwise
-    """
-    last_message = state.messages[-1] if state.messages else None
-
-    if last_message and hasattr(last_message, "tool_calls") and last_message.tool_calls:
-        return "tools"
-
-    return "__end__"
-
-
-def create_graph(
-    llm: Optional[Union[ChatGoogleGenerativeAI, ChatOpenAI]] = None,
-    tools: Optional[List[BaseTool]] = None,
-    name: str = "Gemini Agent",
-) -> StateGraph:
-    """Create a LangGraph agent.
-
-    Args:
-        llm: Optional pre-configured LLM, will create default if not provided
-        tools: Optional list of tools for the agent to use
-        name: Name for the compiled graph
-
-    Returns:
-        Compiled StateGraph ready for execution
-    """
-    if llm is None:
-        llm = create_llm()
-
-    agent_node = create_agent_node(llm, tools)
-
-    # Build the graph
-    builder = StateGraph(State, context_schema=Context)
-
-    # Add agent node
-    builder.add_node("agent", agent_node)
-
-    # Add tool node if tools are provided
-    if tools:
-        tool_node = ToolNode(tools)
-        builder.add_node("tools", tool_node)
-
-        # Set up edges
-        builder.add_edge("__start__", "agent")
-        builder.add_conditional_edges(
-            "agent",
-            should_continue_tools,
-            {
-                "tools": "tools",
-                "__end__": "__end__",
-            },
-        )
-        builder.add_edge("tools", "agent")
-    else:
-        # Simple graph without tools
-        builder.add_edge("__start__", "agent")
-        builder.add_edge("agent", "__end__")
-
-    return builder.compile(name=name)
-
-
-# Default graph instance (None until explicitly created)
-graph = None
-
-
-def get_graph() -> StateGraph:
-    """Get or create the default graph instance.
+def should_continue(state: AgentState) -> Literal["tools", "end"]:
+    """Determine if the graph should continue to tools or end.
     
-    Returns:
-        Compiled StateGraph ready for execution
+    This is the primary routing decision after model invocation.
     """
-    global graph
-    if graph is None:
-        graph = create_graph()
-    return graph
+    last_message = state["messages"][-1]
+    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+        return "tools"
+    return "end"
 
 
-async def run_agent(
-    input_message: str,
-    user_id: str = "default",
-    conversation_id: str = "default",
-    context: Optional[Dict[str, Any]] = None,
-) -> List[BaseMessage]:
-    """Convenience function to run the agent with a single message.
-
-    Args:
-        input_message: The user's input message
-        user_id: Optional user identifier
-        conversation_id: Optional conversation identifier
-        context: Optional runtime context
-
-    Returns:
-        List of messages from the conversation
+def should_end_after_todo(state: AgentState) -> Literal["end", "continue"]:
+    """Determine if we should end after todo check or continue with model.
+    
+    This routes the final response through todo checking before ending.
     """
-    initial_state = State(
-        messages=[HumanMessage(content=input_message)],
-        user_id=user_id,
-        conversation_id=conversation_id,
-        context=context or {},
+    todo_list = state.get("todo_list")
+    if not todo_list or not todo_list.get("tasks"):
+        return "end"
+    
+    # Check if all tasks are completed
+    from agent.todo import get_todo_list_summary
+    summary = get_todo_list_summary(todo_list)
+    if summary["pending"] == 0 and summary["in_progress"] == 0:
+        return "end"
+    
+    return "continue"
+
+
+def should_check_todo_completion(state: AgentState) -> Literal["todo_check", "continue"]:
+    """Check if we need to evaluate todo completion status.
+    
+    After tools execution, check if:
+    1. A task was completed
+    2. Re-planning is needed
+    3. All tasks are done
+    """
+    todo_list = state.get("todo_list")
+    if not todo_list or not todo_list.get("tasks"):
+        return "continue"
+    
+    # Check if re-planning was triggered
+    if state.get("_needs_todo_replan"):
+        return "todo_check"
+    
+    # Check if all tasks are completed
+    from agent.todo import get_todo_list_summary
+    summary = get_todo_list_summary(todo_list)
+    if summary["pending"] == 0 and summary["in_progress"] == 0:
+        # All done, continue to end
+        return "continue"
+    
+    # Check if we need to set active task
+    if not todo_list.get("active_task_id"):
+        return "todo_check"
+    
+    return "continue"
+
+
+def should_replan_or_continue(state: AgentState) -> Literal["todo_planner", "model"]:
+    """Determine if re-planning is needed or if we should continue with model.
+    
+    After todo check, decide whether to:
+    1. Re-plan the todo list (go to todo_planner)
+    2. Continue with the current plan (go to model)
+    
+    Uses the _todo_route field set by TodoCheckerMiddleware.
+    """
+    route = state.get("_todo_route", "model")
+    return route if route in ("todo_planner", "model") else "model"
+
+
+# ============================================================================
+# Graph Builder
+# ============================================================================
+
+def create_llm_from_config(config: AgentConfig):
+    """Create an LLM instance from AgentConfig."""
+    return create_llm(
+        provider=config.provider if hasattr(config.provider, 'value') else None,
+        model_name=config.model_name,
+        temperature=config.temperature,
+        max_tokens=config.max_tokens,
+        api_key=config.api_key,
+        base_url=config.base_url,
     )
 
-    config = {
-        "configurable": {
-            "llm_model": "gemini-1.5-flash",
-            "llm_temperature": 0.7,
-            "system_prompt": "You are a helpful AI assistant.",
-        }
-    }
 
-    final_state = await get_graph().ainvoke(initial_state, config=config)
+def build_graph(config: AgentConfig = None):
+    """Build the agent graph with middleware and todo feedback loops.
+    
+    Graph Structure with Feedback Loops:
+    ```
+    START → start → memory → token_count → summarize → todo → todo_planner
+           → model → [tools|end] 
+           tools → todo_progress → [todo_check]
+           todo_check → [todo_planner|model]
+           end → END
+    ```
+    
+    Key Improvements:
+    1. TodoProgressMiddleware runs after tools execution
+    2. Conditional edge checks todo completion status
+    3. Feedback loop triggers re-planning when needed
+    4. Active task is automatically set after task completion
+    """
+    config = config or AgentConfig.from_env()
+    tools = get_all_tools()
+    
+    # Use multi-provider LLM loader
+    llm = create_llm_from_config(config)
+    
+    workflow = StateGraph(AgentState)
+    
+    # -------------------------------------------------------------------------
+    # Node Creation
+    # -------------------------------------------------------------------------
+    
+    workflow.add_node("start", StartMiddleware())
+    
+    if config.enable_memory_loader:
+        workflow.add_node("memory", MemoryLoaderMiddleware())
+    
+    if config.enable_token_tracking:
+        workflow.add_node("token_count", TokenCountMiddleware())
+    
+    if config.enable_summarization:
+        workflow.add_node("summarize", SummarizationMiddleware(config.summarization_threshold, config))
+    
+    if config.enable_todo_list or config.enable_todo_planner:
+        workflow.add_node("todo", TodoMiddleware(enabled=config.enable_todo_list))
+        if config.enable_todo_planner:
+            workflow.add_node(
+                "todo_planner",
+                TodoPlannerMiddleware(
+                    enabled=config.enable_todo_planner,
+                    approach=ComplexityApproach(config.todo_complexity_approach),
+                ),
+            )
+            # Add TodoProgressMiddleware for post-tools feedback loop
+            workflow.add_node(
+                "todo_progress",
+                TodoProgressMiddleware(enabled=config.enable_todo_planner),
+            )
+            # Add TodoCheckerMiddleware for conditional routing
+            workflow.add_node(
+                "todo_check",
+                TodoCheckerMiddleware(enabled=config.enable_todo_planner),
+            )
+    
+    workflow.add_node("model", ModelCallMiddleware(llm, tools, config))
+    
+    if config.enable_pii_detection:
+        workflow.add_node("pii_detect", PIIDetectionMiddleware())
+    
+    workflow.add_node("tools", ToolNodeWithMiddleware(tools))
+    workflow.add_node("end", EndMiddleware())
+    
+    # -------------------------------------------------------------------------
+    # Edge Creation (Linear Flow)
+    # -------------------------------------------------------------------------
+    
+    workflow.add_edge(START, "start")
+    
+    current = "start"
+    if config.enable_memory_loader:
+        workflow.add_edge(current, "memory")
+        current = "memory"
+    
+    if config.enable_token_tracking:
+        workflow.add_edge(current, "token_count")
+        current = "token_count"
+    
+    if config.enable_summarization:
+        workflow.add_edge(current, "summarize")
+        current = "summarize"
+    
+    if config.enable_todo_list or config.enable_todo_planner:
+        workflow.add_edge(current, "todo")
+        current = "todo"
+        if config.enable_todo_planner:
+            workflow.add_edge(current, "todo_planner")
+            current = "todo_planner"
+    
+    workflow.add_edge(current, "model")
+    
+    # -------------------------------------------------------------------------
+    # Conditional Edges (Primary Routing)
+    # -------------------------------------------------------------------------
+    
+    # Model decides: tools or end_flow
+    workflow.add_conditional_edges(
+        "model",
+        should_continue,
+        {"tools": "tools", "end": "end_flow"}
+    )
+    
+    # Create end_flow node for final routing
+    workflow.add_node("end_flow", EndMiddleware())
+    
+    # Tools to Todo Feedback Loop
+    if config.enable_todo_planner:
+        # After tools, run todo_progress to analyze results
+        workflow.add_edge("tools", "todo_progress")
+        
+        # After todo_progress, check if we need to evaluate completion
+        workflow.add_conditional_edges(
+            "todo_progress",
+            should_check_todo_completion,
+            {"todo_check": "todo_check", "continue": "end_flow"}
+        )
+        
+        # Todo check decides: re-plan or continue with model
+        workflow.add_conditional_edges(
+            "todo_check",
+            should_replan_or_continue,
+            {"todo_planner": "todo_planner", "model": "model"}
+        )
+    else:
+        workflow.add_edge("tools", "end_flow")
+    
+    # End flow: check if we should end or continue (handles PII via pii_detect if enabled)
+    if config.enable_pii_detection:
+        # Route end_flow to pii_detect first
+        workflow.add_edge("end_flow", "pii_detect")
+        # After PII detection, check if we should end or continue
+        workflow.add_conditional_edges(
+            "pii_detect",
+            should_end_after_todo,
+            {"end": "end", "continue": "model"}
+        )
+    else:
+        # Direct end flow with todo checking
+        workflow.add_conditional_edges(
+            "end_flow",
+            should_end_after_todo,
+            {"end": "end", "continue": "model"}
+        )
+    
+    # -------------------------------------------------------------------------
+    # Final Edges
+    # -------------------------------------------------------------------------
+    
+    workflow.add_edge("end", END)
+    
+    return workflow.compile()
 
-    return final_state.get("messages", [])
+
+# Default graph instance
+graph = build_graph()
+
+
+# =============================================================================
+# Convenience Functions (for backward compatibility)
+# =============================================================================
+
+def get_default_llm():
+    """Get the default LLM using environment variables."""
+    return create_llm()
+
+
+# Alias for backward compatibility
+create_llm_module = create_llm
