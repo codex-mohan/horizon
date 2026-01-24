@@ -341,13 +341,13 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
                   backgroundColor: "hsl(var(--muted))",
                 },
               },
-              { dark: theme === "dark" }
+              { dark: theme === "dark" },
             ),
           ]}
         />
       </div>
     );
-  }
+  },
 );
 CodeBlock.displayName = "CodeBlock"; // Good practice for debugging
 
@@ -393,35 +393,38 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         );
       },
       p: ({ children }: any) => (
-        <div className="leading-7 text-foreground/80 not-first:mt-4 wrap-break-word">
+        <div className="text-base leading-7 text-foreground/90 not-first:mt-2 wrap-break-word">
           {children}
         </div>
       ),
       h1: ({ children }: any) => (
-        <h1 className="mt-6 border-b border-border pb-2 text-2xl font-semibold tracking-tight">
+        <h1 className="mt-4 border-b border-border pb-2 text-2xl font-bold tracking-tight">
           {children}
         </h1>
       ),
       h2: ({ children }: any) => (
-        <h2 className="mt-8 border-b border-border pb-2 text-xl font-semibold tracking-tight">
+        <h2 className="mt-4 border-b border-border pb-2 text-xl font-semibold tracking-tight">
           {children}
         </h2>
       ),
       h3: ({ children }: any) => (
-        <h3 className="mt-6 text-lg font-semibold tracking-tight">
+        <h3 className="mt-3 text-lg font-semibold tracking-tight">
           {children}
         </h3>
       ),
       ul: (props: any) => (
-        <ul className="my-4 ml-6 list-disc [&>li]:mt-2" {...props} />
+        <ul className="my-2 ml-4 list-disc text-base [&>li]:mt-1" {...props} />
       ),
       ol: (props: any) => (
-        <ol className="my-4 ml-6 list-decimal [&>li]:mt-2" {...props} />
+        <ol
+          className="my-2 ml-4 list-decimal text-base [&>li]:mt-1"
+          {...props}
+        />
       ),
-      li: (props: any) => <li className="" {...props} />,
+      li: (props: any) => <li className="leading-7" {...props} />,
       blockquote: (props: any) => (
         <blockquote
-          className="mt-4 border-l-2 border-border pl-6 italic text-muted-foreground"
+          className="mt-2 border-l-2 border-border pl-4 italic text-base text-muted-foreground"
           {...props}
         />
       ),
@@ -436,8 +439,8 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
             const rows = Array.from(tableRef.current.querySelectorAll("tr"));
             const tableData = rows.map((row) =>
               Array.from(row.querySelectorAll("th, td")).map((cell) =>
-                (cell.textContent || "").trim().replace(/"/g, '""')
-              )
+                (cell.textContent || "").trim().replace(/"/g, '""'),
+              ),
             );
 
             if (tableData.length === 0) return;
@@ -465,7 +468,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
 
         return (
           <div
-            className="my-6 w-full rounded-lg border"
+            className="my-3 w-full rounded-lg border"
             onMouseEnter={() => setShowDownload(true)}
             onMouseLeave={() => setShowDownload(false)}
           >
@@ -473,7 +476,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
               {showDownload && (
                 <button
                   onClick={downloadCSV}
-                  className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground transition-colors hover:bg-primary/90"
+                  className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-md bg-primary px-2 py-1 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
                   title="Download as CSV"
                 >
                   <FiDownload size={12} />
@@ -481,7 +484,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
                 </button>
               )}
               <div className="overflow-x-auto">
-                <table ref={tableRef} className="w-full" {...props}>
+                <table ref={tableRef} className="w-full text-base" {...props}>
                   {children}
                 </table>
               </div>
@@ -551,7 +554,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         );
       },
     }),
-    []
+    [],
   ); // Empty dependency array means this object is created only once
 
   return (

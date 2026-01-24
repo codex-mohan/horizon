@@ -6,7 +6,7 @@ from agent.middleware.summarization import SummarizationMiddleware
 from agent.middleware.model_call import ModelCallMiddleware
 from agent.middleware.tracking import (
     StartMiddleware,
-    TokenCountMiddleware,
+    TokenTrackerMiddleware,
     PIIDetectionMiddleware,
     EndMiddleware
 )
@@ -18,7 +18,7 @@ __all__ = [
     "SummarizationMiddleware",
     "ModelCallMiddleware",
     "StartMiddleware",
-    "TokenCountMiddleware",
+    "TokenTrackerMiddleware",
     "PIIDetectionMiddleware",
     "EndMiddleware",
     "ToolNodeWithMiddleware"

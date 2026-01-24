@@ -20,7 +20,13 @@ class AgentState(TypedDict):
     model_calls: int
     tool_calls: int
     total_tokens: int
+    input_tokens: int
+    output_tokens: int
     start_time: float
+    
+    # Token warnings
+    token_warning_shown: bool
+    token_warning_message: str
     
     # Metadata
     session_id: str

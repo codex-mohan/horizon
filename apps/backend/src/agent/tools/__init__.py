@@ -9,20 +9,39 @@ from rich.console import Console
 
 console = Console()
 
-@tool("SearchWeb", description="Search the web for information on a given query.")
-def search_web(query: str) -> str:
-    """Search the web for information using duckduckgo."""
-    try:
-        response = requests.get(
-            "https://api.duckduckgo.com/",
-            params={"q": query, "format": "json"},
-            timeout=5
-        )
-        results = response.json()
-        return f"Search results for '{query}': {results.get('AbstractText', 'No results')}"
-    except Exception as e:
-        console.log(f"[red]Search error: {e}[/red]")
-        return f"Search failed: {str(e)}"
+# Import web tools from the web module
+from .web import (
+    search_web,
+    fetch_url_content,
+    fetch_url_markdown,
+    extract_page_metadata,
+    download_image,
+    get_media_info,
+    find_urls,
+    extract_structured_data,
+    scrape_sitemap,
+    get_all_web_tools as get_all_web_tools_from_module,
+)
+
+# Import lightweight file operations tools from file_ops_lite
+from .file_ops_lite import (
+    read_file,
+    write_file,
+    append_file,
+    copy_file,
+    move_file,
+    delete_file,
+    list_dir,
+    create_dir,
+    remove_dir,
+    glob,
+    search_text,
+    get_file_info,
+    file_checksum,
+    compare_files,
+    replace_text,
+    get_all_file_ops_tools as get_all_file_ops_tools_from_module,
+)
 
 
 @tool
@@ -33,18 +52,6 @@ def calculate(expression: str) -> str:
         return f"Result: {result}"
     except Exception as e:
         console.log(f"[red]Calculation error: {e}[/red]")
-        return f"Error: {str(e)}"
-
-
-@tool
-def fetch_url(url: str) -> str:
-    """Fetch content from a URL."""
-    try:
-        response = requests.get(url, timeout=10)
-        soup = BeautifulSoup(response.content, 'html.parser')
-        text = soup.get_text()[:500]
-        return f"Content: {text}"
-    except Exception as e:
         return f"Error: {str(e)}"
 
 
@@ -76,6 +83,49 @@ def json_parser(json_string: str) -> str:
 
 
 def get_all_tools():
-    return [search_web, calculate, fetch_url, get_weather, get_current_time, json_parser]
+    """Get all tools including web and file operations tools."""
+    non_web_tools = [calculate, get_weather, get_current_time, json_parser]
+    web_tools = get_all_web_tools_from_module()
+    file_ops_tools = get_all_file_ops_tools_from_module()
+    return web_tools + file_ops_tools + non_web_tools
 
-__all__ = ["search_web", "calculate", "fetch_url", "get_weather", "get_current_time", "json_parser", "get_all_tools"]
+
+# Re-export tools for backwards compatibility
+__all__ = [
+    # Web tools
+    "search_web",
+    "fetch_url_content",
+    "fetch_url_markdown",
+    "extract_page_metadata",
+    "download_image",
+    "get_media_info",
+    "find_urls",
+    "extract_structured_data",
+    "scrape_sitemap",
+    
+    # File operations tools (lite version)
+    "read_file",
+    "write_file",
+    "append_file",
+    "copy_file",
+    "move_file",
+    "delete_file",
+    "list_dir",
+    "create_dir",
+    "remove_dir",
+    "glob",
+    "search_text",
+    "get_file_info",
+    "file_checksum",
+    "compare_files",
+    "replace_text",
+    
+    # Utility tools
+    "calculate",
+    "get_weather",
+    "get_current_time",
+    "json_parser",
+    
+    # Functions
+    "get_all_tools",
+]

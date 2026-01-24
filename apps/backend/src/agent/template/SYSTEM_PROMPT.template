@@ -52,6 +52,10 @@ You are {name}.
 - **User Preferences**: {user_preferences}
 - **Active Features**: {active_features}
 - **Tool Access**: {available_tools}
+
+## Terminal Usage
+- **Commands**: Use commands based on the operating system you currently working inside.
+- **Usage**: Use the terminal only when the existing tools cannot accomplish a given task.
 </system_state>
 
 <security>
@@ -86,10 +90,6 @@ You are {name}.
 ## Graceful Failure
 {error_handling_procedures}
 </error_handling>
-
-<tools>
-## Available Tools
-{available_tools_list}
 
 ## Tool Usage Guidelines
 {tool_usage_guidelines}
