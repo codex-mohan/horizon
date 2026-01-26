@@ -1,0 +1,159 @@
+version: "3.9"
+
+# =============================================================================
+# Production Docker Compose Configuration
+# =============================================================================
+# Usage: docker compose -f docker-compose.prod.yaml up -d
+# =============================================================================
+
+services:
+  # =============================================================================
+  # Backend - LangGraph Agent Server (Production)
+  # =============================================================================
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: horizon-backend-prod
+    ports:
+      - "2024:2024"
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - HOST=0.0.0.0
+      - PORT=2024
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - ./apps/backend/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: always
+    networks:
+      - horizon-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # =============================================================================
+  # Frontend - Next.js Web Application (Production)
+  # =============================================================================
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      target: production
+    container_name: horizon-web-prod
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_LANGGRAPH_API_URL=${LANGGRAPH_API_URL:-http://localhost:2024}
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: always
+    networks:
+      - horizon-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # =============================================================================
+  # Sandbox - Isolated Code Execution (Production)
+  # =============================================================================
+  sandbox:
+    build:
+      context: ./apps/sandbox
+      dockerfile: Dockerfile
+    container_name: horizon-sandbox-prod
+    volumes:
+      - sandbox-workspaces:/workspaces
+    environment:
+      - SANDBOX_TIMEOUT=30
+      - SANDBOX_MAX_MEMORY=256m
+      - SANDBOX_MAX_CPU=0.5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=50M,mode=1777
+    networks:
+      - sandbox-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  # =============================================================================
+  # Redis - Session and Cache Storage (Production)
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: horizon-redis-prod
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - horizon-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # =============================================================================
+  # Nginx - Reverse Proxy (Production)
+  # =============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: horizon-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - web
+      - backend
+    restart: always
+    networks:
+      - horizon-network
+
+networks:
+  horizon-network:
+    driver: bridge
+  sandbox-network:
+    driver: bridge
+    internal: true
+
+volumes:
+  sandbox-workspaces:
+  redis-data:

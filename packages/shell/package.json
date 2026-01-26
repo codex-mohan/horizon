@@ -1,0 +1,38 @@
+{
+    "name": "@horizon/shell",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "main": "src/index.ts",
+    "types": "src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        },
+        "./executor": {
+            "import": "./src/executor.ts",
+            "types": "./src/executor.ts"
+        },
+        "./interactive": {
+            "import": "./src/interactive.ts",
+            "types": "./src/interactive.ts"
+        }
+    },
+    "scripts": {
+        "build": "bun build ./src/index.ts --outdir ./dist --target node",
+        "typecheck": "tsc --noEmit",
+        "test": "bun test",
+        "lint": "eslint src/"
+    },
+    "dependencies": {
+        "picocolors": "^1.1.1"
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.7.3"
+    },
+    "peerDependencies": {
+        "typescript": "^5.0.0"
+    }
+}

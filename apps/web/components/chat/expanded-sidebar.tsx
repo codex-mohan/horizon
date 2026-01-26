@@ -1,12 +1,14 @@
 "use client"
 
-import { X, Clock, ImageIcon, FileText, Grid3x3, List, SortAsc } from "lucide-react"
+import { X, Clock, ImageIcon, FileText, Grid3x3, List, SortAsc, Trash2, MoreHorizontal, Plus, Loader2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@workspace/ui/components/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@workspace/ui/components/dropdown-menu"
 import { cn } from "@workspace/ui/lib/utils"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { createThreadsClient, type Thread } from "@/lib/threads"
+import { useConversationStore } from "@/lib/stores/conversation"
 
 interface ExpandedSidebarProps {
   section: "conversations" | "my-items" | "collections" | "assistants"
@@ -16,23 +18,147 @@ interface ExpandedSidebarProps {
 export function ExpandedSidebar({ section, onClose }: ExpandedSidebarProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [sortBy, setSortBy] = useState<"name" | "date">("date")
+  const [threads, setThreads] = useState<Thread[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const { currentThreadId, setCurrentThreadId } = useConversationStore()
+  const apiUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024"
+  const threadsClient = createThreadsClient(apiUrl)
+
+  const fetchThreads = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const fetchedThreads = await threadsClient.listThreads()
+      setThreads(fetchedThreads)
+    } catch (error) {
+      console.error("Failed to fetch threads:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (section === "conversations") {
+      fetchThreads()
+    }
+  }, [section, fetchThreads])
+
+  const handleDeleteThread = async (threadId: string) => {
+    setDeletingId(threadId)
+    try {
+      await threadsClient.deleteThread(threadId)
+      setThreads((prev) => prev.filter((t) => t.thread_id !== threadId))
+      if (currentThreadId === threadId) {
+        setCurrentThreadId(null)
+      }
+    } catch (error) {
+      console.error("Failed to delete thread:", error)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleSelectThread = (threadId: string) => {
+    setCurrentThreadId(threadId)
+    onClose()
+  }
+
+  const handleNewConversation = () => {
+    setCurrentThreadId(null)
+    onClose()
+  }
+
+  const formatTimeAgo = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return "Just now"
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    return `${diffDays}d ago`
+  }
 
   const renderContent = () => {
     switch (section) {
       case "conversations":
         return (
-          <div className="space-y-2 p-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <button
-                key={i}
-                className="w-full text-left p-3 rounded-lg glass hover:bg-primary/20 transition-all duration-200 hover-lift stagger-item"
+          <div className="h-full flex flex-col">
+            <div className="p-4 pb-2 shrink-0">
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-2"
+                onClick={handleNewConversation}
               >
-                <div className="font-medium text-sm">Conversation {i}</div>
-                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <Clock className="size-3" />2 hours ago
+                <Plus className="size-4" />
+                New Conversation
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4 space-y-2">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
                 </div>
-              </button>
-            ))}
+              ) : threads.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  No conversations yet
+                </div>
+              ) : (
+                threads.map((thread, i) => (
+                  <div
+                    key={thread.thread_id}
+                    className={cn(
+                      "w-full text-left p-3 rounded-lg glass hover:bg-primary/20 transition-all duration-200 hover-lift stagger-item group flex items-center justify-between",
+                      currentThreadId === thread.thread_id && "bg-primary/30 ring-1 ring-primary/50"
+                    )}
+                  >
+                    <button
+                      className="flex-1 text-left"
+                      onClick={() => handleSelectThread(thread.thread_id)}
+                    >
+                      <div className="font-medium text-sm truncate">
+                        {(thread.metadata?.title as string) || `Conversation ${i + 1}`}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <Clock className="size-3" />
+                        {formatTimeAgo(thread.updated_at)}
+                      </div>
+                    </button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreHorizontal className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="animate-scale-in">
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => handleDeleteThread(thread.thread_id)}
+                          disabled={deletingId === thread.thread_id}
+                        >
+                          {deletingId === thread.thread_id ? (
+                            <Loader2 className="size-4 mr-2 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-4 mr-2" />
+                          )}
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )
 
@@ -204,7 +330,7 @@ export function ExpandedSidebar({ section, onClose }: ExpandedSidebarProps) {
         </Button>
       </div>
 
-      <div className="flex-1 overflow-hidden custom-scrollbar">{renderContent()}</div>
+      <div className="flex-1 overflow-hidden">{renderContent()}</div>
     </div>
   )
 }

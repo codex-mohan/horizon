@@ -44,6 +44,8 @@ interface ChatBubbleProps {
   onSummarize?: (messageId: string, content: string) => void;
   onShare?: (messageId: string, content: string) => void;
   onDelete?: (messageId: string) => void;
+  showAvatar?: boolean;
+  showActions?: boolean;
 }
 
 export const ChatBubble = ({
@@ -55,6 +57,8 @@ export const ChatBubble = ({
   onSummarize,
   onShare,
   onDelete,
+  showAvatar = true,
+  showActions = true,
 }: ChatBubbleProps) => {
   const isUser = message.role === "user";
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -93,6 +97,7 @@ export const ChatBubble = ({
           isUser
             ? "bg-gradient-to-br from-[var(--primary)] to-[var(--accent)]"
             : "glass border border-border",
+          !showAvatar && !isUser && "invisible" // Hide avatar but keep space
         )}
       >
         {isUser ? (
@@ -126,14 +131,14 @@ export const ChatBubble = ({
         {/* Message Content (The Bubble) */}
         <div
           className={cn(
-            "rounded-xl p-4 relative text-base wrap-break-word whitespace-pre-wrap",
+            "rounded-xl p-4 relative text-[1.05rem] wrap-break-word",
             isUser
               ? cn(
-                  isLightTheme
-                    ? "glass-user-bubble-light"
-                    : "glass-user-bubble",
-                  "text-foreground",
-                )
+                isLightTheme
+                  ? "glass-user-bubble-light"
+                  : "glass-user-bubble",
+                "text-foreground",
+              )
               : "w-full text-foreground",
           )}
         >
@@ -142,186 +147,188 @@ export const ChatBubble = ({
         </div>
 
         {/* Action Buttons (Outside the Bubble) */}
-        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={handleCopy}
-                  className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-                >
-                  <Copy className="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="animate-scale-in">
-                <p>Copy</p>
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Assistant-specific actions */}
-            {!isUser && (
-              <>
-                {/* Retry */}
-                {onRetry && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => onRetry(message.id, message.content)}
-                        className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-                      >
-                        <RotateCcw className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="animate-scale-in">
-                      <p>Retry</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                {/* Speaker */}
-                {onSpeak && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={handleSpeak}
-                        className={cn(
-                          "size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110",
-                          isSpeaking && "text-primary",
-                        )}
-                      >
-                        <Volume2
-                          className={cn(
-                            "size-4",
-                            isSpeaking && "animate-pulse",
-                          )}
-                        />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="animate-scale-in">
-                      <p>{isSpeaking ? "Stop" : "Speak"}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                {/* Summarize */}
-                {onSummarize && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => onSummarize(message.id, message.content)}
-                        className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-                      >
-                        <FileText className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="animate-scale-in">
-                      <p>Summarize</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                {/* Fork */}
-                {onFork && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => onFork(message.id, message.content)}
-                        className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-                      >
-                        <Fork className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="animate-scale-in">
-                      <p>Fork to new conversation</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                {/* More Options Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-                    >
-                      <MoreHorizontal className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="z-[100] animate-scale-in glass border border-border"
+        {showActions && (
+          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={handleCopy}
+                    className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
                   >
-                    {onShare && (
-                      <DropdownMenuItem
-                        onClick={() => onShare(message.id, message.content)}
-                      >
-                        <Share className="size-4 mr-2" />
-                        Share
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleCopy}>
-                      <Copy className="size-4 mr-2" />
-                      Copy text
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        navigator.clipboard.writeText(message.content)
-                      }
-                    >
-                      <FileText className="size-4 mr-2" />
-                      Copy as markdown
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {onDelete && (
-                      <DropdownMenuItem
-                        onClick={() => onDelete(message.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="size-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
+                    <Copy className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="animate-scale-in">
+                  <p>Copy</p>
+                </TooltipContent>
+              </Tooltip>
 
-            {/* User-specific actions */}
-            {isUser && (
-              <>
-                {onEdit && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+              {/* Assistant-specific actions */}
+              {!isUser && (
+                <>
+                  {/* Retry */}
+                  {onRetry && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => onRetry(message.id, message.content)}
+                          className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                        >
+                          <RotateCcw className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="animate-scale-in">
+                        <p>Retry</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  {/* Speaker */}
+                  {onSpeak && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={handleSpeak}
+                          className={cn(
+                            "size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110",
+                            isSpeaking && "text-primary",
+                          )}
+                        >
+                          <Volume2
+                            className={cn(
+                              "size-4",
+                              isSpeaking && "animate-pulse",
+                            )}
+                          />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="animate-scale-in">
+                        <p>{isSpeaking ? "Stop" : "Speak"}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  {/* Summarize */}
+                  {onSummarize && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => onSummarize(message.id, message.content)}
+                          className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                        >
+                          <FileText className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="animate-scale-in">
+                        <p>Summarize</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  {/* Fork */}
+                  {onFork && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => onFork(message.id, message.content)}
+                          className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                        >
+                          <Fork className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="animate-scale-in">
+                        <p>Fork to new conversation</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  {/* More Options Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        onClick={() => onEdit(message.id, message.content)}
                         className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
                       >
-                        <Pencil className="size-4" />
+                        <MoreHorizontal className="size-4" />
                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="animate-scale-in">
-                      <p>Edit</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </>
-            )}
-          </TooltipProvider>
-        </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="z-[100] animate-scale-in glass border border-border"
+                    >
+                      {onShare && (
+                        <DropdownMenuItem
+                          onClick={() => onShare(message.id, message.content)}
+                        >
+                          <Share className="size-4 mr-2" />
+                          Share
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleCopy}>
+                        <Copy className="size-4 mr-2" />
+                        Copy text
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          navigator.clipboard.writeText(message.content)
+                        }
+                      >
+                        <FileText className="size-4 mr-2" />
+                        Copy as markdown
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {onDelete && (
+                        <DropdownMenuItem
+                          onClick={() => onDelete(message.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="size-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
+
+              {/* User-specific actions */}
+              {isUser && (
+                <>
+                  {onEdit && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => onEdit(message.id, message.content)}
+                          className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="animate-scale-in">
+                        <p>Edit</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </>
+              )}
+            </TooltipProvider>
+          </div>
+        )}
       </div>
     </div>
   );

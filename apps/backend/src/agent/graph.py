@@ -22,6 +22,10 @@ from agent.middleware.tracking import (
 )
 from agent.middleware.tools import ToolNodeWithMiddleware
 
+# Note: LangGraph API handles persistence automatically.
+# For custom postgres connection, set POSTGRES_URI environment variable.
+# See: https://langchain-ai.github.io/langgraph/cloud/reference/env_var/#postgres_uri_custom
+
 
 # ============================================================================
 # Conditional Edge Functions

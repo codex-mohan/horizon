@@ -2,7 +2,7 @@
 # ============================================================================
 """Model call wrapper with retry, fallback, and todo integration."""
 
-from agent.middleware.base import BaseMiddleware, console
+from agent.middleware.base import BaseMiddleware, console, log_middleware_error, logger
 from agent.state import AgentState
 from agent.prompts.prompts import PromptBuilder
 from agent.middleware.todo import get_todo_tools
@@ -63,14 +63,30 @@ class ModelCallMiddleware(BaseMiddleware):
                     "output_tokens": output_tokens,
                 }
             except Exception as e:
-                console.log(f"[red]❌ [{self.name}] Error: {e}[/red]")
+                console.log(f"[red]❌ [{self.name}] Error in attempt {attempt + 1}: {e}[/red]")
+                
+                # Check for detailed error info if available
+                if hasattr(e, 'response'):
+                    console.log(f"[red]Error Response:[/red] {e.response}")
+                
+                # Try to extract failed generation if available (LangChain specific)
+                if hasattr(e, 'info') and 'failed_generation' in e.info:
+                    failed_gen = e.info['failed_generation']
+                    console.log(f"[yellow]⚠ Failed Generation Content:[/yellow] {failed_gen}")
+                
                 if attempt == self.config.max_retries - 1:
+                    # Final attempt failed
+                    logger.error(f"Model call failed after {self.config.max_retries} attempts", exc_info=True)
+                    log_middleware_error(self.name, e, context="Model execution final attempt")
+                    
                     return {
-                        "messages": [AIMessage(content="Technical difficulties. Please try again.")],
+                        "messages": [AIMessage(content=f"Error: Unable to generate response. {str(e)}")],
                         "model_calls": state.get("model_calls", 0) + 1,
                         "input_tokens": 0,
                         "output_tokens": 0,
+                        "_error": str(e)
                     }
+                
                 await asyncio.sleep(self.config.initial_delay * (self.config.backoff_factor ** attempt))
 
     def _inject_todo_context(self, state: AgentState, messages: list) -> list:

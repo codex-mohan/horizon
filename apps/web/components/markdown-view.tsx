@@ -3,11 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FiCheck, FiCopy, FiDownload } from "react-icons/fi";
 import { EditorView, lineNumbers } from "@codemirror/view";
-import {
-  syntaxHighlighting,
-  defaultHighlightStyle,
-  LanguageDescription,
-} from "@codemirror/language";
+import { LanguageDescription } from "@codemirror/language";
 
 import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";
@@ -26,12 +22,12 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import dynamic from "next/dynamic";
-import { tokyoNight } from "@uiw/codemirror-themes-all";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme/theme-provider";
 import SmartLink from "@/components/smart-link";
 import ZoomableImageWithLoader from "./image-with-loader";
 import MermaidDiagram from "./mermaid-diagram";
 import mermaid from "mermaid";
+import { createCodeMirrorTheme } from "@/lib/codemirror-theme";
 
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
   ssr: false,
@@ -165,7 +161,7 @@ const getLanguageExtension = (lang: string) => {
 const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
   ({ code, langHint }) => {
     const [isCopied, setIsCopied] = useState(false);
-    const { theme } = useTheme();
+    const { themeMode } = useTheme();
 
     const languageExtensions: { [key: string]: string } = {
       python: "py",
@@ -226,10 +222,14 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
       return ext;
     }, [langHint]);
 
+    const cmTheme = useMemo(
+      () => createCodeMirrorTheme(themeMode === "dark"),
+      [themeMode],
+    );
+
     const extensions = useMemo(() => {
       const base = [
         lineNumbers(),
-        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         EditorView.editable.of(false),
         EditorView.lineWrapping,
       ];
@@ -263,7 +263,7 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
     };
 
     return (
-      <div className="mt-4 overflow-hidden rounded-xl border border-border">
+      <div className="mt-1 overflow-hidden rounded-xl border border-border">
         <div className="flex items-center justify-between bg-muted/50 px-4 py-1.5 text-xs">
           <span className="font-semibold uppercase text-muted-foreground">
             {langHint || "code"}
@@ -303,53 +303,17 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
           editable={false}
           basicSetup={{
             foldGutter: true,
-            syntaxHighlighting: true,
+            syntaxHighlighting: false,
           }}
-          theme={[
-            tokyoNight,
-            EditorView.theme(
-              {
-                "&": {
-                  fontSize: "0.875rem",
-                  backgroundColor: "hsl(var(--background))",
-                  color: "hsl(var(--foreground))",
-                },
-                ".cm-editor": {
-                  borderRadius: "0",
-                },
-                ".cm-scroller": {
-                  paddingTop: "0.5rem",
-                  paddingBottom: "0.5rem",
-                  fontFamily:
-                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-                },
-                ".cm-gutters": {
-                  backgroundColor: "hsl(var(--muted))",
-                  borderRight: "1px solid hsl(var(--border))",
-                  color: "hsl(var(--muted-foreground))",
-                },
-                ".cm-content": {
-                  color: "hsl(var(--foreground))",
-                },
-                ".cm-line": {
-                  color: "hsl(var(--foreground))",
-                },
-                ".cm-activeLine": {
-                  backgroundColor: "hsl(var(--muted)/0.5)",
-                },
-                ".cm-activeLineGutter": {
-                  backgroundColor: "hsl(var(--muted))",
-                },
-              },
-              { dark: theme === "dark" },
-            ),
-          ]}
+          theme={cmTheme}
         />
       </div>
     );
   },
 );
-CodeBlock.displayName = "CodeBlock"; // Good practice for debugging
+CodeBlock.displayName = "CodeBlock";
+
+export { CodeBlock };
 
 // Helper function to extract a YouTube video ID from various URL formats
 const getYouTubeVideoId = (url: string): string | null => {
@@ -393,38 +357,38 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         );
       },
       p: ({ children }: any) => (
-        <div className="text-base leading-7 text-foreground/90 not-first:mt-2 wrap-break-word">
+        <span className="text-[1.05rem] leading-7 text-foreground/90 mb-3 last:mb-0 break-words block">
           {children}
-        </div>
+        </span>
       ),
       h1: ({ children }: any) => (
-        <h1 className="mt-4 border-b border-border pb-2 text-2xl font-bold tracking-tight">
+        <h1 className="mt-4 mb-2 text-xl font-bold tracking-tight">
           {children}
         </h1>
       ),
       h2: ({ children }: any) => (
-        <h2 className="mt-4 border-b border-border pb-2 text-xl font-semibold tracking-tight">
+        <h2 className="mt-4 mb-2 text-lg font-bold tracking-tight">
           {children}
         </h2>
       ),
       h3: ({ children }: any) => (
-        <h3 className="mt-3 text-lg font-semibold tracking-tight">
+        <h3 className="mt-3 mb-1.5 text-[1.05rem] font-bold tracking-tight">
           {children}
         </h3>
       ),
       ul: (props: any) => (
-        <ul className="my-2 ml-4 list-disc text-base [&>li]:mt-1" {...props} />
+        <ul className="my-3 pl-5 list-disc text-[1.05rem] [&>li]:mt-1.5 [&_span]:!m-0 [&_span]:!inline" {...props} />
       ),
       ol: (props: any) => (
         <ol
-          className="my-2 ml-4 list-decimal text-base [&>li]:mt-1"
+          className="my-3 pl-5 list-decimal text-[1.05rem] [&>li]:mt-1.5 [&_span]:!m-0 [&_span]:!inline"
           {...props}
         />
       ),
-      li: (props: any) => <li className="leading-7" {...props} />,
+      li: (props: any) => <li className="leading-7 pl-1" {...props} />,
       blockquote: (props: any) => (
         <blockquote
-          className="mt-2 border-l-2 border-border pl-4 italic text-base text-muted-foreground"
+          className="mt-3 border-l-2 border-primary/30 pl-3 italic text-sm text-foreground/80"
           {...props}
         />
       ),
@@ -468,7 +432,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
 
         return (
           <div
-            className="my-3 w-full rounded-lg border"
+            className="my-2 w-full rounded-lg border"
             onMouseEnter={() => setShowDownload(true)}
             onMouseLeave={() => setShowDownload(false)}
           >
@@ -530,7 +494,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         // Also check if an image tag is being used to embed a YouTube video
         if (videoId) {
           return (
-            <div className="my-4 aspect-video overflow-hidden rounded-lg border border-border bg-black">
+            <div className="my-2 aspect-video overflow-hidden rounded-lg border border-border bg-black">
               <iframe
                 src={`https://www.youtube.com/embed/${videoId}`}
                 title="YouTube video player"
@@ -548,7 +512,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
             src={src}
             alt={alt}
             // Add sizing and margin classes for the thumbnail display and align center
-            className="my-4 aspect-video w-full max-w-xl rounded-lg"
+            className="my-2 aspect-video w-full max-w-xl rounded-lg"
             {...props}
           />
         );

@@ -3,7 +3,7 @@
 import React from "react"
 
 // Utility function to merge class names
-const cn = (...classes: (string | undefined | false | null|any)[]) => {
+const cn = (...classes: (string | undefined | false | null | any)[]) => {
   return classes.filter(Boolean).join(" ")
 }
 
@@ -25,6 +25,7 @@ interface GradientButtonProps {
   glowIntensity?: "none" | "low" | "medium" | "high" | "extreme"
   iconOnly?: boolean
   useThemeGradient?: boolean
+  radius?: "none" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "full"
 }
 
 export const GradientButton: React.FC<GradientButtonProps> = ({
@@ -45,7 +46,8 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
   glowIntensity = "medium",
   iconOnly = false,
   useThemeGradient = !fromColor && !toColor,
-}) => {
+  radius = "md",  // Default radius
+}: GradientButtonProps) => {
   const [isHovered, setIsHovered] = React.useState(false)
 
   // Glow intensity settings
@@ -64,10 +66,10 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
 
   const gradientStyle = useThemeGradient
     ? {
-        background: viaColor
-          ? `linear-gradient(to right, var(--gradient-from), var(--gradient-via), var(--gradient-to))`
-          : `linear-gradient(to right, var(--gradient-from), var(--gradient-to))`,
-      }
+      background: viaColor
+        ? `linear-gradient(to right, var(--gradient-from), var(--gradient-via), var(--gradient-to))`
+        : `linear-gradient(to right, var(--gradient-from), var(--gradient-to))`,
+    }
     : {}
 
   // Build gradient class for Tailwind-based gradients
@@ -115,24 +117,23 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
   }
 
   const variantStyles = getVariantStyles()
+  const radiusClass = radius === "full" ? "rounded-full" : `rounded-${radius}`
 
   return (
     <div
-      className={cn("relative inline-block", className)}
-      style={{ padding: "8px" }}
+      className={cn("relative inline-block p-2", radiusClass, className)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Glow layer */}
       <div
-        className={cn(!useThemeGradient && gradientClass)}
+        className={cn(!useThemeGradient && gradientClass, radiusClass)}
         style={{
           position: "absolute",
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          borderRadius: "8px",
           filter: `blur(${currentGlow.blur}px)`,
           opacity: isHovered && !disabled ? currentGlow.opacity : 0,
           transition: "opacity 300ms ease-in-out",
@@ -144,13 +145,13 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
       {/* Border gradient for outline variant */}
       {variant === "outline" && (
         <div
-          className={cn(!useThemeGradient && gradientClass, "absolute inset-0 rounded-md")}
+          className={cn(!useThemeGradient && gradientClass, "absolute inset-0", radiusClass)}
           style={{
             padding: "2px",
             ...(useThemeGradient ? gradientStyle : {}),
           }}
         >
-          <div className="w-full h-full bg-gray-950 rounded-md" />
+          <div className={cn("w-full h-full bg-gray-950", radiusClass)} />
         </div>
       )}
 
@@ -160,14 +161,16 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
         disabled={disabled}
         onClick={disabled ? undefined : onClick}
         className={cn(
-          "relative inline-flex gap-2 whitespace-nowrap items-center justify-center rounded-md px-6 py-2",
+          "relative inline-flex whitespace-nowrap items-center justify-center",
+          !isIconOnly && "gap-2 px-6 py-2",
+          radiusClass,
           "transition-all duration-300 ease-in-out",
           "[&_svg]:size-4 [&_svg]:shrink-0",
           isIconOnly && "px-0 py-0 gap-0",
           !useThemeGradient && variantStyles.button,
           variantStyles.textGradient &&
-            !useThemeGradient &&
-            `bg-gradient-to-r ${fromColor} ${viaColor || ""} ${toColor} bg-clip-text text-transparent`,
+          !useThemeGradient &&
+          `bg-gradient-to-r ${fromColor} ${viaColor || ""} ${toColor} bg-clip-text text-transparent`,
           !variantStyles.textGradient && color,
           variant === "outline" && "border-transparent",
           !disabled && "active:scale-95 cursor-pointer",
@@ -182,13 +185,13 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
           ...(useThemeGradient && (variant === "default" || variant === "solid") ? gradientStyle : {}),
           ...(useThemeGradient && variantStyles.textGradient
             ? {
-                background: viaColor
-                  ? `linear-gradient(to right, var(--gradient-from), var(--gradient-via), var(--gradient-to))`
-                  : `linear-gradient(to right, var(--gradient-from), var(--gradient-to))`,
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                color: "transparent",
-              }
+              background: viaColor
+                ? `linear-gradient(to right, var(--gradient-from), var(--gradient-via), var(--gradient-to))`
+                : `linear-gradient(to right, var(--gradient-from), var(--gradient-to))`,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }
             : {}),
         }}
       >

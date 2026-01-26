@@ -5,6 +5,7 @@ import { Sidebar } from "./sidebar";
 import { ChatArea } from "./chat-area";
 import { SettingsSidebar } from "./settings-sidebar";
 import { AnimatedBackground } from "./animated-background";
+import { useConversationStore } from "@/lib/stores/conversation";
 
 export interface Message {
   id: string;
@@ -41,6 +42,8 @@ export function ChatInterface() {
     "conversations" | "my-items" | "collections" | "assistants" | null
   >(null);
 
+  const { currentThreadId, setCurrentThreadId } = useConversationStore();
+
   return (
     <div className="flex h-screen w-full overflow-hidden relative bg-background">
       <AnimatedBackground />
@@ -65,6 +68,8 @@ export function ChatInterface() {
         onMessagesChange={setMessages}
         onAttachedFilesChange={setAttachedFiles}
         onSettingsOpen={() => setIsSettingsOpen(true)}
+        threadId={currentThreadId}
+        onThreadChange={setCurrentThreadId}
       />
 
       <SettingsSidebar

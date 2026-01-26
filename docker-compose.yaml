@@ -1,0 +1,124 @@
+version: "3.9"
+
+services:
+  # =============================================================================
+  # Backend - LangGraph Agent Server
+  # =============================================================================
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: horizon-backend
+    ports:
+      - "2024:2024"
+      - "8000:8000"
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/backend/src:/app/src:cached
+      - ./apps/backend/.env:/app/.env:ro
+      # Persist Python cache
+      - backend-cache:/app/.cache
+    environment:
+      - ENVIRONMENT=development
+      - HOST=0.0.0.0
+      - PORT=2024
+      - CORS_ORIGINS=http://localhost:3000
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - ./apps/backend/.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - horizon-network
+
+  # =============================================================================
+  # Frontend - Next.js Web Application
+  # =============================================================================
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      target: development
+    container_name: horizon-web
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/web:/app:cached
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_LANGGRAPH_API_URL=http://localhost:2024
+      - WATCHPACK_POLLING=true
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - horizon-network
+
+  # =============================================================================
+  # Sandbox - Isolated Code Execution Environment
+  # =============================================================================
+  sandbox:
+    build:
+      context: ./apps/sandbox
+      dockerfile: Dockerfile
+    container_name: horizon-sandbox
+    # No ports exposed - backend communicates via Docker socket
+    volumes:
+      - sandbox-workspaces:/workspaces
+    environment:
+      - SANDBOX_TIMEOUT=30
+      - SANDBOX_MAX_MEMORY=512m
+      - SANDBOX_MAX_CPU=1.0
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=100M,mode=1777
+    networks:
+      - sandbox-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # Redis - Optional caching and session storage
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: horizon-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - horizon-network
+
+networks:
+  horizon-network:
+    driver: bridge
+  sandbox-network:
+    driver: bridge
+    internal: true  # Isolated from internet
+
+volumes:
+  backend-cache:
+  sandbox-workspaces:
+  redis-data:

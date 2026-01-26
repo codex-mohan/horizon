@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { cn } from "@workspace/ui/lib/utils";
 import {
   Loader2,
@@ -10,6 +10,15 @@ import {
   XCircle,
 } from "lucide-react";
 import { useTheme } from "@/components/theme/theme-provider";
+import dynamic from "next/dynamic";
+import { EditorView, lineNumbers } from "@codemirror/view";
+import { json } from "@codemirror/lang-json";
+import { createCodeMirrorTheme } from "@/lib/codemirror-theme";
+
+const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
+  ssr: false,
+  loading: () => <div className="h-16 animate-pulse bg-muted/50 rounded" />,
+});
 
 export interface ToolCall {
   id: string;
@@ -25,6 +34,60 @@ interface ToolCallMessageProps {
   className?: string;
 }
 
+const JsonViewer: React.FC<{ data: unknown; maxHeight?: string }> = React.memo(
+  ({ data, maxHeight = "200px" }) => {
+    const { themeMode } = useTheme();
+    const cmTheme = useMemo(
+      () => createCodeMirrorTheme(themeMode === "dark"),
+      [themeMode],
+    );
+
+    const extensions = useMemo(
+      () => [
+        json(),
+        lineNumbers(),
+        EditorView.editable.of(false),
+        EditorView.lineWrapping,
+      ],
+      [],
+    );
+
+    const formattedJson = useMemo(() => {
+      try {
+        if (typeof data === "string") {
+          const parsed = JSON.parse(data);
+          return JSON.stringify(parsed, null, 2);
+        }
+        return JSON.stringify(data, null, 2);
+      } catch {
+        return typeof data === "string" ? data : String(data);
+      }
+    }, [data]);
+
+    return (
+      <div
+        className="overflow-hidden rounded-lg border border-border"
+        style={{ maxHeight }}
+      >
+        <CodeMirror
+          value={formattedJson}
+          height="auto"
+          maxHeight={maxHeight}
+          extensions={extensions}
+          editable={false}
+          basicSetup={{
+            foldGutter: true,
+            syntaxHighlighting: false,
+            lineNumbers: false,
+          }}
+          theme={cmTheme}
+        />
+      </div>
+    );
+  },
+);
+JsonViewer.displayName = "JsonViewer";
+
 export function ToolCallMessage({
   toolCalls,
   isLoading = false,
@@ -35,10 +98,6 @@ export function ToolCallMessage({
   const isLightTheme = themeMode === "light";
 
   const loadingCount = toolCalls.filter((tc) => tc.status === "loading").length;
-  const completedCount = toolCalls.filter(
-    (tc) => tc.status === "completed" || tc.status === "success",
-  ).length;
-  const errorCount = toolCalls.filter((tc) => tc.status === "error").length;
 
   const getStatusIcon = (status: ToolCall["status"]) => {
     switch (status) {
@@ -100,7 +159,7 @@ export function ToolCallMessage({
       >
         <span
           className={cn(
-            "text-sm font-medium flex items-center gap-2",
+            "text-[1.05rem] font-medium flex items-center gap-2",
             isLightTheme ? "text-slate-700" : "text-foreground",
           )}
         >
@@ -118,7 +177,7 @@ export function ToolCallMessage({
           {toolCalls.length > 0 && (
             <span
               className={cn(
-                "text-xs px-2 py-0.5 rounded-full",
+                "text-[0.95rem] px-2 py-0.5 rounded-full",
                 isLightTheme
                   ? "bg-slate-200 text-slate-700"
                   : "bg-primary/20 text-primary",
@@ -130,7 +189,7 @@ export function ToolCallMessage({
           {isLoading && (
             <span
               className={cn(
-                "text-xs flex items-center gap-1",
+                "text-[0.95rem] flex items-center gap-1",
                 isLightTheme ? "text-amber-600" : "text-amber-400",
               )}
             >
@@ -157,7 +216,7 @@ export function ToolCallMessage({
         >
           <div
             className={cn(
-              "max-h-80 overflow-y-auto custom-scrollbar p-3 space-y-2",
+              "max-h-96 overflow-y-auto custom-scrollbar p-3 space-y-2",
               isLightTheme ? "scrollbar-light" : "",
             )}
           >
@@ -228,34 +287,40 @@ export function ToolCallMessage({
 
                       {toolCall.arguments &&
                         Object.keys(toolCall.arguments).length > 0 && (
-                          <div
-                            className={cn(
-                              "mt-2 p-2 rounded-lg text-xs font-mono",
-                              "overflow-x-auto",
-                              isLightTheme
-                                ? "bg-slate-100 text-slate-700"
-                                : "bg-black/30 text-muted-foreground",
-                            )}
-                          >
-                            <pre className="whitespace-pre-wrap break-all">
-                              {JSON.stringify(toolCall.arguments, null, 2)}
-                            </pre>
+                          <div className="mt-2">
+                            <p
+                              className={cn(
+                                "text-xs font-medium mb-1",
+                                isLightTheme
+                                  ? "text-slate-500"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              Arguments
+                            </p>
+                            <JsonViewer
+                              data={toolCall.arguments}
+                              maxHeight="150px"
+                            />
                           </div>
                         )}
 
                       {toolCall.result && (
-                        <div
-                          className={cn(
-                            "mt-2 p-2 rounded-lg text-xs",
-                            isLightTheme
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-emerald-950/30 text-emerald-400",
-                          )}
-                        >
-                          <span className="font-medium">Result: </span>
-                          {typeof toolCall.result === "string"
-                            ? toolCall.result
-                            : JSON.stringify(toolCall.result, null, 2)}
+                        <div className="mt-2">
+                          <p
+                            className={cn(
+                              "text-xs font-medium mb-1",
+                              isLightTheme
+                                ? "text-emerald-600"
+                                : "text-emerald-400",
+                            )}
+                          >
+                            Result
+                          </p>
+                          <JsonViewer
+                            data={toolCall.result}
+                            maxHeight="200px"
+                          />
                         </div>
                       )}
                     </div>

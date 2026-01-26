@@ -43,13 +43,16 @@ import { useChat, ProcessedEvent as ChatProcessedEvent } from "@/lib/chat";
 import { useChatSettings } from "@/lib/stores/chat-settings";
 import {
   combineToolMessages,
-  getCombinedToolCalls,
+  getCombinedToolCallsFromMap,
   isToolMessage,
   debugToolMessages,
+  type CombinedToolCall,
 } from "@/lib/chat-utils";
 import type { Message as LangGraphMessage } from "@langchain/langgraph-sdk";
 import { useTheme } from "@/components/theme/theme-provider";
 import { Terminal } from "lucide-react";
+import { createThreadsClient } from "@/lib/threads";
+import { generateConversationTitle } from "@/lib/title-utils";
 
 interface ChatAreaProps {
   messages: Message[];
@@ -57,6 +60,8 @@ interface ChatAreaProps {
   onMessagesChange: (messages: Message[]) => void;
   onAttachedFilesChange: (files: AttachedFile[]) => void;
   onSettingsOpen: () => void;
+  threadId?: string | null;
+  onThreadChange?: (threadId: string | null) => void;
 }
 
 const suggestedPrompts = [
@@ -72,6 +77,8 @@ export function ChatArea({
   onMessagesChange,
   onAttachedFilesChange,
   onSettingsOpen,
+  threadId,
+  onThreadChange,
 }: ChatAreaProps) {
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState("gpt-4");
@@ -90,11 +97,26 @@ export function ChatArea({
   const isLightTheme = themeMode === "light";
   const { settings, toggleShowToolCalls } = useChatSettings();
   const [currentToolCalls, setCurrentToolCalls] = useState<ToolCall[]>([]);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [toolCallsMap, setToolCallsMap] = useState<Map<string, CombinedToolCall[]>>(new Map());
 
   const thread = useChat({
     apiUrl:
       process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
     assistantId: "agent",
+    threadId: threadId,
+    onError: (error) => {
+      setChatError(error.message);
+      // Log detailed context for debugging loop issues
+      console.error("❌ Discussion Error:", {
+        message: error.message,
+        type: error.type,
+        lastMessage: error.lastMessageContent,
+        details: error.details
+      });
+      // Safety: clear running states
+      setCurrentToolCalls([]);
+    },
     onEvent: (event: Record<string, unknown>) => {
       const processedEvent = thread.processEvent(event);
       if (processedEvent) {
@@ -196,63 +218,91 @@ export function ChatArea({
     }
   }, [thread.messages, thread.isLoading, liveActivityEvents]);
 
+  // Clear live state when loading completes to prevent stale data
+  useEffect(() => {
+    if (!thread.isLoading) {
+      // Clear live tool calls and activity when response is complete
+      setCurrentToolCalls([]);
+      setLiveActivityEvents([]);
+    }
+  }, [thread.isLoading]);
+
   useEffect(() => {
     if (thread.messages.length > 0) {
-      debugToolMessages(thread.messages);
-      const combinedMessages = combineToolMessages(thread.messages);
+      try {
+        debugToolMessages(thread.messages);
+        const { messages: combinedMessages, toolCallsMap: newToolCallsMap } = combineToolMessages(thread.messages);
 
-      const convertedMessages: Message[] = combinedMessages
-        .filter((msg) => !isToolMessage(msg))
-        .map((msg: LangGraphMessage) => {
-          const combinedToolCalls = getCombinedToolCalls(msg);
-          const msgData = msg as unknown as Record<string, unknown>;
-          const hasToolCalls =
-            msgData.tool_calls &&
-            Array.isArray(msgData.tool_calls) &&
-            msgData.tool_calls.length > 0;
-          const msgWithTimestamp = msg as LangGraphMessage & {
-            created_at?: number;
-          };
+        // Store the tool calls map for rendering
+        setToolCallsMap(newToolCallsMap);
 
-          let content =
-            typeof msg.content === "string"
-              ? msg.content
-              : JSON.stringify(msg.content);
+        const convertedMessages: Message[] = combinedMessages
+          .filter((msg: LangGraphMessage) => !isToolMessage(msg))
+          .map((msg: LangGraphMessage) => {
+            const combinedToolCalls = getCombinedToolCallsFromMap(msg, newToolCallsMap);
+            const msgData = msg as unknown as Record<string, unknown>;
+            const hasToolCalls =
+              msgData.tool_calls &&
+              Array.isArray(msgData.tool_calls) &&
+              msgData.tool_calls.length > 0;
+            const msgWithTimestamp = msg as LangGraphMessage & {
+              created_at?: number;
+            };
 
-          if (
-            (combinedToolCalls && combinedToolCalls.length > 0) ||
-            hasToolCalls
-          ) {
-            const hasContent = content && content.trim().length > 0;
-            content = hasContent
-              ? `${content}\n\n_Tools executed successfully_`
-              : `_Tools executed successfully_`;
-          }
+            let content =
+              typeof msg.content === "string"
+                ? msg.content
+                : JSON.stringify(msg.content);
 
-          return {
-            id: msg.id || Date.now().toString(),
-            role: msg.type === "human" ? "user" : "assistant",
-            content,
-            timestamp: new Date(
-              msgWithTimestamp.created_at
-                ? new Date(msgWithTimestamp.created_at * 1000)
-                : Date.now(),
-            ),
-            ...((combinedToolCalls && combinedToolCalls.length > 0) ||
-            hasToolCalls
-              ? { _combinedToolCalls: combinedToolCalls || [] }
-              : {}),
-          };
-        });
+            // Only append tool execution note if there are actual combined tool calls with results
+            // if (combinedToolCalls && combinedToolCalls.length > 0) {
+            //   const completedTools = combinedToolCalls.filter(tc => tc.result);
+            //   if (completedTools.length > 0) {
+            //     const hasContent = content && content.trim().length > 0;
+            //     content = hasContent
+            //       ? `${content}\n\n_Tools executed successfully_`
+            //       : `_Tools executed successfully_`;
+            //   }
+            // }
 
-      console.log("Converted messages:", convertedMessages.length);
-      onMessagesChange(convertedMessages);
+            return {
+              id: msg.id || Date.now().toString(),
+              role: msg.type === "human" ? "user" : "assistant",
+              content,
+              timestamp: new Date(
+                msgWithTimestamp.created_at
+                  ? new Date(msgWithTimestamp.created_at * 1000)
+                  : Date.now(),
+              ),
+              ...((combinedToolCalls && combinedToolCalls.length > 0) || hasToolCalls
+                ? { _combinedToolCalls: combinedToolCalls || [] }
+                : {}),
+            };
+          });
+
+        onMessagesChange(convertedMessages);
+        setChatError(null); // Clear any previous errors
+      } catch (error) {
+        console.error("Error processing messages:", error);
+        setChatError(error instanceof Error ? error.message : "Failed to process messages");
+      }
     }
   }, [thread.messages, onMessagesChange]);
 
+  // Reset chat when threadId changes to null (New Conversation)
+  useEffect(() => {
+    if (!threadId) {
+      onMessagesChange([]);
+      setInput("");
+      onAttachedFilesChange([]);
+      setLiveActivityEvents([]);
+      setCurrentToolCalls([]);
+    }
+  }, [threadId, onMessagesChange, onAttachedFilesChange]);
+
   const wordCount = input.trim().split(/\s+/).filter(Boolean).length;
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!input.trim() && attachedFiles.length === 0) return;
 
     if (isEditing) {
@@ -276,6 +326,19 @@ export function ChatArea({
 
       setLiveActivityEvents([]);
       hasFinalizeEventOccurredRef.current = false;
+
+      // Update thread title if this is the first message
+      if (thread.threadId && messages.length === 0) {
+        try {
+          const apiUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
+          const threadsClient = createThreadsClient(apiUrl);
+          await threadsClient.updateThread(thread.threadId, {
+            title: generateConversationTitle(input)
+          });
+        } catch (error) {
+          console.error("Failed to update thread title:", error);
+        }
+      }
 
       thread.submit({
         messages: [
@@ -321,9 +384,52 @@ export function ChatArea({
     textareaRef.current?.focus();
   };
 
-  const handleRetry = (messageId: string, content: string) => {
-    console.log("Retry message:", messageId, content);
-  };
+  const handleRetry = useCallback((messageId: string, content: string) => {
+    // Find the message index
+    const messageIndex = messages.findIndex((msg) => msg.id === messageId);
+    if (messageIndex === -1) return;
+
+    const message = messages[messageIndex];
+
+    if (message.role === "user") {
+      // If retrying a user message, remove all messages after it and re-send
+      const keptMessages = messages.slice(0, messageIndex);
+      onMessagesChange(keptMessages);
+
+      // Clear states and re-submit
+      setLiveActivityEvents([]);
+      hasFinalizeEventOccurredRef.current = false;
+      setChatError(null);
+
+      thread.submit({
+        messages: [{ type: "human" as const, content }],
+      });
+    } else if (message.role === "assistant") {
+      // If retrying an assistant message, find the preceding user message and retry from there
+      let precedingUserIndex = -1;
+      for (let i = messageIndex - 1; i >= 0; i--) {
+        if (messages[i].role === "user") {
+          precedingUserIndex = i;
+          break;
+        }
+      }
+
+      if (precedingUserIndex >= 0) {
+        const userMessage = messages[precedingUserIndex];
+        const keptMessages = messages.slice(0, precedingUserIndex);
+        onMessagesChange(keptMessages);
+
+        // Clear states and re-submit
+        setLiveActivityEvents([]);
+        hasFinalizeEventOccurredRef.current = false;
+        setChatError(null);
+
+        thread.submit({
+          messages: [{ type: "human" as const, content: userMessage.content }],
+        });
+      }
+    }
+  }, [messages, onMessagesChange, thread]);
 
   const handleFork = (messageId: string, content: string) => {
     console.log("Fork message:", messageId, content);
@@ -572,6 +678,9 @@ export function ChatArea({
               onClick={handleSend}
               disabled={!input.trim() && attachedFiles.length === 0}
               glowIntensity="high"
+              radius="full"
+              iconOnly={true}
+              className="p-0 text-white"
               icon={
                 isEditing ? (
                   <Pencil className="size-4" />
@@ -579,7 +688,6 @@ export function ChatArea({
                   <Send className="size-4" />
                 )
               }
-              className="p-0 text-white"
             ></GradientButton>
           )}
         </div>
@@ -640,14 +748,33 @@ export function ChatArea({
           </div>
         ) : (
           <div className="max-w-4xl mx-auto w-full space-y-6">
+            {/* Error display */}
+            {chatError && (
+              <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+                <p className="text-sm font-medium">Error processing messages</p>
+                <p className="text-xs mt-1 opacity-80">{chatError}</p>
+              </div>
+            )}
+
             {messages.map((message, index) => {
               const isLast = index === messages.length - 1;
+              const isAssistantLoading = isLast && thread.isLoading && message.role === "assistant";
+
+              // Check if previous message was also from assistant to group them
+              const prevMessage = index > 0 ? messages[index - 1] : null;
+              const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
+              const isConsecutiveAssistant = message.role === "assistant" && prevMessage?.role === "assistant";
+              const showAvatar = !isConsecutiveAssistant;
+
+              // Show actions only on the last message in a consecutive assistant group
+              const isLastInAssistantGroup = message.role === "assistant" &&
+                (nextMessage?.role !== "assistant" || isLast);
+
               return (
                 <div key={message.id} className="space-y-3">
                   <div
-                    className={`flex items-start gap-3 ${
-                      message.role === "user" ? "justify-end" : ""
-                    }`}
+                    className={`flex items-start gap-3 ${message.role === "user" ? "justify-end" : ""
+                      }`}
                   >
                     {message.role === "user" ? (
                       <ChatBubble
@@ -661,56 +788,9 @@ export function ChatArea({
                         onDelete={handleDelete}
                       />
                     ) : (
-                      <div className="w-full">
-                        {isLast &&
-                          thread.isLoading &&
-                          settings.showToolCalls &&
-                          currentToolCalls.length > 0 && (
-                            <div className="mb-3">
-                              <ToolCallMessage
-                                toolCalls={currentToolCalls}
-                                isLoading={thread.isLoading}
-                              />
-                            </div>
-                          )}
-                        {isLast &&
-                          thread.isLoading &&
-                          settings.showActivityTimeline &&
-                          liveActivityEvents.length > 0 && (
-                            <div className="mb-3">
-                              <ActivityTimeline
-                                processedEvents={liveActivityEvents}
-                                isLoading={thread.isLoading}
-                              />
-                            </div>
-                          )}
-                        {message._combinedToolCalls ? (
-                          <div className="space-y-3">
-                            {settings.showToolCalls && (
-                              <ToolCallMessage
-                                toolCalls={
-                                  message._combinedToolCalls as ToolCall[]
-                                }
-                                isLoading={
-                                  thread.isLoading &&
-                                  message._combinedToolCalls.length === 0
-                                }
-                              />
-                            )}
-                            {message.content && (
-                              <ChatBubble
-                                message={message}
-                                onEdit={handleEdit}
-                                onRetry={handleRetry}
-                                onFork={handleFork}
-                                onSpeak={handleSpeak}
-                                onSummarize={handleSummarize}
-                                onShare={handleShare}
-                                onDelete={handleDelete}
-                              />
-                            )}
-                          </div>
-                        ) : (
+                      <div className="w-full space-y-3">
+                        {/* Chat bubble with the actual content */}
+                        {message.content && (
                           <ChatBubble
                             message={message}
                             onEdit={handleEdit}
@@ -720,8 +800,23 @@ export function ChatArea({
                             onSummarize={handleSummarize}
                             onShare={handleShare}
                             onDelete={handleDelete}
+                            showAvatar={showAvatar}
+                            showActions={isLastInAssistantGroup}
                           />
                         )}
+
+                        {/* Show completed tool calls from message history (not loading state) */}
+                        {message._combinedToolCalls &&
+                          message._combinedToolCalls.length > 0 &&
+                          settings.showToolCalls &&
+                          !isAssistantLoading && (
+                            <div className="ml-14">
+                              <ToolCallMessage
+                                toolCalls={message._combinedToolCalls as ToolCall[]}
+                                isLoading={false}
+                              />
+                            </div>
+                          )}
                       </div>
                     )}
                   </div>
@@ -729,6 +824,7 @@ export function ChatArea({
               );
             })}
 
+            {/* Loading placeholder - only shown when waiting for assistant response */}
             {thread.isLoading &&
               (messages.length === 0 ||
                 messages[messages.length - 1].role === "user") && (
@@ -743,23 +839,21 @@ export function ChatArea({
                         : "glass bg-card/60",
                     )}
                   >
-                    {liveActivityEvents.length > 0 ||
-                    currentToolCalls.length > 0 ? (
-                      <div className="text-xs space-y-2">
-                        {settings.showToolCalls &&
-                          currentToolCalls.length > 0 && (
-                            <ToolCallMessage
-                              toolCalls={currentToolCalls}
-                              isLoading={true}
-                            />
-                          )}
-                        {settings.showActivityTimeline &&
-                          liveActivityEvents.length > 0 && (
-                            <ActivityTimeline
-                              processedEvents={liveActivityEvents}
-                              isLoading={true}
-                            />
-                          )}
+                    {/* Show live tool calls and activity during loading */}
+                    {(liveActivityEvents.length > 0 || currentToolCalls.length > 0) ? (
+                      <div className="space-y-3">
+                        {settings.showToolCalls && currentToolCalls.length > 0 && (
+                          <ToolCallMessage
+                            toolCalls={currentToolCalls}
+                            isLoading={true}
+                          />
+                        )}
+                        {settings.showActivityTimeline && liveActivityEvents.length > 0 && (
+                          <ActivityTimeline
+                            processedEvents={liveActivityEvents}
+                            isLoading={true}
+                          />
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-center justify-start h-full gap-2">

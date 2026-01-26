@@ -1,12 +1,23 @@
 {
-  "name": "Horizon",
+  "name": "horizon",
   "version": "0.0.1",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "dev:web": "bun --cwd apps/web dev",
+    "dev:backend": "cd apps/backend && langgraph dev",
     "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "docker:dev": "docker compose up --build",
+    "docker:prod": "docker compose -f docker-compose.prod.yaml up --build -d",
+    "docker:down": "docker compose down",
+    "clean": "turbo clean && rm -rf node_modules",
+    "typecheck": "turbo typecheck"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
@@ -15,8 +26,13 @@
     "turbo": "^2.6.3",
     "typescript": "5.7.3"
   },
-  "packageManager": "pnpm@10.4.1",
+  "trustedDependencies": [
+    "esbuild"
+  ],
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@lezer/highlight": "^1.2.3"
   }
 }
