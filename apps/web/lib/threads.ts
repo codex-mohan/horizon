@@ -8,21 +8,36 @@ export interface Thread {
 }
 
 export interface ThreadsClient {
-    listThreads: () => Promise<Thread[]>;
+    listThreads: (userId?: string) => Promise<Thread[]>;
     getThread: (threadId: string) => Promise<Thread | null>;
-    createThread: (metadata?: Record<string, unknown>) => Promise<Thread>;
+    createThread: (userId: string, metadata?: Record<string, unknown>) => Promise<Thread>;
     deleteThread: (threadId: string) => Promise<void>;
     updateThread: (threadId: string, metadata: Record<string, unknown>) => Promise<Thread>;
 }
 
+/**
+ * Creates a threads client for managing LangGraph conversations.
+ * 
+ * Threads are associated with users via metadata.user_id.
+ * LangGraph's checkpointer stores all conversation state (messages, tool calls, etc.)
+ * in its own database, so we don't need to duplicate this data.
+ */
 export function createThreadsClient(apiUrl: string): ThreadsClient {
     const client = new Client({ apiUrl });
 
     return {
-        async listThreads(): Promise<Thread[]> {
+        /**
+         * List all threads for a specific user.
+         * If no userId is provided, lists all threads (admin use).
+         */
+        async listThreads(userId?: string): Promise<Thread[]> {
             try {
-                // Use search with empty query to list all threads
-                const response = await client.threads.search();
+                // Use search with metadata filter to get user's threads
+                const searchOptions = userId
+                    ? { metadata: { user_id: userId } }
+                    : {};
+
+                const response = await client.threads.search(searchOptions);
                 return response.map((t) => ({
                     thread_id: t.thread_id,
                     created_at: t.created_at || new Date().toISOString(),
@@ -51,8 +66,17 @@ export function createThreadsClient(apiUrl: string): ThreadsClient {
             }
         },
 
-        async createThread(metadata?: Record<string, unknown>): Promise<Thread> {
-            const thread = await client.threads.create({ metadata });
+        /**
+         * Create a new thread for a user.
+         * The user_id is stored in metadata for filtering.
+         */
+        async createThread(userId: string, metadata?: Record<string, unknown>): Promise<Thread> {
+            const thread = await client.threads.create({
+                metadata: {
+                    ...metadata,
+                    user_id: userId, // Always include user_id for filtering
+                },
+            });
             return {
                 thread_id: thread.thread_id,
                 created_at: thread.created_at || new Date().toISOString(),

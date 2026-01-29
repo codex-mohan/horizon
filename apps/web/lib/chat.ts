@@ -21,8 +21,10 @@ export interface UseChatOptions {
   apiUrl?: string;
   assistantId?: string;
   threadId?: string | null;
+  userId?: string; // User ID for associating threads with users
   onEvent?: (event: Record<string, unknown>) => void;
   onError?: (error: ChatError) => void;
+  onThreadId?: (threadId: string) => void; // Callback when new thread is created
 }
 
 export interface UseChatReturn {
@@ -122,11 +124,26 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     setError(null);
   }, []);
 
+  /* State to track the active thread ID internally since useStream doesn't expose it directly */
+  const [internalThreadId, setInternalThreadId] = useState<string | null>(null);
+
+  const handleThreadId = useCallback((id: string) => {
+    setInternalThreadId(id);
+    options.onThreadId?.(id);
+  }, [options.onThreadId]);
+
   const thread = useStream({
     apiUrl,
     assistantId,
     threadId: options.threadId ?? undefined,
     messagesKey: "messages",
+    // Pass user_id as thread metadata for new thread creation
+    ...(options.userId && !options.threadId && {
+      threadConfig: {
+        metadata: { user_id: options.userId },
+      },
+    }),
+    onThreadId: handleThreadId,
     onUpdateEvent: (event: Record<string, unknown>) => {
       setLastEvent(event);
       setError(null); // Clear errors on successful events
@@ -157,7 +174,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     },
   });
 
-  const processEvent = (
+  const processEvent = useCallback((
     event: Record<string, unknown>,
   ): ProcessedEvent | null => {
     if (event.StartMiddleware) {
@@ -249,7 +266,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     }
 
     return null;
-  };
+  }, []);
 
   return {
     submit: thread.submit as UseChatReturn["submit"],
@@ -262,6 +279,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     processEvent,
     apiUrl,
     assistantId,
-    threadId: options.threadId,
+    // Return the actual active thread ID from internal state or option
+    threadId: internalThreadId || options.threadId,
   };
 }

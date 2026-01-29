@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme/theme-provider"
+import { Toaster } from "sonner"
 import "highlight.js/styles/github-dark.css"
 import "@workspace/ui/styles/globals.css"
 
@@ -65,6 +66,17 @@ export default function RootLayout({
       <body className={`font-sans antialiased`}>
         <ThemeProvider>
           {children}
+          <Toaster
+            position="top-right"
+            expand={false}
+            richColors
+            closeButton
+            toastOptions={{
+              classNames: {
+                toast: "glass-strong",
+              },
+            }}
+          />
           <Analytics />
         </ThemeProvider>
       </body>

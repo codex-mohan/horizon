@@ -1,0 +1,23 @@
+{
+  "users": [
+    {
+      "id": "cfae84e8-b7bf-494f-9763-2e2871eeb523",
+      "username": "mohanakrishna",
+      "passwordHash": "$2b$12$r90QtdKdVOgXtyOcmUYMG.vRiY9HMvEntztobtm4OlpFPsnO1bUZW",
+      "displayName": "Mohana Krishna",
+      "createdAt": "2026-01-27T06:53:48.745Z",
+      "updatedAt": "2026-01-27T06:53:48.745Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "8b08ec7f-1d6d-4254-a33e-8602c4a6a3c7",
+      "userId": "cfae84e8-b7bf-494f-9763-2e2871eeb523",
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJjZmFlODRlOC1iN2JmLTQ5NGYtOTc2My0yZTI4NzFlZWI1MjMiLCJzZXNzaW9uSWQiOiI4YjA4ZWM3Zi0xZDZkLTQyNTQtYTMzZS04NjAyYzRhNmEzYzciLCJpYXQiOjE3Njk0OTY4MjksImV4cCI6MTc3MjA4ODgyOX0.YXx5HHsHeScCuULIdNo2y8LM1Q5sTf31wbH70DcbJPo",
+      "expiresAt": "2026-01-28T06:53:49.439Z",
+      "rememberMe": false,
+      "createdAt": "2026-01-27T06:53:49.447Z"
+    }
+  ],
+  "conversations": []
+}

@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   Plus,
   Wrench,
@@ -39,7 +39,7 @@ import type { Message, AttachedFile } from "./chat-interface";
 import { FileAttachment } from "@workspace/ui/components/file-attachment";
 import { ActivityTimeline } from "./activity-timeline";
 import { ToolCallMessage, type ToolCall } from "./tool-call-message";
-import { useChat, ProcessedEvent as ChatProcessedEvent } from "@/lib/chat";
+import { useChat, ProcessedEvent as ChatProcessedEvent, type UseChatOptions, type ChatError } from "@/lib/chat";
 import { useChatSettings } from "@/lib/stores/chat-settings";
 import {
   combineToolMessages,
@@ -53,6 +53,7 @@ import { useTheme } from "@/components/theme/theme-provider";
 import { Terminal } from "lucide-react";
 import { createThreadsClient } from "@/lib/threads";
 import { generateConversationTitle } from "@/lib/title-utils";
+import { useAuthStore } from "@/lib/stores/auth";
 
 interface ChatAreaProps {
   messages: Message[];
@@ -100,60 +101,93 @@ export function ChatArea({
   const [chatError, setChatError] = useState<string | null>(null);
   const [toolCallsMap, setToolCallsMap] = useState<Map<string, CombinedToolCall[]>>(new Map());
 
-  const thread = useChat({
-    apiUrl:
-      process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
+  // Get current user for associating threads
+  const { user } = useAuthStore();
+
+  // Memoize callbacks to prevent useChat/useStream from resetting on re-renders
+  const handleThreadId = useCallback((newThreadId: string) => {
+    console.log("[ChatArea] onThreadId called:", { newThreadId, currentThreadId: threadId });
+    // Only notify if we didn't have a threadId before (new conversation)
+    if (newThreadId && !threadId) {
+      console.log("[ChatArea] Thread created, notifying parent to update URL");
+      onThreadChange?.(newThreadId);
+    }
+  }, [threadId, onThreadChange]);
+
+  const chatErrorCallback = useCallback((error: ChatError) => {
+    setChatError(error.message);
+    // Log detailed context for debugging loop issues
+    console.error("❌ Discussion Error:", {
+      message: error.message,
+      type: error.type,
+      lastMessage: error.lastMessageContent,
+      details: error.details
+    });
+    // Safety: clear running states
+    setCurrentToolCalls([]);
+  }, []);
+
+  const chatEventCallback = useCallback((event: Record<string, unknown>) => {
+    // Note: We access thread via closure, but for processEvent we might need thread to be stable or use a helper
+    // Since 'thread' isn't available when defining options (circular), we handle processing in the effect or render phase
+    // or we pass a processor function.
+    // However, useChat options `onEvent` is called by the hook.
+
+    if (event.tools && settings.showToolCalls) {
+      const toolsEvent = event.tools as Record<string, unknown>;
+      if (toolsEvent.tool_calls && Array.isArray(toolsEvent.tool_calls)) {
+        const newToolCalls: ToolCall[] = toolsEvent.tool_calls.map(
+          (tc: Record<string, unknown>, idx: number) => {
+            let name = "unknown";
+            if (tc.name && typeof tc.name === "string") {
+              name = tc.name;
+            } else if (
+              tc.function &&
+              typeof tc.function === "object" &&
+              tc.function &&
+              (tc.function as Record<string, unknown>).name
+            ) {
+              name =
+                ((tc.function as Record<string, unknown>).name as string) ||
+                "unknown";
+            }
+            return {
+              id: `tool-${Date.now()}-${idx}`,
+              name,
+              arguments: (tc.input as Record<string, unknown>) || {},
+              status: "loading",
+            };
+          },
+        );
+        setCurrentToolCalls((prev) => [...prev, ...newToolCalls]);
+      }
+    }
+  }, [settings.showToolCalls]);
+
+  const chatOptions = useMemo<UseChatOptions>(() => ({
+    apiUrl: process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
     assistantId: "agent",
     threadId: threadId,
-    onError: (error) => {
-      setChatError(error.message);
-      // Log detailed context for debugging loop issues
-      console.error("❌ Discussion Error:", {
-        message: error.message,
-        type: error.type,
-        lastMessage: error.lastMessageContent,
-        details: error.details
-      });
-      // Safety: clear running states
-      setCurrentToolCalls([]);
-    },
-    onEvent: (event: Record<string, unknown>) => {
-      const processedEvent = thread.processEvent(event);
+    userId: user?.id,
+    onThreadId: handleThreadId,
+    onError: chatErrorCallback,
+    onEvent: chatEventCallback
+  }), [threadId, user?.id, handleThreadId, chatErrorCallback, chatEventCallback]);
+
+  const thread = useChat(chatOptions);
+
+  // Handle live activity events separately since they need thread instance methods
+  const lastProcessedEventRef = useRef<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    if (thread.lastEvent && thread.lastEvent !== lastProcessedEventRef.current) {
+      const processedEvent = thread.processEvent(thread.lastEvent);
       if (processedEvent) {
         setLiveActivityEvents((prev) => [...prev, processedEvent]);
       }
-
-      if (event.tools && settings.showToolCalls) {
-        const toolsEvent = event.tools as Record<string, unknown>;
-        if (toolsEvent.tool_calls && Array.isArray(toolsEvent.tool_calls)) {
-          const newToolCalls: ToolCall[] = toolsEvent.tool_calls.map(
-            (tc: Record<string, unknown>, idx: number) => {
-              let name = "unknown";
-              if (tc.name && typeof tc.name === "string") {
-                name = tc.name;
-              } else if (
-                tc.function &&
-                typeof tc.function === "object" &&
-                tc.function &&
-                (tc.function as Record<string, unknown>).name
-              ) {
-                name =
-                  ((tc.function as Record<string, unknown>).name as string) ||
-                  "unknown";
-              }
-              return {
-                id: `tool-${Date.now()}-${idx}`,
-                name,
-                arguments: (tc.input as Record<string, unknown>) || {},
-                status: "loading",
-              };
-            },
-          );
-          setCurrentToolCalls((prev) => [...prev, ...newToolCalls]);
-        }
-      }
-    },
-  });
+      lastProcessedEventRef.current = thread.lastEvent;
+    }
+  }, [thread.lastEvent, thread.processEvent]);
 
   const hasMessages = messages.length > 0;
 
@@ -227,67 +261,90 @@ export function ChatArea({
     }
   }, [thread.isLoading]);
 
+  // Optimize message processing to prevent infinite loops
+  const { processedMessages, newToolCallsMap } = useMemo(() => {
+    if (thread.messages.length === 0) {
+      return { processedMessages: [], newToolCallsMap: new Map() };
+    }
+
+    try {
+      debugToolMessages(thread.messages);
+      const { messages: combinedMessages, toolCallsMap: map } = combineToolMessages(thread.messages);
+
+      const converted = combinedMessages
+        .filter((msg: LangGraphMessage) => !isToolMessage(msg))
+        .map((msg: LangGraphMessage, idx: number) => {
+          const combinedToolCalls = getCombinedToolCallsFromMap(msg, map);
+          const msgData = msg as unknown as Record<string, unknown>;
+          const hasToolCalls =
+            msgData.tool_calls &&
+            Array.isArray(msgData.tool_calls) &&
+            msgData.tool_calls.length > 0;
+          const msgWithTimestamp = msg as LangGraphMessage & {
+            created_at?: number;
+          };
+
+          const content =
+            typeof msg.content === "string"
+              ? msg.content
+              : JSON.stringify(msg.content);
+
+          return {
+            id: msg.id || `temp-${idx}`,
+            role: msg.type === "human" ? "user" : "assistant",
+            content,
+            timestamp: new Date(
+              msgWithTimestamp.created_at
+                ? new Date(msgWithTimestamp.created_at * 1000)
+                : Date.now(),
+            ),
+            ...((combinedToolCalls && combinedToolCalls.length > 0) || hasToolCalls
+              ? { _combinedToolCalls: combinedToolCalls || [] }
+              : {}),
+          };
+        }) as Message[];
+
+      return { processedMessages: converted, newToolCallsMap: map };
+    } catch (error) {
+      console.error("Error processing messages:", error);
+      return { processedMessages: [], newToolCallsMap: new Map() };
+    }
+  }, [thread.messages]);
+
+  // Update tool calls map when it changes
   useEffect(() => {
-    if (thread.messages.length > 0) {
-      try {
-        debugToolMessages(thread.messages);
-        const { messages: combinedMessages, toolCallsMap: newToolCallsMap } = combineToolMessages(thread.messages);
+    if (newToolCallsMap.size > 0 && JSON.stringify(Array.from(newToolCallsMap.entries())) !== JSON.stringify(Array.from(toolCallsMap.entries()))) {
+      setToolCallsMap(newToolCallsMap);
+    }
+  }, [newToolCallsMap, toolCallsMap]);
 
-        // Store the tool calls map for rendering
-        setToolCallsMap(newToolCallsMap);
+  // Update messages only when they actually change to break the loop
+  // compare with current prop 'messages'
+  useEffect(() => {
+    if (processedMessages.length > 0) {
+      // Simple length check first
+      if (processedMessages.length !== messages.length) {
+        console.log(`[ChatArea] Updating messages: count changed ${messages.length} -> ${processedMessages.length}`);
+        onMessagesChange(processedMessages);
+        setChatError(null);
+        return;
+      }
 
-        const convertedMessages: Message[] = combinedMessages
-          .filter((msg: LangGraphMessage) => !isToolMessage(msg))
-          .map((msg: LangGraphMessage) => {
-            const combinedToolCalls = getCombinedToolCallsFromMap(msg, newToolCallsMap);
-            const msgData = msg as unknown as Record<string, unknown>;
-            const hasToolCalls =
-              msgData.tool_calls &&
-              Array.isArray(msgData.tool_calls) &&
-              msgData.tool_calls.length > 0;
-            const msgWithTimestamp = msg as LangGraphMessage & {
-              created_at?: number;
-            };
+      // Deep check last message to see if it updated (streaming)
+      const lastProcessed = processedMessages[processedMessages.length - 1];
+      const lastCurrent = messages[messages.length - 1];
 
-            let content =
-              typeof msg.content === "string"
-                ? msg.content
-                : JSON.stringify(msg.content);
-
-            // Only append tool execution note if there are actual combined tool calls with results
-            // if (combinedToolCalls && combinedToolCalls.length > 0) {
-            //   const completedTools = combinedToolCalls.filter(tc => tc.result);
-            //   if (completedTools.length > 0) {
-            //     const hasContent = content && content.trim().length > 0;
-            //     content = hasContent
-            //       ? `${content}\n\n_Tools executed successfully_`
-            //       : `_Tools executed successfully_`;
-            //   }
-            // }
-
-            return {
-              id: msg.id || Date.now().toString(),
-              role: msg.type === "human" ? "user" : "assistant",
-              content,
-              timestamp: new Date(
-                msgWithTimestamp.created_at
-                  ? new Date(msgWithTimestamp.created_at * 1000)
-                  : Date.now(),
-              ),
-              ...((combinedToolCalls && combinedToolCalls.length > 0) || hasToolCalls
-                ? { _combinedToolCalls: combinedToolCalls || [] }
-                : {}),
-            };
-          });
-
-        onMessagesChange(convertedMessages);
-        setChatError(null); // Clear any previous errors
-      } catch (error) {
-        console.error("Error processing messages:", error);
-        setChatError(error instanceof Error ? error.message : "Failed to process messages");
+      if (
+        lastProcessed.id !== lastCurrent.id ||
+        lastProcessed.content !== lastCurrent.content ||
+        JSON.stringify(lastProcessed._combinedToolCalls) !== JSON.stringify(lastCurrent._combinedToolCalls)
+      ) {
+        // console.log("[ChatArea] Updating messages: content changed");
+        onMessagesChange(processedMessages);
+        setChatError(null);
       }
     }
-  }, [thread.messages, onMessagesChange]);
+  }, [processedMessages, messages, onMessagesChange]);
 
   // Reset chat when threadId changes to null (New Conversation)
   useEffect(() => {
@@ -458,7 +515,7 @@ export function ChatArea({
     Local: ["ollama/llama2", "vllm/mistral"],
   };
 
-  const renderChatInput = () => (
+  const chatInput = useMemo(() => (
     <div className="glass-strong rounded-xl p-4 space-y-3 hover-lift">
       {attachedFiles.length > 0 && (
         <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
@@ -693,7 +750,23 @@ export function ChatArea({
         </div>
       </div>
     </div>
-  );
+  ), [
+    attachedFiles,
+    onAttachedFilesChange,
+    isEditing,
+    input,
+    handleSend,
+    toggleShowToolCalls,
+    settings.showToolCalls,
+    isLightTheme,
+    onSettingsOpen,
+    wordCount,
+    selectedModel,
+    modelGroups,
+    thread.isLoading,
+    handleStop,
+    fileInputRef
+  ]);
 
   return (
     <div className="flex-1 flex flex-col relative z-10">
@@ -730,12 +803,13 @@ export function ChatArea({
               className="space-y-4 animate-slide-up"
               style={{ animationDelay: "0.3s" }}
             >
-              {renderChatInput()}
+              {chatInput}
 
               <div className="flex flex-wrap gap-2 justify-center">
                 {suggestedPrompts.map((prompt, index) => (
                   <Badge
                     key={index}
+                    variant="outline"
                     className="cursor-pointer transition-all duration-200 hover:scale-105 hover-lift hover-glow stagger-item glass-badge"
                     style={{ animationDelay: `${0.4 + index * 0.05}s` }}
                     onClick={() => setInput(prompt)}
@@ -881,7 +955,7 @@ export function ChatArea({
 
       {hasMessages && (
         <div className="border-t border-border p-4 animate-slide-up">
-          <div className="max-w-4xl mx-auto">{renderChatInput()}</div>
+          <div className="max-w-4xl mx-auto">{chatInput}</div>
         </div>
       )}
 

@@ -8,6 +8,7 @@ import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
 import { ExpandedSidebar } from "./expanded-sidebar"
 import { ThemeSwitcher } from "@/components/theme/theme-switcher"
+import { useAuthStore } from "@/lib/stores/auth"
 
 interface SidebarProps {
   isExpanded: boolean
@@ -17,6 +18,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse }: SidebarProps) {
+  const { user } = useAuthStore()
   const topSections = [
     { id: "conversations", icon: MessageSquare, label: "Conversations" },
     { id: "my-items", icon: FolderOpen, label: "My Items" },
@@ -114,9 +116,9 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
                     className="size-10 p-0 transition-all duration-200 hover:scale-110 hover-glow flex items-center justify-center"
                   >
                     <Avatar className="size-10 transition-transform duration-200">
-                      <AvatarImage src="/horizon-icon.png" />
+                      <AvatarImage src={user?.avatarUrl || "/horizon-icon.png"} />
                       <AvatarFallback className="bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-[var(--foreground)]">
-                        SA
+                        {user?.displayName ? user.displayName.substring(0, 2).toUpperCase() : "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>

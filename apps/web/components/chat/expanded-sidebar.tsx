@@ -7,8 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/componen
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@workspace/ui/components/dropdown-menu"
 import { cn } from "@workspace/ui/lib/utils"
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { createThreadsClient, type Thread } from "@/lib/threads"
 import { useConversationStore } from "@/lib/stores/conversation"
+import { useAuthStore } from "@/lib/stores/auth"
 
 interface ExpandedSidebarProps {
   section: "conversations" | "my-items" | "collections" | "assistants"
@@ -22,21 +24,26 @@ export function ExpandedSidebar({ section, onClose }: ExpandedSidebarProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  const router = useRouter()
   const { currentThreadId, setCurrentThreadId } = useConversationStore()
+  const { user } = useAuthStore()
   const apiUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024"
   const threadsClient = createThreadsClient(apiUrl)
 
   const fetchThreads = useCallback(async () => {
+    if (!user) return // Don't fetch if not logged in
+
     setIsLoading(true)
     try {
-      const fetchedThreads = await threadsClient.listThreads()
+      // Filter threads by current user's ID
+      const fetchedThreads = await threadsClient.listThreads(user.id)
       setThreads(fetchedThreads)
     } catch (error) {
       console.error("Failed to fetch threads:", error)
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [user])
 
   useEffect(() => {
     if (section === "conversations") {
@@ -61,11 +68,13 @@ export function ExpandedSidebar({ section, onClose }: ExpandedSidebarProps) {
 
   const handleSelectThread = (threadId: string) => {
     setCurrentThreadId(threadId)
+    router.push(`/chat/${threadId}`)
     onClose()
   }
 
   const handleNewConversation = () => {
     setCurrentThreadId(null)
+    router.push("/chat/new")
     onClose()
   }
 
