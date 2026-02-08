@@ -1,59 +1,179 @@
 "use client";
 
 import type React from "react";
-
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
-  Plus,
-  Wrench,
-  SlidersHorizontal,
-  Paperclip,
-  LinkIcon,
-  Pencil,
-  Send,
-  X,
-  Mic,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@workspace/ui/components/button";
-import { GradientButton } from "@workspace/ui/components/gradient-button";
-import { Textarea } from "@workspace/ui/components/textarea";
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  memo,
+} from "react";
+import { Loader2 } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@workspace/ui/components/dropdown-menu";
+import { FileBadge } from "./file-badge";
 import { ChatBubble } from "./chat-bubble";
+import { ChatInput, type AttachedFile as ChatInputAttachedFile } from "./chat-input";
 import { cn } from "@workspace/ui/lib/utils";
 import type { Message, AttachedFile } from "./chat-interface";
-import { FileAttachment } from "@workspace/ui/components/file-attachment";
 import { ActivityTimeline } from "./activity-timeline";
 import { ToolCallMessage, type ToolCall } from "./tool-call-message";
-import { useChat, ProcessedEvent as ChatProcessedEvent, type UseChatOptions, type ChatError } from "@/lib/chat";
+
+import { BranchSwitcher } from "./branch-switcher";
+import {
+  useChat,
+  ProcessedEvent as ChatProcessedEvent,
+  type UseChatOptions,
+  type ChatError,
+  type MessageMetadata,
+} from "@/lib/chat";
 import { useChatSettings } from "@/lib/stores/chat-settings";
 import {
   combineToolMessages,
   getCombinedToolCallsFromMap,
   isToolMessage,
-  debugToolMessages,
-  type CombinedToolCall,
+  isSystemMessage,
 } from "@/lib/chat-utils";
 import type { Message as LangGraphMessage } from "@langchain/langgraph-sdk";
 import { useTheme } from "@/components/theme/theme-provider";
-import { Terminal } from "lucide-react";
 import { createThreadsClient } from "@/lib/threads";
 import { generateConversationTitle } from "@/lib/title-utils";
 import { useAuthStore } from "@/lib/stores/auth";
+import { toast } from "sonner";
+
+// ============================================================================
+// STATIC DATA
+// ============================================================================
+
+const suggestedPrompts = [
+  "Explain quantum computing in simple terms",
+  "Write a Python function to sort an array",
+  "What are the latest trends in AI?",
+  "Help me plan a trip to Japan",
+] as const;
+
+// ============================================================================
+// MESSAGE DISPLAY COMPONENT
+// ============================================================================
+
+interface MessageDisplayProps {
+  message: Message;
+  showAvatar: boolean;
+  showActions: boolean;
+  showToolCalls: boolean;
+  isStreaming: boolean;
+  onEdit: (id: string, content: string) => void;
+  onRetry: (id: string, content: string) => void;
+  onDelete: (id: string) => void;
+  // Branching props - now using simple string types from SDK
+  branchMetadata?: MessageMetadata | null;
+  onBranchSelect?: (branch: string) => void;
+}
+
+// MessageDisplay Component Refactor for robust branching
+const MessageDisplay = function MessageDisplay({
+  message,
+  showAvatar,
+  showActions,
+  showToolCalls,
+  isStreaming,
+  onEdit,
+  onRetry,
+  onDelete,
+  branchMetadata,
+  onBranchSelect,
+}: MessageDisplayProps) {
+  const noopHandler = useCallback(() => { }, []);
+
+  // Construct effective metadata - DIRECT from SDK (No caching)
+  const effectiveBranch = branchMetadata?.branch;
+  const effectiveOptions = branchMetadata?.branchOptions;
+
+  const handleBranchSelect = useCallback(
+    (branch: string) => {
+      onBranchSelect?.(branch);
+    },
+    [onBranchSelect]
+  );
+
+
+
+
+  return (
+    <div className="space-y-3">
+      <div
+        className={cn(
+          "flex items-start gap-3",
+          message.role === "user" && "justify-end"
+        )}
+      >
+        {message.role === "user" ? (
+          <div className="flex flex-col items-end gap-1">
+            <ChatBubble
+              message={message}
+              onEdit={onEdit}
+              onRetry={onRetry}
+              onFork={noopHandler}
+              onSpeak={noopHandler}
+              onSummarize={noopHandler}
+              onShare={noopHandler}
+              onDelete={onDelete}
+              branch={effectiveBranch}
+              branchOptions={effectiveOptions}
+              onBranchSelect={handleBranchSelect}
+            />
+          </div>
+        ) : (
+          <div className="w-full space-y-3">
+            <div className="flex flex-col gap-1">
+              {/* Only show bubble if there is content or if it's not a pure tool-caller message */}
+              {/* Actually, we should nearly always show the bubble if it's an AI message, 
+                  unless it's PURELY tool calls and we want to hide those (but we usually show tool calls separately). 
+                  If content is empty string, ChatBubble might process it as empty. */}
+
+              {(message.content || !message._combinedToolCalls?.length) && (
+                <ChatBubble
+                  message={message}
+                  onEdit={onEdit}
+                  onRetry={onRetry}
+                  onFork={noopHandler}
+                  onSpeak={noopHandler}
+                  onSummarize={noopHandler}
+                  onShare={noopHandler}
+                  onDelete={onDelete}
+                  showAvatar={showAvatar}
+                  showActions={showActions}
+                  branch={effectiveBranch}
+                  branchOptions={effectiveOptions}
+                  onBranchSelect={handleBranchSelect}
+                />
+              )}
+            </div>
+
+            {message._combinedToolCalls &&
+              message._combinedToolCalls.length > 0 &&
+              showToolCalls &&
+              !isStreaming && (
+                <div className="ml-14">
+                  <ToolCallMessage
+                    toolCalls={message._combinedToolCalls as ToolCall[]}
+                    isLoading={false}
+                    branch={effectiveBranch}
+                    branchOptions={effectiveOptions}
+                    onBranchSelect={handleBranchSelect}
+                  />
+                </div>
+              )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MAIN CHAT AREA
+// ============================================================================
 
 interface ChatAreaProps {
   messages: Message[];
@@ -65,13 +185,6 @@ interface ChatAreaProps {
   onThreadChange?: (threadId: string | null) => void;
 }
 
-const suggestedPrompts = [
-  "Explain quantum computing in simple terms",
-  "Write a Python function to sort an array",
-  "What are the latest trends in AI?",
-  "Help me plan a trip to Japan",
-];
-
 export function ChatArea({
   messages,
   attachedFiles,
@@ -81,891 +194,550 @@ export function ChatArea({
   threadId,
   onThreadChange,
 }: ChatAreaProps) {
-  const [input, setInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState("gpt-4");
-  const [isEditing, setIsEditing] = useState<string | null>(null);
-  const [liveActivityEvents, setLiveActivityEvents] = useState<
-    ChatProcessedEvent[]
-  >([]);
-  const [historicalActivities, setHistoricalActivities] = useState<
-    Record<string, ChatProcessedEvent[]>
-  >({});
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const hasFinalizeEventOccurredRef = useRef(false);
+  const lastMessageFingerprintRef = useRef("");
+  const updateScheduledRef = useRef(false);
+  const pendingMessagesRef = useRef<Message[] | null>(null);
+
   const { themeMode } = useTheme();
   const isLightTheme = themeMode === "light";
   const { settings, toggleShowToolCalls } = useChatSettings();
-  const [currentToolCalls, setCurrentToolCalls] = useState<ToolCall[]>([]);
-  const [chatError, setChatError] = useState<string | null>(null);
-  const [toolCallsMap, setToolCallsMap] = useState<Map<string, CombinedToolCall[]>>(new Map());
-
-  // Get current user for associating threads
   const { user } = useAuthStore();
 
-  // Memoize callbacks to prevent useChat/useStream from resetting on re-renders
-  const handleThreadId = useCallback((newThreadId: string) => {
-    console.log("[ChatArea] onThreadId called:", { newThreadId, currentThreadId: threadId });
-    // Only notify if we didn't have a threadId before (new conversation)
-    if (newThreadId && !threadId) {
-      console.log("[ChatArea] Thread created, notifying parent to update URL");
-      onThreadChange?.(newThreadId);
-    }
-  }, [threadId, onThreadChange]);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [liveActivityEvents, setLiveActivityEvents] = useState<ChatProcessedEvent[]>([]);
+  const [currentToolCalls, setCurrentToolCalls] = useState<ToolCall[]>([]);
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
 
-  const chatErrorCallback = useCallback((error: ChatError) => {
+  // ---- Chat Hook ----
+  const handleThreadId = useCallback(
+    (newId: string) => {
+      if (newId && !threadId) {
+        onThreadChange?.(newId);
+      }
+    },
+    [threadId, onThreadChange]
+  );
+
+  const handleError = useCallback((error: ChatError) => {
     setChatError(error.message);
-    // Log detailed context for debugging loop issues
-    console.error("❌ Discussion Error:", {
-      message: error.message,
-      type: error.type,
-      lastMessage: error.lastMessageContent,
-      details: error.details
-    });
-    // Safety: clear running states
-    setCurrentToolCalls([]);
   }, []);
 
-  const chatEventCallback = useCallback((event: Record<string, unknown>) => {
-    // Note: We access thread via closure, but for processEvent we might need thread to be stable or use a helper
-    // Since 'thread' isn't available when defining options (circular), we handle processing in the effect or render phase
-    // or we pass a processor function.
-    // However, useChat options `onEvent` is called by the hook.
-
-    if (event.tools && settings.showToolCalls) {
-      const toolsEvent = event.tools as Record<string, unknown>;
-      if (toolsEvent.tool_calls && Array.isArray(toolsEvent.tool_calls)) {
-        const newToolCalls: ToolCall[] = toolsEvent.tool_calls.map(
-          (tc: Record<string, unknown>, idx: number) => {
-            let name = "unknown";
-            if (tc.name && typeof tc.name === "string") {
-              name = tc.name;
-            } else if (
-              tc.function &&
-              typeof tc.function === "object" &&
-              tc.function &&
-              (tc.function as Record<string, unknown>).name
-            ) {
-              name =
-                ((tc.function as Record<string, unknown>).name as string) ||
-                "unknown";
-            }
-            return {
-              id: `tool-${Date.now()}-${idx}`,
-              name,
+  const handleEvent = useCallback(
+    (event: Record<string, unknown>) => {
+      // Process for tool calls display
+      if (event.tools && settings.showToolCalls) {
+        const toolsData = event.tools as Record<string, unknown>;
+        if (Array.isArray(toolsData.tool_calls)) {
+          const calls: ToolCall[] = toolsData.tool_calls.map(
+            (tc: Record<string, unknown>, i: number) => ({
+              id: `tool-${Date.now()}-${i}`,
+              name: (tc.name as string) || "unknown",
               arguments: (tc.input as Record<string, unknown>) || {},
-              status: "loading",
-            };
-          },
-        );
-        setCurrentToolCalls((prev) => [...prev, ...newToolCalls]);
-      }
-    }
-  }, [settings.showToolCalls]);
-
-  const chatOptions = useMemo<UseChatOptions>(() => ({
-    apiUrl: process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
-    assistantId: "agent",
-    threadId: threadId,
-    userId: user?.id,
-    onThreadId: handleThreadId,
-    onError: chatErrorCallback,
-    onEvent: chatEventCallback
-  }), [threadId, user?.id, handleThreadId, chatErrorCallback, chatEventCallback]);
-
-  const thread = useChat(chatOptions);
-
-  // Handle live activity events separately since they need thread instance methods
-  const lastProcessedEventRef = useRef<Record<string, unknown> | null>(null);
-
-  useEffect(() => {
-    if (thread.lastEvent && thread.lastEvent !== lastProcessedEventRef.current) {
-      const processedEvent = thread.processEvent(thread.lastEvent);
-      if (processedEvent) {
-        setLiveActivityEvents((prev) => [...prev, processedEvent]);
-      }
-      lastProcessedEventRef.current = thread.lastEvent;
-    }
-  }, [thread.lastEvent, thread.processEvent]);
-
-  const hasMessages = messages.length > 0;
-
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [input]);
-
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop =
-        chatContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.type.indexOf("image") !== -1) {
-          const blob = item.getAsFile();
-          if (blob) {
-            const url = URL.createObjectURL(blob);
-            onAttachedFilesChange([
-              ...attachedFiles,
-              {
-                id: Date.now().toString(),
-                name: `image-${Date.now()}.png`,
-                type: item.type,
-                url,
-                size: blob.size,
-              },
-            ]);
-          }
+              status: "loading" as const,
+            })
+          );
+          setCurrentToolCalls((prev) => [...prev, ...calls]);
         }
       }
-    };
 
-    document.addEventListener("paste", handlePaste);
-    return () => document.removeEventListener("paste", handlePaste);
-  }, [attachedFiles, onAttachedFilesChange]);
+      // Process for activity timeline
+      if (event.event === "updates" && event.data) {
+        const data = event.data as Record<string, unknown>;
+        const nodeNames = Object.keys(data);
+        if (nodeNames.length > 0) {
+          const nodeName = nodeNames[0];
+          const formattedName = nodeName
+            .replace(/_/g, " ")
+            .replace(/([A-Z])/g, " $1")
+            .replace(/^./, (str) => str.toUpperCase())
+            .trim();
 
-  useEffect(() => {
-    if (
-      hasFinalizeEventOccurredRef.current &&
-      !thread.isLoading &&
-      thread.messages.length > 0
-    ) {
-      const lastMessage = thread.messages[thread.messages.length - 1];
-      if (lastMessage && lastMessage.type === "ai" && lastMessage.id) {
-        setHistoricalActivities((prev) => ({
-          ...prev,
-          [lastMessage.id!]: [...liveActivityEvents],
-        }));
+          setLiveActivityEvents((prev) => [
+            ...prev,
+            {
+              title: formattedName,
+              data: "Processing...",
+              icon: "sparkles",
+              timestamp: Date.now(),
+            },
+          ]);
+        }
       }
-      hasFinalizeEventOccurredRef.current = false;
-    }
-  }, [thread.messages, thread.isLoading, liveActivityEvents]);
+    },
+    [settings.showToolCalls]
+  );
 
-  // Clear live state when loading completes to prevent stale data
-  useEffect(() => {
-    if (!thread.isLoading) {
-      // Clear live tool calls and activity when response is complete
-      setCurrentToolCalls([]);
-      setLiveActivityEvents([]);
-    }
-  }, [thread.isLoading]);
+  const chatOptions = useMemo<UseChatOptions>(
+    () => ({
+      apiUrl: process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
+      assistantId: "agent",
+      threadId: threadId ?? undefined,
+      userId: user?.id,
+      onThreadId: handleThreadId,
+      onError: handleError,
+      onEvent: handleEvent,
+      fetchStateHistory: true,
+    }),
+    [threadId, user?.id, handleThreadId, handleError, handleEvent]
+  );
 
-  // Optimize message processing to prevent infinite loops
-  const { processedMessages, newToolCallsMap } = useMemo(() => {
-    if (thread.messages.length === 0) {
-      return { processedMessages: [], newToolCallsMap: new Map() };
+  const chat = useChat(chatOptions);
+
+  // ---- Process messages directly from SDK (no intermediate state) ----
+  // This preserves object references for branch metadata lookup
+  const processedMessages = useMemo(() => {
+    if (chat.messages.length === 0) return [];
+
+    // DEBUG: Deep inspection of branching state
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[ChatArea] Branch Tree Debug:", {
+        branchTree: chat.stream.experimental_branchTree,
+        currentBranch: chat.stream.branch,
+        message0: chat.messages[0],
+        message0_meta: chat.getMessagesMetadata(chat.messages[0]),
+      });
+      // Dump the entire tree structure json to help debugging
+      try {
+        console.log("[ChatArea] Full Tree JSON:", JSON.stringify(chat.stream.experimental_branchTree, null, 2));
+      } catch (e) { }
     }
 
     try {
-      debugToolMessages(thread.messages);
-      const { messages: combinedMessages, toolCallsMap: map } = combineToolMessages(thread.messages);
+      const { messages: combined, toolCallsMap } = combineToolMessages(chat.messages);
 
-      const converted = combinedMessages
-        .filter((msg: LangGraphMessage) => !isToolMessage(msg))
-        .map((msg: LangGraphMessage, idx: number) => {
-          const combinedToolCalls = getCombinedToolCallsFromMap(msg, map);
-          const msgData = msg as unknown as Record<string, unknown>;
-          const hasToolCalls =
-            msgData.tool_calls &&
-            Array.isArray(msgData.tool_calls) &&
-            msgData.tool_calls.length > 0;
-          const msgWithTimestamp = msg as LangGraphMessage & {
-            created_at?: number;
-          };
-
-          const content =
-            typeof msg.content === "string"
-              ? msg.content
-              : JSON.stringify(msg.content);
-
+      return combined
+        .filter((m: LangGraphMessage) => !isToolMessage(m) && !isSystemMessage(m))
+        .map((m: LangGraphMessage, i: number) => {
+          const tools = getCombinedToolCallsFromMap(m, toolCallsMap);
           return {
-            id: msg.id || `temp-${idx}`,
-            role: msg.type === "human" ? "user" : "assistant",
-            content,
-            timestamp: new Date(
-              msgWithTimestamp.created_at
-                ? new Date(msgWithTimestamp.created_at * 1000)
-                : Date.now(),
-            ),
-            ...((combinedToolCalls && combinedToolCalls.length > 0) || hasToolCalls
-              ? { _combinedToolCalls: combinedToolCalls || [] }
-              : {}),
-          };
-        }) as Message[];
-
-      return { processedMessages: converted, newToolCallsMap: map };
-    } catch (error) {
-      console.error("Error processing messages:", error);
-      return { processedMessages: [], newToolCallsMap: new Map() };
+            id: m.id || `msg-${i}`,
+            role: m.type === "human" ? "user" : "assistant",
+            content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+            timestamp: new Date(),
+            ...(tools?.length ? { _combinedToolCalls: tools } : {}),
+            // Keep the ORIGINAL LangGraph message for branch metadata lookup
+            _originalMessage: m,
+          } as Message;
+        });
+    } catch (err) {
+      console.error("Message processing error:", err);
+      return [];
     }
-  }, [thread.messages]);
+  }, [chat.messages]);
 
-  // Update tool calls map when it changes
-  useEffect(() => {
-    if (newToolCallsMap.size > 0 && JSON.stringify(Array.from(newToolCallsMap.entries())) !== JSON.stringify(Array.from(toolCallsMap.entries()))) {
-      setToolCallsMap(newToolCallsMap);
-    }
-  }, [newToolCallsMap, toolCallsMap]);
-
-  // Update messages only when they actually change to break the loop
-  // compare with current prop 'messages'
+  // Sync processed messages to parent (for other components that need message list)
   useEffect(() => {
     if (processedMessages.length > 0) {
-      // Simple length check first
-      if (processedMessages.length !== messages.length) {
-        console.log(`[ChatArea] Updating messages: count changed ${messages.length} -> ${processedMessages.length}`);
-        onMessagesChange(processedMessages);
-        setChatError(null);
-        return;
-      }
-
-      // Deep check last message to see if it updated (streaming)
-      const lastProcessed = processedMessages[processedMessages.length - 1];
-      const lastCurrent = messages[messages.length - 1];
-
-      if (
-        lastProcessed.id !== lastCurrent.id ||
-        lastProcessed.content !== lastCurrent.content ||
-        JSON.stringify(lastProcessed._combinedToolCalls) !== JSON.stringify(lastCurrent._combinedToolCalls)
-      ) {
-        // console.log("[ChatArea] Updating messages: content changed");
+      const fp = processedMessages.map((m) => `${m.id}:${m.content.length}`).join("|");
+      if (fp !== lastMessageFingerprintRef.current) {
+        lastMessageFingerprintRef.current = fp;
         onMessagesChange(processedMessages);
         setChatError(null);
       }
     }
-  }, [processedMessages, messages, onMessagesChange]);
+  }, [processedMessages, onMessagesChange]);
 
-  // Reset chat when threadId changes to null (New Conversation)
+  // Clear state when loading stops
+  useEffect(() => {
+    if (!chat.isLoading) {
+      setCurrentToolCalls([]);
+      setLiveActivityEvents([]);
+    }
+  }, [chat.isLoading]);
+
+  // Reset on new conversation
   useEffect(() => {
     if (!threadId) {
       onMessagesChange([]);
-      setInput("");
       onAttachedFilesChange([]);
       setLiveActivityEvents([]);
       setCurrentToolCalls([]);
+      lastMessageFingerprintRef.current = "";
     }
   }, [threadId, onMessagesChange, onAttachedFilesChange]);
 
-  const wordCount = input.trim().split(/\s+/).filter(Boolean).length;
+  // Scroll to bottom
+  useEffect(() => {
+    chatContainerRef.current?.scrollTo({
+      top: chatContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages.length]);
 
-  const handleSend = useCallback(async () => {
-    if (!input.trim() && attachedFiles.length === 0) return;
-
-    if (isEditing) {
-      onMessagesChange(
-        messages.map((msg) =>
-          msg.id === isEditing ? { ...msg, content: input } : msg,
-        ),
-      );
-      setIsEditing(null);
-    } else {
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        role: "user",
-        content: input,
-        timestamp: new Date(),
-        attachments: attachedFiles.length > 0 ? attachedFiles : undefined,
-      };
-
-      const newMessages: Message[] = [...messages, userMessage];
-      onMessagesChange(newMessages);
-
-      setLiveActivityEvents([]);
-      hasFinalizeEventOccurredRef.current = false;
-
-      // Update thread title if this is the first message
-      if (thread.threadId && messages.length === 0) {
-        try {
-          const apiUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
-          const threadsClient = createThreadsClient(apiUrl);
-          await threadsClient.updateThread(thread.threadId, {
-            title: generateConversationTitle(input)
-          });
-        } catch (error) {
-          console.error("Failed to update thread title:", error);
+  // ---- Handlers ----
+  const handleSubmit = useCallback(
+    async (text: string, files: ChatInputAttachedFile[]) => {
+      // Normal submit with optimistic update
+      const newMessage = { type: "human" as const, content: text };
+      chat.submit(
+        { messages: [newMessage] },
+        {
+          optimisticValues: (prev) => ({
+            ...prev,
+            messages: [...(prev.messages ?? []), {
+              id: `optimistic-${Date.now()}`,
+              type: "human",
+              content: text,
+            } as unknown as LangGraphMessage],
+          }),
         }
+      );
+      onAttachedFilesChange([]);
+
+      // Update title on first message
+      if (chat.threadId && chat.messages.filter(m => m.type !== "system").length === 0) {
+        try {
+          const client = createThreadsClient(
+            process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024"
+          );
+          client.updateThread(chat.threadId, {
+            title: generateConversationTitle(text),
+          });
+        } catch { }
       }
-
-      thread.submit({
-        messages: [
-          {
-            type: "human" as const,
-            content: input,
-          },
-        ],
-      });
-    }
-
-    setInput("");
-    onAttachedFilesChange([]);
-  }, [
-    input,
-    attachedFiles,
-    isEditing,
-    messages,
-    onMessagesChange,
-    onAttachedFilesChange,
-    thread,
-  ]);
+    },
+    [messages, onAttachedFilesChange, chat]
+  );
 
   const handleStop = useCallback(() => {
-    thread.stop();
-  }, [thread]);
+    chat.stop();
+  }, [chat]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const newFiles: AttachedFile[] = files.map((file) => ({
-      id: Date.now().toString() + file.name,
-      name: file.name,
-      type: file.type,
-      url: URL.createObjectURL(file),
-      size: file.size,
-    }));
-    onAttachedFilesChange([...attachedFiles, ...newFiles]);
-  };
+  const handleEdit = useCallback(
+    (id: string, content: string) => {
+      // Find message in live stream for metadata lookup
+      const messageIndex = chat.messages.findIndex((m) => m.id === id);
+      const liveMessage = chat.messages[messageIndex];
 
-  const handleEdit = (messageId: string, content: string) => {
-    setIsEditing(messageId);
-    setInput(content);
-    textareaRef.current?.focus();
-  };
+      if (!liveMessage) {
+        toast.error("Message not found in current session");
+        return;
+      }
 
-  const handleRetry = useCallback((messageId: string, content: string) => {
-    // Find the message index
-    const messageIndex = messages.findIndex((msg) => msg.id === messageId);
-    if (messageIndex === -1) return;
+      const metadata = chat.getMessagesMetadata(liveMessage);
+      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
 
-    const message = messages[messageIndex];
+      // If we have a parent checkpoint, use it to branch
+      if (parentCheckpoint) {
+        console.log("[ChatArea] Branching from checkpoint:", parentCheckpoint);
+        chat.submit(
+          { messages: [{ type: "human", content }] },
+          { checkpoint: parentCheckpoint }
+        );
+      } else if (messageIndex === 0) {
+        // Special case: Editing the very first message.
+        // The parent checkpoint is effectively the "empty" beginning.
+        // We typically can't "branch" the root in the same way without a root checkpoint ID,
+        // but often the first message HAS a parent checkpoint (the empty one).
+        // If it's missing, we might be in a weird state.
+        // We'll try to just submit (which might append) but log a warning.
+        //Ideally, we should start a new thread or find the root checkpoint. 
+        console.warn("[ChatArea] No parent checkpoint for first message. This might append instead of branch.");
 
-    if (message.role === "user") {
-      // If retrying a user message, remove all messages after it and re-send
-      const keptMessages = messages.slice(0, messageIndex);
-      onMessagesChange(keptMessages);
+        // Attempt to create a NEW conversation if we can't branch the first message properly?
+        // Or just let it append and hope the backend deduplicates? 
+        // For now, let's treat it as a new submission if we can't find a checkpoint.
+        // Actually, let's try passing the current threadId to force context?
+        chat.submit(
+          { messages: [{ type: "human", content }] }
+          // No checkpoint available implies root.
+        );
+      } else {
+        toast.error("Unable to edit: No checkpoint available");
+        console.error("Missing checkpoint for message:", liveMessage);
+      }
+    },
+    [chat]
+  );
 
-      // Clear states and re-submit
-      setLiveActivityEvents([]);
-      hasFinalizeEventOccurredRef.current = false;
-      setChatError(null);
+  const handleRetry = useCallback(
+    (id: string, _content: string) => {
+      // Find message in live stream for metadata lookup
+      const liveMessage = chat.messages.find((m) => m.id === id);
+      if (!liveMessage) {
+        toast.error("Message not found in current session");
+        return;
+      }
 
-      thread.submit({
-        messages: [{ type: "human" as const, content }],
-      });
-    } else if (message.role === "assistant") {
-      // If retrying an assistant message, find the preceding user message and retry from there
-      let precedingUserIndex = -1;
-      for (let i = messageIndex - 1; i >= 0; i--) {
-        if (messages[i].role === "user") {
-          precedingUserIndex = i;
-          break;
+      const metadata = chat.getMessagesMetadata(liveMessage);
+      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+
+      if (parentCheckpoint) {
+        if (liveMessage.type === "human") {
+          // For user messages: resubmit the same content from parent checkpoint
+          const content = typeof liveMessage.content === 'string'
+            ? liveMessage.content
+            : JSON.stringify(liveMessage.content);
+          chat.submit(
+            { messages: [{ type: "human", content }] },
+            { checkpoint: parentCheckpoint }
+          );
+        } else {
+          // For assistant messages: regenerate by submitting undefined
+          chat.submit(undefined, { checkpoint: parentCheckpoint });
         }
+      } else {
+        // Fallback for retry if no checkpoint (rare)
+        toast.error("Unable to retry: No checkpoint available");
       }
+    },
+    [chat]
+  );
 
-      if (precedingUserIndex >= 0) {
-        const userMessage = messages[precedingUserIndex];
-        const keptMessages = messages.slice(0, precedingUserIndex);
-        onMessagesChange(keptMessages);
+  // Handler for switching between message branches
+  const handleBranchSelect = useCallback(
+    (branch: string) => {
+      chat.setBranch(branch);
+    },
+    [chat]
+  );
 
-        // Clear states and re-submit
-        setLiveActivityEvents([]);
-        hasFinalizeEventOccurredRef.current = false;
-        setChatError(null);
+  const handleDelete = useCallback(
+    (id: string) => {
+      setHiddenMessageIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+      // Also notify parent for consistency, though we don't render from it
+      onMessagesChange(processedMessages.filter((m) => m.id !== id));
+    },
+    [processedMessages, onMessagesChange]
+  );
 
-        thread.submit({
-          messages: [{ type: "human" as const, content: userMessage.content }],
-        });
-      }
-    }
-  }, [messages, onMessagesChange, thread]);
+  const handleRemoveFile = useCallback(
+    (fileId: string) => {
+      onAttachedFilesChange(attachedFiles.filter((f) => f.id !== fileId));
+    },
+    [attachedFiles, onAttachedFilesChange]
+  );
 
-  const handleFork = (messageId: string, content: string) => {
-    console.log("Fork message:", messageId, content);
-  };
-
-  const handleSpeak = (messageId: string, content: string) => {
-    console.log("Speak message:", messageId, content);
-  };
-
-  const handleSummarize = (messageId: string, content: string) => {
-    console.log("Summarize message:", messageId, content);
-  };
-
-  const handleShare = (messageId: string, content: string) => {
-    console.log("Share message:", messageId, content);
-  };
-
-  const handleDelete = (messageId: string) => {
-    onMessagesChange(messages.filter((msg) => msg.id !== messageId));
-  };
-
-  const modelGroups = {
-    OpenAI: ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
-    Anthropic: ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
-    Google: ["gemini-pro", "gemini-pro-vision"],
-    Local: ["ollama/llama2", "vllm/mistral"],
-  };
-
-  const chatInput = useMemo(() => (
-    <div className="glass-strong rounded-xl p-4 space-y-3 hover-lift">
-      {attachedFiles.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
-          {attachedFiles.map((file) => (
-            <FileAttachment
-              key={file.id}
-              file={file}
-              size={file.size}
-              onRemove={() =>
-                onAttachedFilesChange(
-                  attachedFiles.filter((f) => f.id !== file.id),
-                )
-              }
-              variant="input"
-            />
-          ))}
-        </div>
-      )}
-
-      {isEditing && (
-        <div className="flex items-center justify-between w-full">
-          <div className="text-xs text-muted-foreground flex items-center gap-2">
-            <span className="font-medium text-foreground/80">
-              Editing message
-            </span>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setIsEditing(null);
-              setInput("");
-            }}
-            className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
-          >
-            <X className="size-3 mr-1" />
-            Cancel
-          </Button>
-        </div>
-      )}
-
-      <Textarea
-        ref={textareaRef}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-          }
-        }}
-        placeholder="Ask me anything..."
-        className="min-h-20 max-h-[150px] resize-none bg-transparent border-0 focus-visible:ring-0 transition-all duration-200"
-      />
-
-      <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/50">
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="hover:scale-110 transition-transform duration-200"
-                    >
-                      <Plus className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="z-100 animate-scale-in">
-                    <DropdownMenuItem
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Paperclip className="size-4 mr-2" />
-                      Upload File
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <LinkIcon className="size-4 mr-2" />
-                      Add URL
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="z-100 animate-scale-in">
-                <p>Attach files</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="hover:scale-110 transition-transform duration-200"
-                >
-                  <Wrench className="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="z-100 animate-scale-in">
-                <p>Tools</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="hover:scale-110 transition-transform duration-200"
-                  onClick={toggleShowToolCalls}
-                >
-                  <Terminal
-                    className={cn(
-                      "size-4",
-                      settings.showToolCalls
-                        ? "text-primary"
-                        : isLightTheme
-                          ? "text-slate-400"
-                          : "text-muted-foreground",
-                    )}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="z-100 animate-scale-in">
-                <p>Tool Calls {settings.showToolCalls ? "On" : "Off"}</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={onSettingsOpen}
-                  className="hover:scale-110 transition-transform duration-200"
-                >
-                  <SlidersHorizontal className="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="z-100 animate-scale-in">
-                <p>Model settings</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground transition-opacity duration-200">
-            {wordCount} words
-          </span>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs hover:scale-105 transition-transform duration-200"
-              >
-                {selectedModel}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-48 z-100 animate-scale-in"
-            >
-              {Object.entries(modelGroups).map(([group, models]) => (
-                <div key={group}>
-                  <DropdownMenuLabel className="text-xs">
-                    {group}
-                  </DropdownMenuLabel>
-                  {models.map((model) => (
-                    <DropdownMenuItem
-                      key={model}
-                      onClick={() => setSelectedModel(model)}
-                    >
-                      {model}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                </div>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="hover:scale-110 transition-transform duration-200"
-              >
-                <Mic className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="z-100 animate-scale-in">
-              <p>Voice input</p>
-            </TooltipContent>
-          </Tooltip>
-
-          {thread.isLoading ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleStop}
-              className="h-9 px-4 text-xs hover:scale-105 transition-transform duration-200 bg-destructive/10 text-destructive hover:bg-destructive/20"
-            >
-              <Loader2 className="size-4 mr-1 animate-spin" />
-              Stop
-            </Button>
-          ) : (
-            <GradientButton
-              height={9}
-              width={9}
-              useThemeGradient
-              onClick={handleSend}
-              disabled={!input.trim() && attachedFiles.length === 0}
-              glowIntensity="high"
-              radius="full"
-              iconOnly={true}
-              className="p-0 text-white"
-              icon={
-                isEditing ? (
-                  <Pencil className="size-4" />
-                ) : (
-                  <Send className="size-4" />
-                )
-              }
-            ></GradientButton>
-          )}
-        </div>
-      </div>
-    </div>
-  ), [
-    attachedFiles,
-    onAttachedFilesChange,
-    isEditing,
-    input,
-    handleSend,
-    toggleShowToolCalls,
-    settings.showToolCalls,
-    isLightTheme,
-    onSettingsOpen,
-    wordCount,
-    selectedModel,
-    modelGroups,
-    thread.isLoading,
-    handleStop,
-    fileInputRef
-  ]);
+  // ---- Render ----
+  const hasMessages = chat.messages.filter(m => m.type !== "system").length > 0;
+  const showLoading =
+    chat.isLoading &&
+    (chat.messages.length === 0 || chat.messages[chat.messages.length - 1]?.type === "human");
 
   return (
     <div className="flex-1 flex flex-col relative z-10">
+      {/* Messages Area */}
       <div
         ref={chatContainerRef}
         className={cn(
           "flex-1 overflow-y-auto custom-scrollbar",
-          hasMessages ? "p-4" : "flex items-center justify-center",
+          hasMessages ? "p-4" : "flex items-center justify-center"
         )}
       >
         {!hasMessages ? (
+          /* Welcome Screen */
           <div className="max-w-3xl w-full space-y-8 animate-slide-up">
             <div className="text-center space-y-4">
-              <div className="inline-block">
-                <div className="text-6xl font-bold bg-linear-to-r from-(--gradient-from) via-(--gradient-via) to-(--gradient-to) bg-clip-text text-transparent animate-pulse">
-                  Horizon
-                </div>
-                <div
-                  className="text-sm text-muted-foreground mt-2 animate-slide-up"
-                  style={{ animationDelay: "0.1s" }}
-                >
-                  by Singularity.ai
-                </div>
+              <div className="text-6xl font-bold bg-linear-to-r from-(--gradient-from) via-(--gradient-via) to-(--gradient-to) bg-clip-text text-transparent animate-pulse font-display tracking-tight">
+                Horizon
               </div>
-              <p
-                className="text-xl text-muted-foreground animate-slide-up"
-                style={{ animationDelay: "0.2s" }}
-              >
+              <div className="text-sm text-muted-foreground">by Singularity.ai</div>
+              <p className="text-xl text-muted-foreground">
                 Experience the event horizon of AI conversations
               </p>
             </div>
 
-            <div
-              className="space-y-4 animate-slide-up"
-              style={{ animationDelay: "0.3s" }}
-            >
-              {chatInput}
+            <div className="glass-strong rounded-xl p-4 space-y-3">
+              {/* File Badges Area */}
+              {attachedFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {attachedFiles.map((file) => (
+                    <FileBadge
+                      key={file.id}
+                      name={file.name}
+                      size={file.size}
+                      type={file.type}
+                      url={file.url}
+                      onRemove={() => handleRemoveFile(file.id)}
+                    />
+                  ))}
+                </div>
+              )}
 
-              <div className="flex flex-wrap gap-2 justify-center">
-                {suggestedPrompts.map((prompt, index) => (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    className="cursor-pointer transition-all duration-200 hover:scale-105 hover-lift hover-glow stagger-item glass-badge"
-                    style={{ animationDelay: `${0.4 + index * 0.05}s` }}
-                    onClick={() => setInput(prompt)}
-                  >
-                    {prompt}
-                  </Badge>
-                ))}
-              </div>
+              <ChatInput
+                onSubmit={handleSubmit}
+                onStop={handleStop}
+                isLoading={chat.isLoading}
+                onSettingsOpen={onSettingsOpen}
+                showToolCalls={settings.showToolCalls}
+                onToggleToolCalls={toggleShowToolCalls}
+                isLightTheme={isLightTheme}
+                attachedFiles={attachedFiles}
+                onAttachedFilesChange={onAttachedFilesChange}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 justify-center">
+              {suggestedPrompts.map((prompt, i) => (
+                <Badge
+                  key={i}
+                  variant="outline"
+                  className="cursor-pointer hover:scale-105 transition-transform glass-badge"
+                  onClick={() => handleSubmit(prompt, [])}
+                >
+                  {prompt}
+                </Badge>
+              ))}
             </div>
           </div>
         ) : (
+          /* Messages List */
           <div className="max-w-4xl mx-auto w-full space-y-6">
-            {/* Error display */}
             {chatError && (
               <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-                <p className="text-sm font-medium">Error processing messages</p>
-                <p className="text-xs mt-1 opacity-80">{chatError}</p>
+                <p className="text-sm font-medium">Error</p>
+                <p className="text-xs opacity-80">{chatError}</p>
               </div>
             )}
 
-            {messages.map((message, index) => {
-              const isLast = index === messages.length - 1;
-              const isAssistantLoading = isLast && thread.isLoading && message.role === "assistant";
+            {/* Messages List - Iterating directly over stream messages for correct branching */}
+            {chat.messages.map((msg, i) => {
+              // Skip system messages.
+              // Note: We do NOT skip tool messages here if we want to debug them, but normally we hide them 
+              // because they are attached to the AI message via getToolCalls.
+              if (msg.type === "system" || msg.type === "tool") return null;
+              if (msg.id && hiddenMessageIds.has(msg.id)) return null;
 
-              // Check if previous message was also from assistant to group them
-              const prevMessage = index > 0 ? messages[index - 1] : null;
-              const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
-              const isConsecutiveAssistant = message.role === "assistant" && prevMessage?.role === "assistant";
-              const showAvatar = !isConsecutiveAssistant;
+              const isLast = i === chat.messages.length - 1;
+              const prev = i > 0 ? chat.messages[i - 1] : null;
 
-              // Show actions only on the last message in a consecutive assistant group
-              const isLastInAssistantGroup = message.role === "assistant" &&
-                (nextMessage?.role !== "assistant" || isLast);
+              // Get metadata and tool calls using SDK methods
+              // Get metadata and tool calls using SDK methods
+              let branchMetadata = chat.getMessagesMetadata(msg);
+              const toolCalls = chat.getToolCalls(msg);
+
+              // Branching logic removed as per request
+
+
+              if (process.env.NODE_ENV === 'development' && branchMetadata?.branchOptions) {
+                console.log(`[ChatArea] Msg ${i} (${msg.id?.slice(0, 8)}):`, branchMetadata);
+              }
+
+              // Adapt LangGraph message to UI Message interface on the fly
+              const uiMessage: Message = {
+                id: msg.id || `msg-${i}`,
+                role: msg.type === "human" ? "user" : "assistant",
+                content: typeof msg.content === "string"
+                  ? msg.content
+                  : Array.isArray(msg.content)
+                    ? msg.content.map(c => (c as any).text || "").join("")
+                    : JSON.stringify(msg.content),
+                timestamp: new Date(), // Timestamp not available in SDK message
+                _originalMessage: msg,
+                // Map SDK tool calls to our UI format
+                _combinedToolCalls: toolCalls.map(tc => ({
+                  id: tc.call.id || "",
+                  name: tc.call.name,
+                  arguments: tc.call.args,
+                  result: tc.result?.content as string,
+                  status: tc.state === "pending" ? "loading" : tc.state === "error" ? "error" : "success"
+                }))
+              };
+
+              // Calculate if the bubble should show the avatar
+              // Show avatar if:
+              // 1. It's an assistant message
+              // 2. AND (it's the first message OR the previous message was NOT from assistant)
+              const showAvatar = uiMessage.role === "assistant" && (i === 0 || prev?.type === "human");
+
+              // Fix for "Only 2 messages shown":
+              // This was likely caused by the previous logic filtering or strict content checks.
+              // With the logic above, we iterate ALL messages and only filter system/tool/hidden.
 
               return (
-                <div key={message.id} className="space-y-3">
-                  <div
-                    className={`flex items-start gap-3 ${message.role === "user" ? "justify-end" : ""
-                      }`}
-                  >
-                    {message.role === "user" ? (
-                      <ChatBubble
-                        message={message}
-                        onEdit={handleEdit}
-                        onRetry={handleRetry}
-                        onFork={handleFork}
-                        onSpeak={handleSpeak}
-                        onSummarize={handleSummarize}
-                        onShare={handleShare}
-                        onDelete={handleDelete}
-                      />
-                    ) : (
-                      <div className="w-full space-y-3">
-                        {/* Chat bubble with the actual content */}
-                        {message.content && (
-                          <ChatBubble
-                            message={message}
-                            onEdit={handleEdit}
-                            onRetry={handleRetry}
-                            onFork={handleFork}
-                            onSpeak={handleSpeak}
-                            onSummarize={handleSummarize}
-                            onShare={handleShare}
-                            onDelete={handleDelete}
-                            showAvatar={showAvatar}
-                            showActions={isLastInAssistantGroup}
-                          />
-                        )}
-
-                        {/* Show completed tool calls from message history (not loading state) */}
-                        {message._combinedToolCalls &&
-                          message._combinedToolCalls.length > 0 &&
-                          settings.showToolCalls &&
-                          !isAssistantLoading && (
-                            <div className="ml-14">
-                              <ToolCallMessage
-                                toolCalls={message._combinedToolCalls as ToolCall[]}
-                                isLoading={false}
-                              />
-                            </div>
-                          )}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <MessageDisplay
+                  key={msg.id || i}
+                  message={uiMessage}
+                  showAvatar={showAvatar}
+                  showActions={uiMessage.role === "assistant"}
+                  showToolCalls={settings.showToolCalls}
+                  isStreaming={isLast && chat.isLoading && uiMessage.role === "assistant"}
+                  onEdit={handleEdit}
+                  onRetry={handleRetry}
+                  onDelete={handleDelete}
+                  branchMetadata={branchMetadata}
+                  onBranchSelect={handleBranchSelect}
+                />
               );
             })}
 
-            {/* Loading placeholder - only shown when waiting for assistant response */}
-            {thread.isLoading &&
-              (messages.length === 0 ||
-                messages[messages.length - 1].role === "user") && (
-                <div className="flex items-start gap-3 mt-3">
-                  <div
-                    className={cn(
-                      "relative group max-w-[85%] md:max-w-[80%]",
-                      "rounded-xl p-3 break-words",
-                      "rounded-bl-none w-full min-h-[56px]",
-                      isLightTheme
-                        ? "glass-strong bg-white/60"
-                        : "glass bg-card/60",
-                    )}
-                  >
-                    {/* Show live tool calls and activity during loading */}
-                    {(liveActivityEvents.length > 0 || currentToolCalls.length > 0) ? (
-                      <div className="space-y-3">
-                        {settings.showToolCalls && currentToolCalls.length > 0 && (
-                          <ToolCallMessage
-                            toolCalls={currentToolCalls}
-                            isLoading={true}
-                          />
+            {/* Loading State */}
+            {showLoading && (
+              <div className="flex items-start gap-3">
+                <div
+                  className={cn(
+                    "rounded-xl p-3 w-full min-h-[56px]",
+                    isLightTheme ? "glass-strong bg-white/60" : "glass bg-card/60"
+                  )}
+                >
+                  {currentToolCalls.length > 0 || liveActivityEvents.length > 0 ? (
+                    <div className="space-y-3">
+                      {settings.showToolCalls && currentToolCalls.length > 0 && (
+                        <ToolCallMessage toolCalls={currentToolCalls} isLoading />
+                      )}
+                      {settings.showActivityTimeline && liveActivityEvents.length > 0 && (
+                        <ActivityTimeline processedEvents={liveActivityEvents} isLoading />
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Loader2
+                        className={cn(
+                          "size-5 animate-spin",
+                          isLightTheme ? "text-slate-600" : "text-primary"
                         )}
-                        {settings.showActivityTimeline && liveActivityEvents.length > 0 && (
-                          <ActivityTimeline
-                            processedEvents={liveActivityEvents}
-                            isLoading={true}
-                          />
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-start h-full gap-2">
-                        <Loader2
-                          className={cn(
-                            "h-5 w-5 animate-spin",
-                            isLightTheme ? "text-slate-600" : "text-primary",
-                          )}
-                        />
-                        <span
-                          className={
-                            isLightTheme ? "text-slate-600" : "text-foreground"
-                          }
-                        >
-                          Processing...
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                      />
+                      <span className={isLightTheme ? "text-slate-600" : "text-foreground"}>
+                        Processing...
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            )}
           </div>
         )}
       </div>
 
+      {/* Bottom Input (when messages exist) */}
       {hasMessages && (
-        <div className="border-t border-border p-4 animate-slide-up">
-          <div className="max-w-4xl mx-auto">{chatInput}</div>
+        <div className="border-t border-border p-4">
+          <div className="max-w-4xl mx-auto glass-strong rounded-xl p-4">
+            {/* File Badges Area */}
+            {attachedFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {attachedFiles.map((file) => (
+                  <FileBadge
+                    key={file.id}
+                    name={file.name}
+                    size={file.size}
+                    type={file.type}
+                    url={file.url}
+                    onRemove={() => handleRemoveFile(file.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            <ChatInput
+              onSubmit={handleSubmit}
+              onStop={handleStop}
+              isLoading={chat.isLoading}
+              onSettingsOpen={onSettingsOpen}
+              showToolCalls={settings.showToolCalls}
+              onToggleToolCalls={toggleShowToolCalls}
+              isLightTheme={isLightTheme}
+              attachedFiles={attachedFiles}
+              onAttachedFilesChange={onAttachedFilesChange}
+            />
+          </div>
         </div>
       )}
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={handleFileSelect}
-      />
     </div>
   );
 }

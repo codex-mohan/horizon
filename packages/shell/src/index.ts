@@ -15,17 +15,21 @@
  * @module @horizon/shell
  */
 
-export { ShellExecutor, type ShellConfig, type ExecutionResult } from "./executor";
 export {
-    InteractiveShell,
-    type InteractiveConfig,
-    type SessionState,
-} from "./interactive";
-export { CommandHistory, type HistoryEntry } from "./history";
+  ShellExecutor,
+  type ShellConfig,
+  type ExecutionResult,
+} from "./executor.js";
 export {
-    ShellError,
-    TimeoutError,
-    PermissionError,
-    type ErrorContext,
-} from "./errors";
-export { detectOS, getPlatformInfo, type PlatformInfo } from "./platform";
+  InteractiveShell,
+  type InteractiveConfig,
+  type SessionState,
+} from "./interactive.js";
+export { CommandHistory, type HistoryEntry } from "./history.js";
+export {
+  ShellError,
+  TimeoutError,
+  PermissionError,
+  type ErrorContext,
+} from "./errors.js";
+export { detectOS, getPlatformInfo, type PlatformInfo } from "./platform.js";

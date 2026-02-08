@@ -21,6 +21,7 @@ export interface AuthState {
     register: (username: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
+    updateProfile: (updates: { displayName?: string; avatarUrl?: string }) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -88,6 +89,10 @@ export const useAuthStore = create<AuthState>()(
                     await fetch("/api/auth/logout", { method: "POST" });
                 } finally {
                     set({ user: null, isLoading: false });
+                    // Force a hard refresh to clear all application state
+                    if (typeof window !== "undefined") {
+                        window.location.href = "/auth";
+                    }
                 }
             },
 
@@ -102,6 +107,30 @@ export const useAuthStore = create<AuthState>()(
                     // to prevent unnecessary redirects
                     const currentUser = get().user;
                     set({ user: currentUser, isInitialized: true });
+                }
+            },
+
+            updateProfile: async (updates: { displayName?: string; avatarUrl?: string }) => {
+                set({ isLoading: true });
+                try {
+                    const response = await fetch("/api/auth/update", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(updates),
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        set({ isLoading: false });
+                        return { success: false, error: data.error || "Update failed" };
+                    }
+
+                    set({ user: data.user, isLoading: false });
+                    return { success: true };
+                } catch (error) {
+                    set({ isLoading: false });
+                    return { success: false, error: "Network error. Please try again." };
                 }
             },
         }),

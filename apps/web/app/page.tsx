@@ -36,10 +36,10 @@ export default function Home() {
           <div className="absolute inset-0 blur-xl bg-primary/30 rounded-full animate-pulse" />
         </div>
         <div className="text-center">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent font-display tracking-tight">
             Horizon
           </h1>
-          <p className="text-muted-foreground text-sm">Loading...</p>
+          <p className="text-muted-foreground text-sm font-accent italic">Loading...</p>
         </div>
       </motion.div>
     </div>

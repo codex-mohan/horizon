@@ -1,0 +1,1744 @@
+{
+  "test-state-1770459719038": [
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040ed-6012-6ad0-ffff-1929690f7efb",
+        "ts": "2026-02-07T10:21:59.165Z",
+        "channel_values": {
+          "messages": [],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 0,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Say hello",
+                  "additional_kwargs": {},
+                  "response_metadata": {}
+                }
+              }
+            ]
+          }
+        },
+        "channel_versions": {
+          "__start__": 1
+        },
+        "versions_seen": {
+          "__input__": {}
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "input",
+        "writes": {
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Say hello",
+                  "additional_kwargs": {},
+                  "response_metadata": {}
+                }
+              }
+            ]
+          }
+        },
+        "step": -1,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-state-1770459719038",
+          "enable_interrupt": false
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-state-1770459719038",
+          "enable_interrupt": false
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040ed-6132-6c30-8000-fea55dc3d4a5",
+        "ts": "2026-02-07T10:21:59.283Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Say hello",
+                "additional_kwargs": {},
+                "response_metadata": {}
+              }
+            }
+          ],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 0,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "branch:to:start_middleware": null
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 2,
+          "branch:to:start_middleware": 2
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": null,
+        "step": 0,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-state-1770459719038",
+          "enable_interrupt": false
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-state-1770459719038",
+          "enable_interrupt": false,
+          "checkpoint_id": "1f1040ed-6012-6ad0-ffff-1929690f7efb"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040ed-61d1-6740-8001-9b387693f67c",
+        "ts": "2026-02-07T10:21:59.348Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Say hello",
+                "additional_kwargs": {},
+                "response_metadata": {}
+              }
+            }
+          ],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {
+            "started_at": "2026-02-07T10:21:59.305Z",
+            "thread_id": "test-state-1770459719038",
+            "model_provider": "groq",
+            "model_name": "meta-llama/llama-4-scout-17b-16e-instruct"
+          },
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770459719303,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "branch:to:agent": null
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 2,
+          "branch:to:start_middleware": 3,
+          "start_time": 3,
+          "token_usage": 3,
+          "metadata": 3,
+          "branch:to:agent": 3
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "start_middleware": {
+            "branch:to:start_middleware": 2
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "start_middleware": {
+            "start_time": 1770459719303,
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "metadata": {
+              "started_at": "2026-02-07T10:21:59.305Z",
+              "thread_id": "test-state-1770459719038",
+              "model_provider": "groq",
+              "model_name": "meta-llama/llama-4-scout-17b-16e-instruct"
+            }
+          }
+        },
+        "step": 1,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-state-1770459719038",
+          "enable_interrupt": false
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-state-1770459719038",
+          "enable_interrupt": false,
+          "checkpoint_id": "1f1040ed-6132-6c30-8000-fea55dc3d4a5"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040ed-902d-6210-8002-2b10d0d2d8cc",
+        "ts": "2026-02-07T10:22:04.209Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Say hello",
+                "additional_kwargs": {},
+                "response_metadata": {}
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 983,
+                  "output_tokens": 24,
+                  "total_tokens": 1007
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 24,
+                    "promptTokens": 983,
+                    "totalTokens": 1007
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-8f3bd604-5ef2-4984-8410-744cb0e8060a"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 983,
+            "output": 24,
+            "total": 1007
+          },
+          "metadata": {
+            "started_at": "2026-02-07T10:21:59.305Z",
+            "thread_id": "test-state-1770459719038",
+            "model_provider": "groq",
+            "model_name": "meta-llama/llama-4-scout-17b-16e-instruct"
+          },
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [
+            {
+              "step": 0,
+              "thought": "I have enough information to provide a final answer",
+              "timestamp": 1770459724172
+            }
+          ],
+          "action_steps": [
+            {
+              "step": 0,
+              "action": "response",
+              "timestamp": 1770459724172
+            }
+          ],
+          "start_time": 1770459719303,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "branch:to:end_middleware": "agent"
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 4,
+          "branch:to:start_middleware": 3,
+          "start_time": 3,
+          "token_usage": 4,
+          "metadata": 3,
+          "branch:to:agent": 4,
+          "model_calls": 4,
+          "reasoning_steps": 4,
+          "action_steps": 4,
+          "branch:to:end_middleware": 4
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "start_middleware": {
+            "branch:to:start_middleware": 2
+          },
+          "agent": {
+            "branch:to:agent": 3
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "agent": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "AIMessage"
+                ],
+                "kwargs": {
+                  "content": "Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?",
+                  "additional_kwargs": {},
+                  "tool_calls": [],
+                  "invalid_tool_calls": [],
+                  "usage_metadata": {
+                    "input_tokens": 983,
+                    "output_tokens": 24,
+                    "total_tokens": 1007
+                  },
+                  "response_metadata": {
+                    "tokenUsage": {
+                      "completionTokens": 24,
+                      "promptTokens": 983,
+                      "totalTokens": 1007
+                    },
+                    "finish_reason": "stop"
+                  },
+                  "id": "run-8f3bd604-5ef2-4984-8410-744cb0e8060a"
+                }
+              }
+            ],
+            "model_calls": 1,
+            "reasoning_steps": [
+              {
+                "step": 0,
+                "thought": "I have enough information to provide a final answer",
+                "timestamp": 1770459724172
+              }
+            ],
+            "action_steps": [
+              {
+                "step": 0,
+                "action": "response",
+                "timestamp": 1770459724172
+              }
+            ],
+            "token_usage": {
+              "input": 983,
+              "output": 24,
+              "total": 1007
+            }
+          }
+        },
+        "step": 2,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-state-1770459719038",
+          "enable_interrupt": false
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-state-1770459719038",
+          "enable_interrupt": false,
+          "checkpoint_id": "1f1040ed-61d1-6740-8001-9b387693f67c"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040ed-909d-66f0-8003-fc0112f7f978",
+        "ts": "2026-02-07T10:22:04.255Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Say hello",
+                "additional_kwargs": {},
+                "response_metadata": {}
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 983,
+                  "output_tokens": 24,
+                  "total_tokens": 1007
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 24,
+                    "promptTokens": 983,
+                    "totalTokens": 1007
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-8f3bd604-5ef2-4984-8410-744cb0e8060a"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 983,
+            "output": 24,
+            "total": 1007
+          },
+          "metadata": {
+            "started_at": "2026-02-07T10:21:59.305Z",
+            "thread_id": "test-state-1770459719038",
+            "model_provider": "groq",
+            "model_name": "meta-llama/llama-4-scout-17b-16e-instruct",
+            "completed_at": "2026-02-07T10:22:04.229Z",
+            "execution_time_ms": 4926,
+            "total_model_calls": 1,
+            "total_tools_executed": 0,
+            "total_tools_rejected": 0,
+            "has_errors": false
+          },
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [
+            {
+              "step": 0,
+              "thought": "I have enough information to provide a final answer",
+              "timestamp": 1770459724172
+            }
+          ],
+          "action_steps": [
+            {
+              "step": 0,
+              "action": "response",
+              "timestamp": 1770459724172
+            }
+          ],
+          "start_time": 1770459719303,
+          "end_time": 1770459724229,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 4926
+          },
+          "errors": []
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 4,
+          "branch:to:start_middleware": 3,
+          "start_time": 3,
+          "token_usage": 4,
+          "metadata": 5,
+          "branch:to:agent": 4,
+          "model_calls": 4,
+          "reasoning_steps": 4,
+          "action_steps": 4,
+          "branch:to:end_middleware": 5,
+          "end_time": 5,
+          "middleware_metrics": 5
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "start_middleware": {
+            "branch:to:start_middleware": 2
+          },
+          "agent": {
+            "branch:to:agent": 3
+          },
+          "end_middleware": {
+            "branch:to:end_middleware": 4
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "end_middleware": {
+            "end_time": 1770459724229,
+            "middleware_metrics": {
+              "token_usage": {
+                "input": 0,
+                "output": 0,
+                "total": 0
+              },
+              "rate_limit_hits": 0,
+              "retries": 0,
+              "pii_detected": false,
+              "pii_types": [],
+              "processing_time_ms": 4926
+            },
+            "metadata": {
+              "started_at": "2026-02-07T10:21:59.305Z",
+              "thread_id": "test-state-1770459719038",
+              "model_provider": "groq",
+              "model_name": "meta-llama/llama-4-scout-17b-16e-instruct",
+              "completed_at": "2026-02-07T10:22:04.229Z",
+              "execution_time_ms": 4926,
+              "total_model_calls": 1,
+              "total_tools_executed": 0,
+              "total_tools_rejected": 0,
+              "has_errors": false
+            }
+          }
+        },
+        "step": 3,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-state-1770459719038",
+          "enable_interrupt": false
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-state-1770459719038",
+          "enable_interrupt": false,
+          "checkpoint_id": "1f1040ed-902d-6210-8002-2b10d0d2d8cc"
+        },
+        "signal": {}
+      }
+    }
+  ],
+  "test-state-1770460056063": [
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040f9-ed8b-69a0-ffff-b0f11a864f7b",
+        "ts": "2026-02-07T10:27:36.122Z",
+        "channel_values": {
+          "messages": [],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 0,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Say hello",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "e4ccd883-06c9-4ec5-bf7d-dd51fc4bba60"
+                }
+              }
+            ]
+          }
+        },
+        "channel_versions": {
+          "__start__": 1
+        },
+        "versions_seen": {
+          "__input__": {}
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "input",
+        "writes": {
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Say hello",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "e4ccd883-06c9-4ec5-bf7d-dd51fc4bba60"
+                }
+              }
+            ]
+          }
+        },
+        "step": -1,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-state-1770460056063",
+          "enable_interrupt": false
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-state-1770460056063",
+          "enable_interrupt": false
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040f9-ee0c-6ff0-8000-1919996e4bc1",
+        "ts": "2026-02-07T10:27:36.175Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Say hello",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "e4ccd883-06c9-4ec5-bf7d-dd51fc4bba60"
+              }
+            }
+          ],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 0,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "branch:to:start_middleware": null
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 2,
+          "branch:to:start_middleware": 2
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": null,
+        "step": 0,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-state-1770460056063",
+          "enable_interrupt": false
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-state-1770460056063",
+          "enable_interrupt": false,
+          "checkpoint_id": "1f1040f9-ed8b-69a0-ffff-b0f11a864f7b"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040f9-ee4c-6790-8001-2e37d71c8af7",
+        "ts": "2026-02-07T10:27:36.201Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Say hello",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "e4ccd883-06c9-4ec5-bf7d-dd51fc4bba60"
+              }
+            }
+          ],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {
+            "started_at": "2026-02-07T10:27:36.183Z",
+            "thread_id": "test-state-1770460056063",
+            "model_provider": "groq",
+            "model_name": "meta-llama/llama-4-scout-17b-16e-instruct"
+          },
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770460056182,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "branch:to:agent": null
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 2,
+          "branch:to:start_middleware": 3,
+          "start_time": 3,
+          "token_usage": 3,
+          "metadata": 3,
+          "branch:to:agent": 3
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "start_middleware": {
+            "branch:to:start_middleware": 2
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "start_middleware": {
+            "start_time": 1770460056182,
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "metadata": {
+              "started_at": "2026-02-07T10:27:36.183Z",
+              "thread_id": "test-state-1770460056063",
+              "model_provider": "groq",
+              "model_name": "meta-llama/llama-4-scout-17b-16e-instruct"
+            }
+          }
+        },
+        "step": 1,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-state-1770460056063",
+          "enable_interrupt": false
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-state-1770460056063",
+          "enable_interrupt": false,
+          "checkpoint_id": "1f1040f9-ee0c-6ff0-8000-1919996e4bc1"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040fa-156b-61f0-8002-7172cf73cf82",
+        "ts": "2026-02-07T10:27:40.303Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Say hello",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "e4ccd883-06c9-4ec5-bf7d-dd51fc4bba60"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 983,
+                  "output_tokens": 24,
+                  "total_tokens": 1007
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 24,
+                    "promptTokens": 983,
+                    "totalTokens": 1007
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-2f183fc2-09bb-4536-bdc6-e48c6c95c7b4"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 983,
+            "output": 24,
+            "total": 1007
+          },
+          "metadata": {
+            "started_at": "2026-02-07T10:27:36.183Z",
+            "thread_id": "test-state-1770460056063",
+            "model_provider": "groq",
+            "model_name": "meta-llama/llama-4-scout-17b-16e-instruct"
+          },
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [
+            {
+              "step": 0,
+              "thought": "I have enough information to provide a final answer",
+              "timestamp": 1770460060291
+            }
+          ],
+          "action_steps": [
+            {
+              "step": 0,
+              "action": "response",
+              "timestamp": 1770460060291
+            }
+          ],
+          "start_time": 1770460056182,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "branch:to:end_middleware": "agent"
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 4,
+          "branch:to:start_middleware": 3,
+          "start_time": 3,
+          "token_usage": 4,
+          "metadata": 3,
+          "branch:to:agent": 4,
+          "model_calls": 4,
+          "reasoning_steps": 4,
+          "action_steps": 4,
+          "branch:to:end_middleware": 4
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "start_middleware": {
+            "branch:to:start_middleware": 2
+          },
+          "agent": {
+            "branch:to:agent": 3
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "agent": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "AIMessage"
+                ],
+                "kwargs": {
+                  "content": "Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?",
+                  "additional_kwargs": {},
+                  "tool_calls": [],
+                  "invalid_tool_calls": [],
+                  "usage_metadata": {
+                    "input_tokens": 983,
+                    "output_tokens": 24,
+                    "total_tokens": 1007
+                  },
+                  "response_metadata": {
+                    "tokenUsage": {
+                      "completionTokens": 24,
+                      "promptTokens": 983,
+                      "totalTokens": 1007
+                    },
+                    "finish_reason": "stop"
+                  },
+                  "id": "run-2f183fc2-09bb-4536-bdc6-e48c6c95c7b4"
+                }
+              }
+            ],
+            "model_calls": 1,
+            "reasoning_steps": [
+              {
+                "step": 0,
+                "thought": "I have enough information to provide a final answer",
+                "timestamp": 1770460060291
+              }
+            ],
+            "action_steps": [
+              {
+                "step": 0,
+                "action": "response",
+                "timestamp": 1770460060291
+              }
+            ],
+            "token_usage": {
+              "input": 983,
+              "output": 24,
+              "total": 1007
+            }
+          }
+        },
+        "step": 2,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-state-1770460056063",
+          "enable_interrupt": false
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-state-1770460056063",
+          "enable_interrupt": false,
+          "checkpoint_id": "1f1040f9-ee4c-6790-8001-2e37d71c8af7"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040fa-158d-64d0-8003-7bc45ae29cf4",
+        "ts": "2026-02-07T10:27:40.317Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Say hello",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "e4ccd883-06c9-4ec5-bf7d-dd51fc4bba60"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "Hello! It's nice to meet you. Is there something I can help you with or would you like to chat?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 983,
+                  "output_tokens": 24,
+                  "total_tokens": 1007
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 24,
+                    "promptTokens": 983,
+                    "totalTokens": 1007
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-2f183fc2-09bb-4536-bdc6-e48c6c95c7b4"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 983,
+            "output": 24,
+            "total": 1007
+          },
+          "metadata": {
+            "started_at": "2026-02-07T10:27:36.183Z",
+            "thread_id": "test-state-1770460056063",
+            "model_provider": "groq",
+            "model_name": "meta-llama/llama-4-scout-17b-16e-instruct",
+            "completed_at": "2026-02-07T10:27:40.311Z",
+            "execution_time_ms": 4129,
+            "total_model_calls": 1,
+            "total_tools_executed": 0,
+            "total_tools_rejected": 0,
+            "has_errors": false
+          },
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [
+            {
+              "step": 0,
+              "thought": "I have enough information to provide a final answer",
+              "timestamp": 1770460060291
+            }
+          ],
+          "action_steps": [
+            {
+              "step": 0,
+              "action": "response",
+              "timestamp": 1770460060291
+            }
+          ],
+          "start_time": 1770460056182,
+          "end_time": 1770460060311,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 4129
+          },
+          "errors": []
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 4,
+          "branch:to:start_middleware": 3,
+          "start_time": 3,
+          "token_usage": 4,
+          "metadata": 5,
+          "branch:to:agent": 4,
+          "model_calls": 4,
+          "reasoning_steps": 4,
+          "action_steps": 4,
+          "branch:to:end_middleware": 5,
+          "end_time": 5,
+          "middleware_metrics": 5
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "start_middleware": {
+            "branch:to:start_middleware": 2
+          },
+          "agent": {
+            "branch:to:agent": 3
+          },
+          "end_middleware": {
+            "branch:to:end_middleware": 4
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "end_middleware": {
+            "end_time": 1770460060311,
+            "middleware_metrics": {
+              "token_usage": {
+                "input": 0,
+                "output": 0,
+                "total": 0
+              },
+              "rate_limit_hits": 0,
+              "retries": 0,
+              "pii_detected": false,
+              "pii_types": [],
+              "processing_time_ms": 4129
+            },
+            "metadata": {
+              "started_at": "2026-02-07T10:27:36.183Z",
+              "thread_id": "test-state-1770460056063",
+              "model_provider": "groq",
+              "model_name": "meta-llama/llama-4-scout-17b-16e-instruct",
+              "completed_at": "2026-02-07T10:27:40.311Z",
+              "execution_time_ms": 4129,
+              "total_model_calls": 1,
+              "total_tools_executed": 0,
+              "total_tools_rejected": 0,
+              "has_errors": false
+            }
+          }
+        },
+        "step": 3,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-state-1770460056063",
+          "enable_interrupt": false
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-state-1770460056063",
+          "enable_interrupt": false,
+          "checkpoint_id": "1f1040fa-156b-61f0-8002-7172cf73cf82"
+        },
+        "signal": {}
+      }
+    }
+  ],
+  "test-simple-1770460088600": [
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040fb-23cb-66e0-ffff-cbe0448a0a24",
+        "ts": "2026-02-07T10:28:08.654Z",
+        "channel_values": {
+          "messages": [],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 0,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Say hello",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "ba905d47-227d-479d-8b60-2f3032eee281"
+                }
+              }
+            ]
+          }
+        },
+        "channel_versions": {
+          "__start__": 1
+        },
+        "versions_seen": {
+          "__input__": {}
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "input",
+        "writes": {
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Say hello",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "ba905d47-227d-479d-8b60-2f3032eee281"
+                }
+              }
+            ]
+          }
+        },
+        "step": -1,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-simple-1770460088600"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-simple-1770460088600"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040fb-2440-69e0-8000-0fab2b154b6a",
+        "ts": "2026-02-07T10:28:08.702Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Say hello",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "ba905d47-227d-479d-8b60-2f3032eee281"
+              }
+            }
+          ],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 0,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "branch:to:agent": null
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 2,
+          "branch:to:agent": 2
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": null,
+        "step": 0,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-simple-1770460088600"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-simple-1770460088600",
+          "checkpoint_id": "1f1040fb-23cb-66e0-ffff-cbe0448a0a24"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f1040fb-4837-6290-8001-1120023d910c",
+        "ts": "2026-02-07T10:28:12.473Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Say hello",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "ba905d47-227d-479d-8b60-2f3032eee281"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "Hello! How can I assist you today?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 941,
+                  "output_tokens": 10,
+                  "total_tokens": 951
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 10,
+                    "promptTokens": 941,
+                    "totalTokens": 951
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-b9412e50-763f-4d0c-a9d7-618765089dc9"
+              }
+            }
+          ],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 0,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": []
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 3,
+          "branch:to:agent": 3
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "agent": {
+            "branch:to:agent": 2
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "agent": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "AIMessage"
+                ],
+                "kwargs": {
+                  "content": "Hello! How can I assist you today?",
+                  "additional_kwargs": {},
+                  "tool_calls": [],
+                  "invalid_tool_calls": [],
+                  "usage_metadata": {
+                    "input_tokens": 941,
+                    "output_tokens": 10,
+                    "total_tokens": 951
+                  },
+                  "response_metadata": {
+                    "tokenUsage": {
+                      "completionTokens": 10,
+                      "promptTokens": 941,
+                      "totalTokens": 951
+                    },
+                    "finish_reason": "stop"
+                  },
+                  "id": "run-b9412e50-763f-4d0c-a9d7-618765089dc9"
+                }
+              }
+            ]
+          }
+        },
+        "step": 1,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "test-simple-1770460088600"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "test-simple-1770460088600",
+          "checkpoint_id": "1f1040fb-2440-69e0-8000-0fab2b154b6a"
+        },
+        "signal": {}
+      }
+    }
+  ]
+}

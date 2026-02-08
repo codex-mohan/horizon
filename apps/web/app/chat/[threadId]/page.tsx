@@ -11,9 +11,11 @@ import { useConversationStore } from "@/lib/stores/conversation";
 import { createThreadsClient } from "@/lib/threads";
 import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Toaster } from "sonner";
+
 
 import type { Message, AttachedFile } from "@/components/chat/chat-interface";
+import { DragDropOverlay } from "@/components/chat/drag-drop-overlay";
+import { toast } from "sonner";
 
 export default function ChatPage() {
     const params = useParams();
@@ -35,6 +37,7 @@ export default function ChatPage() {
     const [sidebarSection, setSidebarSection] = useState<
         "conversations" | "my-items" | "collections" | "assistants" | null
     >(null);
+    const [isDragging, setIsDragging] = useState(false);
 
     // Initialize loading state - use sessionStorage to detecting transitions across reloads
     const [isLoading, setIsLoading] = useState(() => {
@@ -138,32 +141,109 @@ export default function ChatPage() {
     // Handle thread creation from ChatArea - update URL when thread is created
     const handleThreadChange = useCallback(
         (newThreadId: string | null) => {
-            console.log("[ChatPage] handleThreadChange:", { newThreadId, currentParams: threadId });
+            if (newThreadId && newThreadId !== threadId && threadId === "new") {
+                console.log("[ChatPage] New thread created, transitioning:", newThreadId);
 
-            if (newThreadId && newThreadId !== threadId) {
-                // Persist transition flag to store (survives refreshes)
-                setLastCreatedThreadId(newThreadId);
-
-                // DO NOT update activeThreadId immediately to prevent ChatArea prop change
-                // which causes the stream to reset. Keep props stable during transition.
+                // 1. Update global store
                 setCurrentThreadId(newThreadId);
 
-                // Update URL silently to avoid remount
-                console.log("[ChatPage] Silently updating URL to:", newThreadId);
+                // 2. Silently update URL so user sees the new ID
                 window.history.replaceState(null, "", `/chat/${newThreadId}`);
-                // router.replace(`/chat/${newThreadId}`);
-            } else if (!newThreadId && threadId !== "new") {
-                // Prevent auto-redirect to new if we suspect we are in a transition loop
-                console.warn("[ChatPage] Potential redirect loop detected - ignoring redirect to new");
-                // router.push("/chat/new"); 
+
+                // 3. IMPORTANT: Update activeThreadId so standard re-renders (like message updates)
+                // don't cause confusion, BUT rely on ChatArea's internal URL persistence (fixed in previous step)
+                // to avoid stream resets.
+                setActiveThreadId(newThreadId);
             }
         },
-        [threadId, setCurrentThreadId, setLastCreatedThreadId]
+        [threadId, setCurrentThreadId]
     );
 
     // Handle messages change
     const handleMessagesChange = useCallback((newMessages: Message[]) => {
         setMessages(newMessages);
+    }, []);
+
+    // ---- Global Drag & Drop Handlers ----
+    useEffect(() => {
+        const handleGlobalDragEnter = (e: DragEvent) => {
+            // Check if files are being dragged
+            if (
+                e.dataTransfer?.types &&
+                e.dataTransfer.types.indexOf("Files") > -1
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(true);
+            }
+        };
+
+        // Also prevent default on dragover at window level to stop browser from opening files
+        const handleGlobalDragOver = (e: DragEvent) => {
+            if (
+                e.dataTransfer?.types &&
+                e.dataTransfer.types.indexOf("Files") > -1
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+
+        // Prevent drop at window level (in case drop happens outside overlay)
+        const handleGlobalDrop = (e: DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(false);
+        };
+
+        window.addEventListener("dragenter", handleGlobalDragEnter);
+        window.addEventListener("dragover", handleGlobalDragOver);
+        window.addEventListener("drop", handleGlobalDrop);
+
+        return () => {
+            window.removeEventListener("dragenter", handleGlobalDragEnter);
+            window.removeEventListener("dragover", handleGlobalDragOver);
+            window.removeEventListener("drop", handleGlobalDrop);
+        };
+    }, []);
+
+    const handleOverlayDragLeave = useCallback(() => {
+        setIsDragging(false);
+    }, []);
+
+    const handleOverlayDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+        if (!files || files.length === 0) return;
+
+        const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+        const validFiles: File[] = [];
+
+        files.forEach((file) => {
+            if (file.size > MAX_SIZE) {
+                toast.error(`File ${file.name} exceeds the 100MB limit.`);
+            } else {
+                validFiles.push(file);
+            }
+        });
+
+        if (validFiles.length > 0) {
+            const newAttachedFiles: AttachedFile[] = validFiles.map((file) => ({
+                id: `file-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                url: URL.createObjectURL(file),
+                file,
+            }));
+            setAttachedFiles((prev) => [...prev, ...newAttachedFiles]);
+            toast.success(
+                `Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`
+            );
+        }
     }, []);
 
     // Show loading while checking auth
@@ -224,16 +304,12 @@ export default function ChatPage() {
 
     return (
         <>
-            <Toaster
-                position="top-right"
-                expand={false}
-                richColors
-                closeButton
-                toastOptions={{
-                    classNames: {
-                        toast: "glass-strong",
-                    },
-                }}
+
+
+            <DragDropOverlay
+                isDragging={isDragging}
+                onDragLeave={handleOverlayDragLeave}
+                onDrop={handleOverlayDrop}
             />
 
             <div className="flex h-screen w-full overflow-hidden relative bg-background">

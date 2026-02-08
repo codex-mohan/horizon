@@ -403,8 +403,8 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
                             transition={{ delay: 0.4 }}
                             className="space-y-2"
                         >
-                            <h3 className="text-2xl font-bold">Almost There!</h3>
-                            <p className="text-muted-foreground">
+                            <h3 className="text-2xl font-bold font-display tracking-tight">Almost There!</h3>
+                            <p className="text-muted-foreground font-body">
                                 You're about to join Horizon as{" "}
                                 <span className="font-semibold text-foreground">@{username}</span>
                             </p>
@@ -475,7 +475,7 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
 
                     {/* Step header */}
                     <div className="space-y-2">
-                        <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent font-display tracking-tight">
                             {wizardSteps[currentStep]?.title}
                         </h2>
                         {wizardSteps[currentStep]?.description && (

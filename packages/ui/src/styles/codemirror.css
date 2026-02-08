@@ -14,8 +14,8 @@
   --cm-background: oklch(0.98 0.01 270);
   --cm-foreground: oklch(0.2 0.02 270);
   --cm-caret: oklch(0.58 0.24 275);
-  --cm-selection: oklch(0.58 0.24 275 / 0.2);
-  --cm-line-highlight: oklch(0.92 0.02 270);
+  --cm-selection: oklch(0.58 0.24 275 / 0.35);
+  --cm-line-highlight: oklch(0.85 0.03 270);
   --cm-gutter-bg: oklch(0.95 0.01 270);
   --cm-gutter-fg: oklch(0.5 0.02 270);
 
@@ -42,8 +42,8 @@ html:is(.dark)[data-theme="horizon"] {
   --cm-background: oklch(0.06 0.005 270);
   --cm-foreground: oklch(0.92 0.01 270);
   --cm-caret: oklch(0.72 0.24 275);
-  --cm-selection: oklch(0.68 0.24 275 / 0.25);
-  --cm-line-highlight: oklch(0.12 0.01 270);
+  --cm-selection: oklch(0.68 0.24 275 / 0.4);
+  --cm-line-highlight: oklch(0.2 0.02 270);
   --cm-gutter-bg: oklch(0.08 0.005 270);
   --cm-gutter-fg: oklch(0.55 0.02 270);
 
@@ -73,8 +73,8 @@ html:is(.dark)[data-theme="horizon"] {
   --cm-background: oklch(0.98 0.01 330);
   --cm-foreground: oklch(0.2 0.02 330);
   --cm-caret: oklch(0.55 0.25 330);
-  --cm-selection: oklch(0.55 0.25 330 / 0.2);
-  --cm-line-highlight: oklch(0.94 0.02 330);
+  --cm-selection: oklch(0.55 0.25 330 / 0.35);
+  --cm-line-highlight: oklch(0.86 0.03 330);
   --cm-gutter-bg: oklch(0.96 0.01 330);
   --cm-gutter-fg: oklch(0.5 0.02 330);
 
@@ -101,8 +101,8 @@ html:is(.dark)[data-theme="nebula"] {
   --cm-background: oklch(0.12 0.03 330);
   --cm-foreground: oklch(0.92 0.02 330);
   --cm-caret: oklch(0.7 0.25 330);
-  --cm-selection: oklch(0.65 0.25 330 / 0.25);
-  --cm-line-highlight: oklch(0.16 0.04 330);
+  --cm-selection: oklch(0.65 0.25 330 / 0.4);
+  --cm-line-highlight: oklch(0.24 0.05 330);
   --cm-gutter-bg: oklch(0.14 0.03 330);
   --cm-gutter-fg: oklch(0.55 0.03 330);
 
@@ -132,8 +132,8 @@ html:is(.dark)[data-theme="nebula"] {
   --cm-background: oklch(0.98 0.01 180);
   --cm-foreground: oklch(0.2 0.02 180);
   --cm-caret: oklch(0.55 0.2 160);
-  --cm-selection: oklch(0.55 0.2 160 / 0.2);
-  --cm-line-highlight: oklch(0.94 0.02 180);
+  --cm-selection: oklch(0.55 0.2 160 / 0.35);
+  --cm-line-highlight: oklch(0.86 0.03 180);
   --cm-gutter-bg: oklch(0.96 0.01 180);
   --cm-gutter-fg: oklch(0.5 0.02 180);
 
@@ -160,8 +160,8 @@ html:is(.dark)[data-theme="aurora"] {
   --cm-background: oklch(0.11 0.02 180);
   --cm-foreground: oklch(0.92 0.02 180);
   --cm-caret: oklch(0.7 0.2 160);
-  --cm-selection: oklch(0.65 0.2 160 / 0.25);
-  --cm-line-highlight: oklch(0.15 0.03 180);
+  --cm-selection: oklch(0.65 0.2 160 / 0.4);
+  --cm-line-highlight: oklch(0.23 0.04 180);
   --cm-gutter-bg: oklch(0.13 0.02 180);
   --cm-gutter-fg: oklch(0.55 0.03 180);
 

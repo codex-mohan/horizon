@@ -1,6 +1,27 @@
+/**
+ * Chat Hook - Wrapper around LangGraph SDK's useStream
+ *
+ * Provides a full-featured interface for chat functionality including:
+ * - Message streaming
+ * - Branching (edit, regenerate, switch branches)
+ * - Optimistic updates
+ * - Event processing
+ */
+
+import { useCallback, useRef, useState, useEffect, useMemo } from "react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import type { Message } from "@langchain/langgraph-sdk";
-import { useState, useCallback } from "react";
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+export interface ChatError {
+  type: "rate_limit" | "server_error" | "network_error" | "unknown";
+  message: string;
+  lastMessageContent?: string;
+  details?: unknown;
+}
 
 export interface ProcessedEvent {
   title: string;
@@ -9,277 +30,451 @@ export interface ProcessedEvent {
   timestamp?: number;
 }
 
-export interface ChatError {
-  type: "connection" | "processing" | "timeout" | "unknown";
-  message: string;
-  details?: unknown;
-  lastMessageContent?: string;
-  timestamp: number;
+export interface MessageMetadata {
+  firstSeenState?: {
+    parent_checkpoint?: { checkpoint_id: string };
+  };
+  branch?: string;
+  branchOptions?: string[];
+  // Stream metadata for multi-agent support
+  streamMetadata?: {
+    langgraph_node?: string;
+  };
 }
 
 export interface UseChatOptions {
-  apiUrl?: string;
-  assistantId?: string;
+  apiUrl: string;
+  assistantId: string;
   threadId?: string | null;
-  userId?: string; // User ID for associating threads with users
-  onEvent?: (event: Record<string, unknown>) => void;
+  userId?: string;
+  onThreadId?: (threadId: string) => void;
   onError?: (error: ChatError) => void;
-  onThreadId?: (threadId: string) => void; // Callback when new thread is created
+  onEvent?: (event: Record<string, unknown>) => void;
+  onInterrupt?: (interrupt: Record<string, unknown>) => void;
+  fetchStateHistory?: boolean;
+}
+
+export interface SubmitOptions {
+  checkpoint?: { checkpoint_id: string };
+  threadId?: string;
+  optimisticValues?: (prev: ChatState) => ChatState;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UseChatReturn {
-  submit: (input: {
-    messages: Array<{ type: string; content: string }>;
-  }) => void;
-  stop: () => void;
   messages: Message[];
   isLoading: boolean;
+  error: unknown;
+  threadId: string | undefined;
   lastEvent: Record<string, unknown> | null;
-  error: ChatError | null;
-  clearError: () => void;
+
+  // Interrupt handling
+  interrupt: Record<string, unknown> | null;
+  isWaitingForInterrupt: boolean;
+
+  // Core actions
+  submit: (
+    input: { messages: Array<{ type: string; content: string }> } | undefined,
+    options?: SubmitOptions,
+  ) => void;
+  stop: () => void;
+
+  // Interrupt actions
+  approveInterrupt: () => void;
+  rejectInterrupt: (reason?: string) => void;
+
+  // Branching support
+  getMessagesMetadata: (message: Message) => MessageMetadata | null;
+  getToolCalls: (message: any) => any[];
+  setBranch: (branch: string) => void;
+
+  // Utilities
   processEvent: (event: Record<string, unknown>) => ProcessedEvent | null;
-  apiUrl: string;
-  assistantId: string;
-  threadId: string | null | undefined;
+  stream: any;
 }
 
-/**
- * Classifies an error into a specific type for better handling
- */
-function classifyError(error: unknown, lastMessage?: Message): ChatError {
-  const timestamp = Date.now();
-  const lastMessageContent = lastMessage
-    ? typeof lastMessage.content === 'string'
-      ? lastMessage.content
-      : JSON.stringify(lastMessage.content)
-    : undefined;
+// ============================================================================
+// ERROR CLASSIFICATION
+// ============================================================================
 
+function classifyError(error: unknown): ChatError {
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
 
-    // Connection errors
-    if (message.includes("fetch") || message.includes("network") || message.includes("connection")) {
+    if (message.includes("rate limit") || message.includes("429")) {
       return {
-        type: "connection",
-        message: "Failed to connect to the AI service. Please check your connection.",
-        details: error.message,
-        lastMessageContent,
-        timestamp,
+        type: "rate_limit",
+        message:
+          "Rate limit exceeded. Please wait a moment before trying again.",
+        details: error,
       };
     }
 
-    // Timeout errors
-    if (message.includes("timeout") || message.includes("timed out")) {
+    if (message.includes("500") || message.includes("internal server")) {
       return {
-        type: "timeout",
-        message: "The request timed out. The AI service may be busy.",
-        details: error.message,
-        lastMessageContent,
-        timestamp,
+        type: "server_error",
+        message: "Server error. Please try again.",
+        details: error,
       };
     }
 
-    // Processing errors
-    if (message.includes("parse") || message.includes("json") || message.includes("invalid")) {
+    if (message.includes("network") || message.includes("fetch")) {
       return {
-        type: "processing",
-        message: "Failed to process the response. Please try again.",
-        details: error.message,
-        lastMessageContent,
-        timestamp,
+        type: "network_error",
+        message: "Network error. Please check your connection.",
+        details: error,
       };
     }
 
     return {
       type: "unknown",
       message: error.message,
-      details: error.stack,
-      lastMessageContent,
-      timestamp,
+      details: error,
     };
   }
 
   return {
     type: "unknown",
-    message: "An unexpected error occurred",
+    message: String(error),
     details: error,
-    lastMessageContent,
-    timestamp,
   };
 }
 
-export function useChat(options: UseChatOptions = {}): UseChatReturn {
-  const apiUrl =
-    options.apiUrl ||
-    process.env.NEXT_PUBLIC_LANGGRAPH_API_URL ||
-    "http://localhost:2024";
-  const assistantId = options.assistantId || "agent";
+// ============================================================================
+// EVENT PROCESSING
+// ============================================================================
 
+const nodeStartTimes = new Map<string, number>();
+
+function getIconForNode(nodeName: string): string {
+  const lower = nodeName.toLowerCase();
+  if (lower.includes("search") || lower.includes("retriev")) return "search";
+  if (lower.includes("tool") || lower.includes("action")) return "wrench";
+  if (
+    lower.includes("think") ||
+    lower.includes("reason") ||
+    lower.includes("agent")
+  )
+    return "brain";
+  if (lower.includes("start") || lower.includes("init")) return "rocket";
+  if (
+    lower.includes("done") ||
+    lower.includes("complete") ||
+    lower.includes("finish")
+  )
+    return "check";
+  if (lower.includes("compress") || lower.includes("summar")) return "compress";
+  return "sparkles";
+}
+
+function processStreamEvent(
+  event: Record<string, unknown>,
+): ProcessedEvent | null {
+  if (event.event === "updates" && event.data) {
+    const data = event.data as Record<string, unknown>;
+    const nodeNames = Object.keys(data);
+
+    if (nodeNames.length > 0) {
+      const nodeName = nodeNames[0];
+      const now = Date.now();
+      const formattedName = formatNodeName(nodeName);
+
+      if (nodeStartTimes.has(nodeName)) {
+        const startTime = nodeStartTimes.get(nodeName)!;
+        nodeStartTimes.delete(nodeName);
+        const duration = now - startTime;
+
+        return {
+          title: formattedName,
+          data: `Completed in ${duration}ms`,
+          icon: "check",
+          timestamp: now,
+        };
+      } else {
+        nodeStartTimes.set(nodeName, now);
+
+        return {
+          title: formattedName,
+          data: "Running...",
+          icon: getIconForNode(nodeName),
+          timestamp: now,
+        };
+      }
+    }
+  }
+
+  if (event.event === "metadata" && event.data) {
+    return {
+      title: "Metadata",
+      data: "Processing metadata",
+      icon: "hash",
+      timestamp: Date.now(),
+    };
+  }
+
+  return null;
+}
+
+function formatNodeName(name: string): string {
+  return name
+    .replace(/_/g, " ")
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
+}
+
+// ============================================================================
+// STATE TYPE
+// ============================================================================
+
+interface ChatState {
+  messages: Message[];
+}
+
+// ============================================================================
+// MAIN HOOK
+// ============================================================================
+
+export function useChat(options: UseChatOptions): UseChatReturn {
+  const {
+    apiUrl,
+    assistantId,
+    threadId: initialThreadId,
+    userId,
+    onThreadId,
+    onError,
+    onEvent,
+    onInterrupt,
+    fetchStateHistory,
+  } = options;
+
+  // Track thread ID locally since useStream uses callback
+  const [currentThreadId, setCurrentThreadId] = useState<string | undefined>(
+    initialThreadId ?? undefined,
+  );
   const [lastEvent, setLastEvent] = useState<Record<string, unknown> | null>(
     null,
   );
-  const [error, setError] = useState<ChatError | null>(null);
+  const [interrupt, setInterrupt] = useState<Record<string, unknown> | null>(
+    null,
+  );
+  const onThreadIdCalledRef = useRef(false);
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  // Handle thread ID callback
+  const handleThreadId = useCallback(
+    (threadId: string) => {
+      setCurrentThreadId(threadId);
+      if (!onThreadIdCalledRef.current && !initialThreadId) {
+        onThreadIdCalledRef.current = true;
+        onThreadId?.(threadId);
+      }
+    },
+    [initialThreadId, onThreadId],
+  );
 
-  /* State to track the active thread ID internally since useStream doesn't expose it directly */
-  const [internalThreadId, setInternalThreadId] = useState<string | null>(null);
+  // Handle errors
+  const handleError = useCallback(
+    (error: unknown) => {
+      onError?.(classifyError(error));
+    },
+    [onError],
+  );
 
-  const handleThreadId = useCallback((id: string) => {
-    setInternalThreadId(id);
-    options.onThreadId?.(id);
-  }, [options.onThreadId]);
+  // Handle update events (for tracking & timeline)
+  const handleUpdateEvent = useCallback(
+    (data: unknown) => {
+      const eventObj = { event: "updates", data };
+      setLastEvent(eventObj);
+      onEvent?.(eventObj);
+    },
+    [onEvent],
+  );
 
-  const thread = useStream({
+  // Handle interrupt events (Human-in-the-Loop)
+  const handleInterrupt = useCallback(
+    (interruptData: unknown) => {
+      console.log("[useChat] Interrupt received:", interruptData);
+      const interruptObj = interruptData as Record<string, unknown>;
+      setInterrupt(interruptObj);
+      onInterrupt?.(interruptObj);
+    },
+    [onInterrupt],
+  );
+
+  // Reset thread callback tracking when threadId changes
+  useEffect(() => {
+    if (initialThreadId) {
+      setCurrentThreadId(initialThreadId);
+      onThreadIdCalledRef.current = true;
+    } else {
+      onThreadIdCalledRef.current = false;
+    }
+  }, [initialThreadId]);
+
+  // Use the LangGraph SDK's useStream hook with full capabilities
+  // Critical Fix: Pass currentThreadId (state) instead of initialThreadId (prop)
+  // This ensures that once we have an ID (generated on first message), we stick to it
+  // even if the parent prop hasn't updated yet (e.g. silent URL replacement).
+  const stream = useStream<ChatState>({
     apiUrl,
     assistantId,
-    threadId: options.threadId ?? undefined,
     messagesKey: "messages",
-    // Pass user_id as thread metadata for new thread creation
-    ...(options.userId && !options.threadId && {
-      threadConfig: {
-        metadata: { user_id: options.userId },
-      },
-    }),
+    threadId: currentThreadId || initialThreadId || undefined,
     onThreadId: handleThreadId,
-    onUpdateEvent: (event: Record<string, unknown>) => {
-      setLastEvent(event);
-      setError(null); // Clear errors on successful events
-      options.onEvent?.(event);
-      return event;
+    onError: handleError,
+    onUpdateEvent: handleUpdateEvent,
+    onInterrupt: handleInterrupt,
+    // Throttle to prevent excessive re-renders
+    throttle: 100,
+    // Enable experimental branching support
+    experimental_branchTree: true,
+    fetchStateHistory,
+  } as any); // Cast to any because experimental_branchTree might not be in the strict type definition yet
+
+  // Submit function with full branching support
+  const submit = useCallback(
+    (
+      input: { messages: Array<{ type: string; content: string }> } | undefined,
+      options?: SubmitOptions,
+    ) => {
+      const submitOptions: Record<string, unknown> = {};
+
+      // Add checkpoint for branching (edit/regenerate)
+      if (options?.checkpoint) {
+        // robustly handle checkpoint as object or string
+        const cp = options.checkpoint;
+        if (typeof cp === "object" && cp !== null) {
+          submitOptions.checkpoint = cp;
+        } else {
+          submitOptions.checkpoint = { checkpoint_id: cp };
+        }
+      }
+
+      // Add thread ID for optimistic creation
+      if (options?.threadId) {
+        submitOptions.threadId = options.threadId;
+      }
+
+      // Add optimistic values for instant UI updates
+      if (options?.optimisticValues) {
+        submitOptions.optimisticValues = options.optimisticValues;
+      }
+
+      // Add metadata (e.g., user_id)
+      if (userId || options?.metadata) {
+        submitOptions.metadata = {
+          ...(userId ? { user_id: userId } : {}),
+          ...options?.metadata,
+        };
+      }
+
+      // Submit with or without input (undefined input for regenerate)
+      if (input) {
+        stream.submit(
+          { messages: input.messages as unknown as Message[] },
+          Object.keys(submitOptions).length > 0 ? submitOptions : undefined,
+        );
+      } else {
+        // For regeneration - submit undefined to replay from checkpoint
+        stream.submit(undefined, submitOptions);
+      }
     },
-    onError: (rawError: unknown) => {
-      // Get the last message from the current thread state for context
-      const currentMessages = thread.messages as Message[];
-      const lastMessage = currentMessages.length > 0 ? currentMessages[currentMessages.length - 1] : undefined;
+    [stream.submit, userId],
+  );
 
-      const classifiedError = classifyError(rawError, lastMessage);
-      setError(classifiedError);
+  // Stable stop function
+  const stop = useCallback(() => {
+    stream.stop();
+  }, [stream.stop]);
 
-      // Log with appropriate severity and INCLUDE MESSAGE CONTENT
-      console.group(`[Chat Error] ${classifiedError.type}`);
-      console.error(`Message: ${classifiedError.message}`);
-      if (classifiedError.lastMessageContent) {
-        console.error(`Last User Message: "${classifiedError.lastMessageContent}"`);
-      }
-      if (classifiedError.details) {
-        console.error(`Details:`, classifiedError.details);
-      }
-      console.groupEnd();
+  // Approve interrupt (resume with approval)
+  const approveInterrupt = useCallback(() => {
+    console.log("[useChat] Approving interrupt");
+    setInterrupt(null);
 
-      // Notify callback if provided
-      options.onError?.(classifiedError);
+    // Submit with command to resume
+    stream.submit(undefined, {
+      command: { resume: "approved" },
+    });
+  }, [stream]);
+
+  // Reject interrupt (resume with rejection)
+  const rejectInterrupt = useCallback(
+    (reason?: string) => {
+      console.log("[useChat] Rejecting interrupt:", reason);
+      setInterrupt(null);
+
+      // Submit with command to resume with rejection
+      stream.submit(undefined, {
+        command: { resume: reason || "rejected" },
+      });
     },
-  });
+    [stream],
+  );
 
-  const processEvent = useCallback((
-    event: Record<string, unknown>,
-  ): ProcessedEvent | null => {
-    if (event.StartMiddleware) {
-      return {
-        title: "Starting Agent",
-        data: "Initializing agent session",
-        icon: "rocket",
-        timestamp: Date.now(),
-      };
-    }
-
-    if (event.memory) {
-      return {
-        title: "Loading Memory",
-        data: "Retrieving user preferences and context",
-        icon: "brain",
-        timestamp: Date.now(),
-      };
-    }
-
-    if (event.model) {
-      return {
-        title: "Processing",
-        data: "AI is thinking...",
-        icon: "cpu",
-        timestamp: Date.now(),
-      };
-    }
-
-    if (event.tools) {
-      const toolsEvent = event.tools as Record<string, unknown>;
-      let toolNames = "tools";
-
-      if (toolsEvent.tool_calls && Array.isArray(toolsEvent.tool_calls)) {
-        toolNames = toolsEvent.tool_calls
-          .map((tc: Record<string, unknown>) => {
-            if (typeof tc === "string") return tc;
-            if (tc.name && typeof tc.name === "string") return tc.name;
-            if (
-              tc.function &&
-              typeof tc.function === "object" &&
-              tc.function &&
-              (tc.function as Record<string, unknown>).name
-            ) {
-              return (tc.function as Record<string, unknown>).name as string;
-            }
-            return "unknown";
-          })
-          .filter(Boolean)
-          .join(", ");
-      } else if (toolsEvent.input && typeof toolsEvent.input === "string") {
-        toolNames = toolsEvent.input;
+  // Get metadata for a message (branch info, parent checkpoint)
+  const getMessagesMetadata = useCallback(
+    (message: Message): MessageMetadata | null => {
+      if (!stream.getMessagesMetadata) {
+        return null;
       }
+      try {
+        const meta = stream.getMessagesMetadata(message);
+        return meta as MessageMetadata | null;
+      } catch (err) {
+        console.error("[useChat] getMessagesMetadata error:", err);
+        return null;
+      }
+    },
+    [stream],
+  );
 
-      return {
-        title: "Using Tools",
-        data: `Executing: ${toolNames}`,
-        icon: "wrench",
-        timestamp: Date.now(),
-      };
-    }
+  // Set branch for switching between alternative message versions
+  const setBranch = useCallback(
+    (branch: string) => {
+      if (stream.setBranch) {
+        stream.setBranch(branch);
+      }
+    },
+    [stream],
+  );
 
-    if (event.token_tracker) {
-      const tokenData = event as { token_tracker?: { total_tokens?: number } };
-      return {
-        title: "Token Usage",
-        data: `Tokens: ${tokenData.token_tracker?.total_tokens?.toLocaleString() || 0}`,
-        icon: "hash",
-        timestamp: Date.now(),
-      };
-    }
+  // Stable event processor
+  const processEvent = useCallback(
+    (event: Record<string, unknown>): ProcessedEvent | null => {
+      return processStreamEvent(event);
+    },
+    [],
+  );
 
-    if (event.summarize) {
-      return {
-        title: "Summarizing",
-        data: "Condensing conversation context",
-        icon: "compress",
-        timestamp: Date.now(),
-      };
-    }
+  // Extract messages - rely on stream.messages for correct branch handling and metadata tracking
+  const messages = stream.messages ?? [];
 
-    if (event.EndMiddleware) {
-      return {
-        title: "Complete",
-        data: "Response generated",
-        icon: "check",
-        timestamp: Date.now(),
-      };
-    }
-
-    return null;
-  }, []);
+  console.log("[useChat] Messages:", stream.messages);
 
   return {
-    submit: thread.submit as UseChatReturn["submit"],
-    stop: thread.stop,
-    messages: thread.messages as Message[],
-    isLoading: thread.isLoading,
+    messages,
+    isLoading: stream.isLoading,
+    error: stream.error,
+    threadId: currentThreadId,
     lastEvent,
-    error,
-    clearError,
+
+    // Interrupt handling
+    interrupt,
+    isWaitingForInterrupt: interrupt !== null,
+
+    // Core actions
+    submit,
+    stop,
+
+    // Interrupt actions
+    approveInterrupt,
+    rejectInterrupt,
+
+    getMessagesMetadata,
+    getToolCalls: stream.getToolCalls,
+    setBranch,
     processEvent,
-    apiUrl,
-    assistantId,
-    // Return the actual active thread ID from internal state or option
-    threadId: internalThreadId || options.threadId,
+    stream, // Expose raw stream for advanced usage
   };
 }

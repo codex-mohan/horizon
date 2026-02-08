@@ -7,6 +7,16 @@
 @import "tw-animate-css";
 @import "./codemirror.css";
 
+/* Force monospace font for CodeMirror */
+.cm-editor,
+.cm-scroller,
+.cm-content,
+.cm-line {
+  font-family:
+    "Source Code Pro", "Fira Code", "JetBrains Mono", "Consolas", "Monaco",
+    "Courier New", monospace !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /* =============================================================================
@@ -59,11 +69,11 @@
 html:is(.dark)[data-theme="horizon"],
 [data-theme="horizon-dark"] {
   --background: oklch(0.04 0 0);
-  --background-light: oklch(0.07 0.005 270);
+  --background-light: oklch(0.08 0.005 270);
   --foreground: oklch(0.98 0 0);
-  --card: oklch(0.07 0.005 270);
+  --card: oklch(0.09 0.01 270);
   --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.07 0.005 270);
+  --popover: oklch(0.09 0.01 270);
   --popover-foreground: oklch(0.98 0 0);
   --primary: oklch(0.68 0.24 275);
   --primary-foreground: oklch(0.98 0 0);
@@ -132,11 +142,11 @@ html:is(.dark)[data-theme="horizon"],
 html:is(.dark)[data-theme="nebula"],
 [data-theme="nebula-dark"] {
   --background: oklch(0.1 0.03 330);
-  --background-light: oklch(0.14 0.04 330);
+  --background-light: oklch(0.15 0.04 330);
   --foreground: oklch(0.98 0.02 330);
-  --card: oklch(0.14 0.04 330);
+  --card: oklch(0.17 0.05 330);
   --card-foreground: oklch(0.98 0.02 330);
-  --popover: oklch(0.14 0.04 330);
+  --popover: oklch(0.17 0.05 330);
   --popover-foreground: oklch(0.98 0.02 330);
   --primary: oklch(0.65 0.25 330);
   --primary-foreground: oklch(0.98 0.02 330);
@@ -205,11 +215,11 @@ html:is(.dark)[data-theme="nebula"],
 html:is(.dark)[data-theme="aurora"],
 [data-theme="aurora-dark"] {
   --background: oklch(0.09 0.02 180);
-  --background-light: oklch(0.13 0.03 180);
+  --background-light: oklch(0.14 0.03 180);
   --foreground: oklch(0.98 0.02 180);
-  --card: oklch(0.13 0.03 180);
+  --card: oklch(0.16 0.04 180);
   --card-foreground: oklch(0.98 0.02 180);
-  --popover: oklch(0.13 0.03 180);
+  --popover: oklch(0.16 0.04 180);
   --popover-foreground: oklch(0.98 0.02 180);
   --primary: oklch(0.65 0.2 160);
   --primary-foreground: oklch(0.09 0.02 180);
@@ -243,8 +253,14 @@ html:is(.dark)[data-theme="aurora"],
    ============================================================================= */
 
 @theme inline {
-  --font-sans: "Geist", "Geist Fallback";
-  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --font-display:
+    var(--font-display), "Space Grotesk Fallback", system-ui, sans-serif;
+  --font-accent:
+    var(--font-accent), "Playfair Display Fallback", Georgia, serif;
+  --font-body:
+    var(--font-body), "Source Sans 3 Fallback", system-ui, sans-serif;
+  --font-mono:
+    var(--font-mono), "Source Code Pro Fallback", "SF Mono", Monaco, monospace;
   --color-background: var(--background);
   --color-background-light: var(--background-light);
   --color-foreground: var(--foreground);
@@ -277,14 +293,112 @@ html:is(.dark)[data-theme="aurora"],
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Typography Scale Overrides - Shifting everything up */
+  --text-xs: 0.85rem;
+  /* Was 0.75rem */
+  --text-sm: 1rem;
+  /* Was 0.875rem - Standard UI elements like buttons will now be 17px */
+  --text-base: 1.125rem;
+  /* Was 1rem - Body text will be ~19px */
+  --text-lg: 1.25rem;
+  /* Was 1.125rem */
+  --text-xl: 1.5rem;
+  /* Was 1.25rem */
+  --text-2xl: 1.75rem;
+  /* Was 1.5rem */
+  --text-3xl: 2.25rem;
+  /* Was 1.875rem */
+  --text-4xl: 2.75rem;
+  /* Was 2.25rem */
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
+  html {
+    font-size: 17px;
+    /* Increased from default 16px for better readability */
+  }
+
   body {
     @apply bg-background text-foreground overflow-hidden;
+    font-feature-settings:
+      "kern" 1,
+      "liga" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Typography hierarchy utilities */
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+
+  .font-accent {
+    font-family: var(--font-accent);
+    font-weight: 500;
+    letter-spacing: 0.005em;
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+    font-weight: 450;
+    letter-spacing: -0.015em;
+  }
+
+  /* Heading hierarchy with Space Grotesk */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    line-height: 1.3;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 550;
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+  }
+
+  /* Body text with Source Sans 3 */
+  p,
+  li,
+  td,
+  th {
+    font-family: var(--font-body);
+    line-height: 1.7;
+  }
+
+  /* Code with Source Code Pro */
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+    font-weight: 450;
+    line-height: 1.6;
+  }
+
+  /* Special accent text (timestamps, quotes, labels) */
+  .text-accent-font {
+    font-family: var(--font-accent);
   }
 }
 
@@ -379,9 +493,11 @@ html:is(.dark)[data-theme="aurora"],
   100% {
     transform: translate(0, 0) rotate(0deg);
   }
+
   33% {
     transform: translate(30px, -30px) rotate(120deg);
   }
+
   66% {
     transform: translate(-20px, 20px) rotate(240deg);
   }
@@ -392,6 +508,7 @@ html:is(.dark)[data-theme="aurora"],
   100% {
     opacity: 0.3;
   }
+
   50% {
     opacity: 0.6;
   }
@@ -402,6 +519,7 @@ html:is(.dark)[data-theme="aurora"],
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -413,6 +531,7 @@ html:is(.dark)[data-theme="aurora"],
     opacity: 0;
     transform: translateX(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -424,6 +543,7 @@ html:is(.dark)[data-theme="aurora"],
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -435,6 +555,7 @@ html:is(.dark)[data-theme="aurora"],
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -445,6 +566,7 @@ html:is(.dark)[data-theme="aurora"],
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
@@ -597,18 +719,23 @@ html:is(.dark)[data-theme="aurora"],
 .stagger-item:nth-child(1) {
   animation-delay: 0.05s;
 }
+
 .stagger-item:nth-child(2) {
   animation-delay: 0.1s;
 }
+
 .stagger-item:nth-child(3) {
   animation-delay: 0.15s;
 }
+
 .stagger-item:nth-child(4) {
   animation-delay: 0.2s;
 }
+
 .stagger-item:nth-child(5) {
   animation-delay: 0.25s;
 }
+
 .stagger-item:nth-child(6) {
   animation-delay: 0.3s;
 }

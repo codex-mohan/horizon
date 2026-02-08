@@ -23,9 +23,29 @@ interface Session {
   createdAt: Date;
 }
 
+interface Assistant {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string;
+  avatar_url?: string;
+  system_prompt: string;
+  model_provider: string;
+  model_name: string;
+  temperature: number;
+  max_tokens: number;
+  tools: string[];
+  memory_enabled: boolean;
+  is_default: boolean;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 interface Database {
   users: User[];
   sessions: Session[];
+  assistants: Assistant[];
 }
 
 // Ensure data directory exists
@@ -54,12 +74,13 @@ function loadDb(): Database {
           expiresAt: new Date(s.expiresAt as string),
           createdAt: new Date(s.createdAt as string),
         })),
+        assistants: parsed.assistants || [],
       };
     }
   } catch (error) {
     console.error("Error loading database:", error);
   }
-  return { users: [], sessions: [] };
+  return { users: [], sessions: [], assistants: [] };
 }
 
 function saveDb(db: Database): void {
@@ -129,12 +150,79 @@ export const db = {
     cleanExpired: (): number => {
       const database = loadDb();
       const now = new Date();
-      const expired = database.sessions.filter((s) => new Date(s.expiresAt) < now);
-      database.sessions = database.sessions.filter((s) => new Date(s.expiresAt) >= now);
+      const expired = database.sessions.filter(
+        (s) => new Date(s.expiresAt) < now,
+      );
+      database.sessions = database.sessions.filter(
+        (s) => new Date(s.expiresAt) >= now,
+      );
       saveDb(database);
       return expired.length;
     },
   },
+
+  // Assistants operations
+  assistants: {
+    findById: (id: string): Assistant | undefined => {
+      const database = loadDb();
+      return database.assistants.find((a) => a.id === id);
+    },
+    findByUserId: (userId: string): Assistant[] => {
+      const database = loadDb();
+      return database.assistants.filter((a) => a.user_id === userId);
+    },
+    findDefault: (userId: string): Assistant | undefined => {
+      const database = loadDb();
+      return database.assistants.find(
+        (a) => a.user_id === userId && a.is_default,
+      );
+    },
+    findPublic: (): Assistant[] => {
+      const database = loadDb();
+      return database.assistants.filter((a) => a.is_public);
+    },
+    create: (assistant: Assistant): Assistant => {
+      const database = loadDb();
+      database.assistants.push(assistant);
+      saveDb(database);
+      return assistant;
+    },
+    update: (
+      id: string,
+      updates: Partial<Assistant>,
+    ): Assistant | undefined => {
+      const database = loadDb();
+      const index = database.assistants.findIndex((a) => a.id === id);
+      if (index === -1) return undefined;
+      database.assistants[index] = {
+        ...database.assistants[index],
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      saveDb(database);
+      return database.assistants[index];
+    },
+    delete: (id: string): boolean => {
+      const database = loadDb();
+      const index = database.assistants.findIndex((a) => a.id === id);
+      if (index === -1) return false;
+      database.assistants.splice(index, 1);
+      saveDb(database);
+      return true;
+    },
+    setDefault: (userId: string, assistantId: string): boolean => {
+      const database = loadDb();
+      // Remove default from all user assistants
+      database.assistants = database.assistants.map((a) => {
+        if (a.user_id === userId) {
+          return { ...a, is_default: a.id === assistantId };
+        }
+        return a;
+      });
+      saveDb(database);
+      return true;
+    },
+  },
 };
 
-export type { User, Session };
+export type { User, Session, Assistant };

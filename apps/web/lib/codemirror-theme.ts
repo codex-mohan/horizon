@@ -3,42 +3,59 @@ import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
 import type { Extension } from "@codemirror/state";
 
-export function createCodeMirrorTheme(isDark: boolean): Extension {
+export function createCodeMirrorTheme(
+  isDark: boolean,
+  isEditable: boolean = true,
+): Extension {
   const editorTheme = EditorView.theme(
     {
       "&": {
-        fontSize: "0.875rem",
+        fontSize: "1rem !important",
         backgroundColor: "var(--cm-background)",
         color: "var(--cm-foreground)",
+        fontFamily:
+          "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important",
       },
       ".cm-editor": {
         borderRadius: "0",
+        fontFamily:
+          "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important",
       },
       ".cm-scroller": {
-        paddingTop: "0.5rem",
-        paddingBottom: "0.5rem",
-        fontFamily: "var(--font-mono), ui-monospace, SFMono-Regular, monospace",
+        paddingTop: "0.75rem",
+        paddingBottom: "0.75rem",
+        paddingLeft: "0.5rem",
+        paddingRight: "0.5rem",
+        fontFamily:
+          "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important",
+        lineHeight: "1.6",
+      },
+      ".cm-line": {
+        color: "var(--cm-foreground)",
+        fontFamily:
+          "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important",
+      },
+      ".cm-content": {
+        color: "var(--cm-foreground)",
+        caretColor: "var(--cm-caret)",
+        fontFamily:
+          "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important",
       },
       ".cm-gutters": {
         backgroundColor: "var(--cm-gutter-bg)",
         borderRight: "1px solid var(--border)",
         color: "var(--cm-gutter-fg)",
-      },
-      ".cm-content": {
-        color: "var(--cm-foreground)",
-        caretColor: "var(--cm-caret)",
+        fontFamily:
+          "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important",
       },
       ".cm-cursor, .cm-dropCursor": {
         borderLeftColor: "var(--cm-caret)",
       },
-      ".cm-line": {
-        color: "var(--cm-foreground)",
-      },
       ".cm-activeLine": {
-        backgroundColor: "var(--cm-line-highlight)",
+        backgroundColor: "transparent",
       },
       ".cm-activeLineGutter": {
-        backgroundColor: "var(--cm-line-highlight)",
+        backgroundColor: "transparent",
       },
       ".cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection":
         {

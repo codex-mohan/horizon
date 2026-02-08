@@ -14,6 +14,7 @@ import dynamic from "next/dynamic";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { json } from "@codemirror/lang-json";
 import { createCodeMirrorTheme } from "@/lib/codemirror-theme";
+import { BranchSwitcher } from "./branch-switcher";
 
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
   ssr: false,
@@ -32,6 +33,9 @@ interface ToolCallMessageProps {
   toolCalls: ToolCall[];
   isLoading?: boolean;
   className?: string;
+  branch?: string;
+  branchOptions?: string[];
+  onBranchSelect?: (branch: string) => void;
 }
 
 const JsonViewer: React.FC<{ data: unknown; maxHeight?: string }> = React.memo(
@@ -92,12 +96,18 @@ export function ToolCallMessage({
   toolCalls,
   isLoading = false,
   className,
+  branch,
+  branchOptions,
+  onBranchSelect,
 }: ToolCallMessageProps) {
   const [isExpanded, setIsExpanded] = React.useState(true);
   const { themeMode } = useTheme();
   const isLightTheme = themeMode === "light";
 
   const loadingCount = toolCalls.filter((tc) => tc.status === "loading").length;
+
+  // Clean branching logic
+  const showSwitcher = branch && branchOptions && branchOptions.length > 1;
 
   const getStatusIcon = (status: ToolCall["status"]) => {
     switch (status) {
@@ -157,50 +167,64 @@ export function ToolCallMessage({
           isLightTheme ? "hover:bg-black/5" : "hover:bg-white/5",
         )}
       >
-        <span
-          className={cn(
-            "text-[1.05rem] font-medium flex items-center gap-2",
-            isLightTheme ? "text-slate-700" : "text-foreground",
-          )}
-        >
-          <Terminal
+        <div className="flex items-center gap-2 flex-1">
+          <span
             className={cn(
-              "h-4 w-4",
-              isLoading
-                ? "animate-pulse text-primary"
-                : isLightTheme
-                  ? "text-slate-500"
-                  : "text-muted-foreground",
+              "text-[1.05rem] font-medium flex items-center gap-2",
+              isLightTheme ? "text-slate-700" : "text-foreground",
             )}
-          />
-          Tool Calls
-          {toolCalls.length > 0 && (
-            <span
+          >
+            <Terminal
               className={cn(
-                "text-[0.95rem] px-2 py-0.5 rounded-full",
-                isLightTheme
-                  ? "bg-slate-200 text-slate-700"
-                  : "bg-primary/20 text-primary",
+                "h-4 w-4",
+                isLoading
+                  ? "animate-pulse text-primary"
+                  : isLightTheme
+                    ? "text-slate-500"
+                    : "text-muted-foreground",
               )}
-            >
-              {toolCalls.length}
-            </span>
+            />
+            Tool Calls
+            {toolCalls.length > 0 && (
+              <span
+                className={cn(
+                  "text-[0.95rem] px-2 py-0.5 rounded-full",
+                  isLightTheme
+                    ? "bg-slate-200 text-slate-700"
+                    : "bg-primary/20 text-primary",
+                )}
+              >
+                {toolCalls.length}
+              </span>
+            )}
+            {isLoading && (
+              <span
+                className={cn(
+                  "text-[0.95rem] flex items-center gap-1",
+                  isLightTheme ? "text-amber-600" : "text-amber-400",
+                )}
+              >
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {loadingCount > 0 ? `${loadingCount} running` : "Waiting..."}
+              </span>
+            )}
+          </span>
+
+          {/* Added: Branch Switcher in tool header */}
+          {showSwitcher && onBranchSelect && (
+            <div onClick={(e) => e.stopPropagation()} className="ml-2">
+              <BranchSwitcher
+                branch={branch}
+                branchOptions={branchOptions}
+                onSelect={onBranchSelect}
+              />
+            </div>
           )}
-          {isLoading && (
-            <span
-              className={cn(
-                "text-[0.95rem] flex items-center gap-1",
-                isLightTheme ? "text-amber-600" : "text-amber-400",
-              )}
-            >
-              <Loader2 className="h-3 w-3 animate-spin" />
-              {loadingCount > 0 ? `${loadingCount} running` : "Waiting..."}
-            </span>
-          )}
-        </span>
+        </div>
+
         <ChevronDown
           className={cn(
-            "h-4 w-4 transition-transform duration-300",
+            "h-4 w-4 transition-transform duration-300 ml-2",
             isLightTheme ? "text-slate-500" : "text-muted-foreground",
             isExpanded && "rotate-180",
           )}

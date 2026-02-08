@@ -223,7 +223,7 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
     }, [langHint]);
 
     const cmTheme = useMemo(
-      () => createCodeMirrorTheme(themeMode === "dark"),
+      () => createCodeMirrorTheme(themeMode === "dark", false),
       [themeMode],
     );
 
@@ -296,17 +296,32 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
             </button>
           </div>
         </div>
-        <CodeMirror
-          value={code.replace(/\n$/, "")}
-          height="auto"
-          extensions={extensions}
-          editable={false}
-          basicSetup={{
-            foldGutter: true,
-            syntaxHighlighting: false,
+        <div
+          className="font-mono"
+          style={{
+            fontFamily:
+              "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace",
           }}
-          theme={cmTheme}
-        />
+        >
+          <CodeMirror
+            value={code.replace(/\n$/, "")}
+            height="auto"
+            extensions={extensions}
+            editable={false}
+            basicSetup={{
+              foldGutter: true,
+              highlightActiveLine: false,
+              highlightActiveLineGutter: false,
+              dropCursor: false,
+            }}
+            theme={cmTheme}
+            className="font-mono"
+            style={{
+              fontFamily:
+                "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace",
+            }}
+          />
+        </div>
       </div>
     );
   },
@@ -351,44 +366,47 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
 
         // Handle inline code
         return (
-          <code className="rounded bg-muted px-1.5 py-1 text-[0.9em] text-primary">
+          <code className="rounded bg-muted px-1.5 py-0.5 text-[0.9em] font-mono">
             {children}
           </code>
         );
       },
       p: ({ children }: any) => (
-        <span className="text-[1.05rem] leading-7 text-foreground/90 mb-3 last:mb-0 break-words block">
+        <span className="text-[1.0625rem] leading-relaxed text-foreground/90 mb-3 last:mb-0 break-words block font-body">
           {children}
         </span>
       ),
       h1: ({ children }: any) => (
-        <h1 className="mt-4 mb-2 text-xl font-bold tracking-tight">
+        <h1 className="mt-4 mb-2 text-xl font-bold tracking-tight font-display">
           {children}
         </h1>
       ),
       h2: ({ children }: any) => (
-        <h2 className="mt-4 mb-2 text-lg font-bold tracking-tight">
+        <h2 className="mt-4 mb-2 text-lg font-bold tracking-tight font-display">
           {children}
         </h2>
       ),
       h3: ({ children }: any) => (
-        <h3 className="mt-3 mb-1.5 text-[1.05rem] font-bold tracking-tight">
+        <h3 className="mt-3 mb-1.5 text-base font-bold tracking-tight font-display">
           {children}
         </h3>
       ),
       ul: (props: any) => (
-        <ul className="my-3 pl-5 list-disc text-[1.05rem] [&>li]:mt-1.5 [&_span]:!m-0 [&_span]:!inline" {...props} />
-      ),
-      ol: (props: any) => (
-        <ol
-          className="my-3 pl-5 list-decimal text-[1.05rem] [&>li]:mt-1.5 [&_span]:!m-0 [&_span]:!inline"
+        <ul
+          className="my-3 pl-5 list-disc text-[1.0625rem] [&>li]:mt-1.5 [&_span]:!m-0 [&_span]:!inline"
           {...props}
         />
       ),
-      li: (props: any) => <li className="leading-7 pl-1" {...props} />,
+      ol: (props: any) => (
+        <ol
+          className="my-3 pl-5 list-decimal text-[1.0625rem] [&>li]:mt-1.5 [&_span]:!m-0 [&_span]:!inline"
+          {...props}
+        />
+      ),
+      li: (props: any) => <li className="leading-relaxed pl-1" {...props} />,
       blockquote: (props: any) => (
         <blockquote
-          className="mt-3 border-l-2 border-primary/30 pl-3 italic text-sm text-foreground/80"
+          className="mt-3 border-l-2 border-primary/30 pl-3 italic text-sm text-foreground/80 font-accent"
           {...props}
         />
       ),

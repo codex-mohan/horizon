@@ -1,14 +1,25 @@
 "use client"
 
-import { MessageSquare, FolderOpen, Layers, Bot, HelpCircle } from "lucide-react"
+import { useState } from "react"
+import { MessageSquare, FolderOpen, Layers, Bot, HelpCircle, LogOut, Settings, User, Image } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { ExpandedSidebar } from "./expanded-sidebar"
+import { ChangeAvatarDialog } from "./change-avatar-dialog"
 import { ThemeSwitcher } from "@/components/theme/theme-switcher"
 import { useAuthStore } from "@/lib/stores/auth"
+import { UserSettingsDialog } from "./user-settings-dialog"
 
 interface SidebarProps {
   isExpanded: boolean
@@ -18,7 +29,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse }: SidebarProps) {
-  const { user } = useAuthStore()
+  const { user, logout } = useAuthStore()
+  const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false)
+  const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false)
   const topSections = [
     { id: "conversations", icon: MessageSquare, label: "Conversations" },
     { id: "my-items", icon: FolderOpen, label: "My Items" },
@@ -108,12 +121,12 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
                 </TooltipContent>
               </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-10 p-0 transition-all duration-200 hover:scale-110 hover-glow flex items-center justify-center"
+                    className="size-10 p-0 transition-all duration-200 hover:scale-110 hover-glow flex items-center justify-center rounded-full"
                   >
                     <Avatar className="size-10 transition-transform duration-200">
                       <AvatarImage src={user?.avatarUrl || "/horizon-icon.png"} />
@@ -122,11 +135,30 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
                       </AvatarFallback>
                     </Avatar>
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="animate-scale-in">
-                  <p>Profile</p>
-                </TooltipContent>
-              </Tooltip>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="end" className="w-56" sideOffset={10}>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user?.displayName || "User"}</p>
+                      <p className="text-xs leading-none text-muted-foreground">@{user?.username || "username"}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setIsChangeAvatarOpen(true)}>
+                    <Image className="mr-2 size-4" />
+                    <span>Change Profile Picture</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsUserSettingsOpen(true)}>
+                    <Settings className="mr-2 size-4" />
+                    <span>Account Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                    <LogOut className="mr-2 size-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </TooltipProvider>
           </div>
         </div>
@@ -138,6 +170,17 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
           </div>
         )}
       </div>
+
+      {/* User Settings Dialog */}
+      <UserSettingsDialog
+        isOpen={isUserSettingsOpen}
+        onClose={() => setIsUserSettingsOpen(false)}
+      />
+
+      <ChangeAvatarDialog
+        isOpen={isChangeAvatarOpen}
+        onClose={() => setIsChangeAvatarOpen(false)}
+      />
     </>
   )
 }

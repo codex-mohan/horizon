@@ -139,6 +139,13 @@ export function isToolMessage(message: Message): boolean {
 }
 
 /**
+ * Check if a message is a system message
+ */
+export function isSystemMessage(message: Message): boolean {
+  return message.type === "system";
+}
+
+/**
  * Debug utility to log message structure for troubleshooting
  */
 export function debugToolMessages(messages: Message[]): void {
