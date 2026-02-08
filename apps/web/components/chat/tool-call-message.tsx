@@ -1,20 +1,14 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { cn } from "@workspace/ui/lib/utils";
-import {
-  Loader2,
-  Terminal,
-  ChevronDown,
-  CheckCircle2,
-  XCircle,
-} from "lucide-react";
+import { Loader2, ChevronDown, CheckCircle2, XCircle } from "lucide-react";
 import { useTheme } from "@/components/theme/theme-provider";
 import dynamic from "next/dynamic";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { json } from "@codemirror/lang-json";
 import { createCodeMirrorTheme } from "@/lib/codemirror-theme";
-import { BranchSwitcher } from "./branch-switcher";
+import { getToolUIConfig, getToolIcon } from "@/lib/tool-config";
 
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
   ssr: false,
@@ -27,15 +21,16 @@ export interface ToolCall {
   arguments?: Record<string, unknown>;
   result?: string;
   status: "loading" | "success" | "error" | "completed";
+  startedAt?: number;
+  completedAt?: number;
+  error?: string;
+  namespace?: "special" | "generic";
 }
 
 interface ToolCallMessageProps {
   toolCalls: ToolCall[];
   isLoading?: boolean;
   className?: string;
-  branch?: string;
-  branchOptions?: string[];
-  onBranchSelect?: (branch: string) => void;
 }
 
 const JsonViewer: React.FC<{ data: unknown; maxHeight?: string }> = React.memo(
@@ -96,18 +91,12 @@ export function ToolCallMessage({
   toolCalls,
   isLoading = false,
   className,
-  branch,
-  branchOptions,
-  onBranchSelect,
 }: ToolCallMessageProps) {
   const [isExpanded, setIsExpanded] = React.useState(true);
   const { themeMode } = useTheme();
   const isLightTheme = themeMode === "light";
 
   const loadingCount = toolCalls.filter((tc) => tc.status === "loading").length;
-
-  // Clean branching logic
-  const showSwitcher = branch && branchOptions && branchOptions.length > 1;
 
   const getStatusIcon = (status: ToolCall["status"]) => {
     switch (status) {
@@ -149,6 +138,11 @@ export function ToolCallMessage({
 
   if (toolCalls.length === 0 && !isLoading) return null;
 
+  const firstToolConfig =
+    toolCalls.length > 0 ? getToolUIConfig(toolCalls[0].name) : null;
+  const FirstToolIcon =
+    toolCalls.length > 0 ? getToolIcon(toolCalls[0].name) : null;
+
   return (
     <div
       className={cn(
@@ -174,18 +168,24 @@ export function ToolCallMessage({
               isLightTheme ? "text-slate-700" : "text-foreground",
             )}
           >
-            <Terminal
-              className={cn(
-                "h-4 w-4",
-                isLoading
-                  ? "animate-pulse text-primary"
-                  : isLightTheme
-                    ? "text-slate-500"
-                    : "text-muted-foreground",
-              )}
-            />
-            Tool Calls
-            {toolCalls.length > 0 && (
+            {FirstToolIcon && (
+              <FirstToolIcon
+                className={cn(
+                  "h-4 w-4",
+                  isLoading
+                    ? "animate-pulse text-primary"
+                    : isLightTheme
+                      ? "text-slate-500"
+                      : "text-muted-foreground",
+                )}
+              />
+            )}
+            {toolCalls.length === 1 && firstToolConfig
+              ? firstToolConfig.displayName
+              : toolCalls.length > 1
+                ? `${toolCalls.length} Tools`
+                : "Tools"}
+            {toolCalls.length > 1 && (
               <span
                 className={cn(
                   "text-[0.95rem] px-2 py-0.5 rounded-full",
@@ -209,17 +209,6 @@ export function ToolCallMessage({
               </span>
             )}
           </span>
-
-          {/* Added: Branch Switcher in tool header */}
-          {showSwitcher && onBranchSelect && (
-            <div onClick={(e) => e.stopPropagation()} className="ml-2">
-              <BranchSwitcher
-                branch={branch}
-                branchOptions={branchOptions}
-                onSelect={onBranchSelect}
-              />
-            </div>
-          )}
         </div>
 
         <ChevronDown
@@ -248,6 +237,8 @@ export function ToolCallMessage({
               toolCalls.map((toolCall, index) => {
                 const isLast = index === toolCalls.length - 1;
                 const showConnector = !isLast;
+                const toolConfig = getToolUIConfig(toolCall.name);
+                const ToolIcon = getToolIcon(toolCall.name);
 
                 return (
                   <div
@@ -284,44 +275,28 @@ export function ToolCallMessage({
                     </div>
 
                     <div className="pt-0.5">
-                      <div className="flex items-center gap-2">
-                        <p
+                      <div className="flex items-center gap-2 mb-1">
+                        {ToolIcon && (
+                          <ToolIcon
+                            className={cn(
+                              "h-3.5 w-3.5",
+                              getStatusColor(toolCall.status),
+                            )}
+                          />
+                        )}
+                        <span
                           className={cn(
-                            "text-sm font-medium transition-colors duration-300",
+                            "font-medium text-sm",
                             isLightTheme ? "text-slate-700" : "text-foreground",
                           )}
                         >
-                          {toolCall.name}
-                        </p>
-                        <span
-                          className={cn(
-                            "text-xs",
-                            getStatusColor(toolCall.status),
-                          )}
-                        >
-                          {toolCall.status === "loading"
-                            ? "Running..."
-                            : toolCall.status === "completed"
-                              ? "Done"
-                              : toolCall.status === "success"
-                                ? "Success"
-                                : "Error"}
+                          {toolConfig.displayName}
                         </span>
                       </div>
 
                       {toolCall.arguments &&
                         Object.keys(toolCall.arguments).length > 0 && (
-                          <div className="mt-2">
-                            <p
-                              className={cn(
-                                "text-xs font-medium mb-1",
-                                isLightTheme
-                                  ? "text-slate-500"
-                                  : "text-muted-foreground",
-                              )}
-                            >
-                              Arguments
-                            </p>
+                          <div className="ml-5">
                             <JsonViewer
                               data={toolCall.arguments}
                               maxHeight="150px"
@@ -330,49 +305,40 @@ export function ToolCallMessage({
                         )}
 
                       {toolCall.result && (
-                        <div className="mt-2">
-                          <p
-                            className={cn(
-                              "text-xs font-medium mb-1",
-                              isLightTheme
-                                ? "text-emerald-600"
-                                : "text-emerald-400",
-                            )}
-                          >
-                            Result
-                          </p>
+                        <div className="ml-5 mt-2">
                           <JsonViewer
                             data={toolCall.result}
-                            maxHeight="200px"
+                            maxHeight="150px"
                           />
+                        </div>
+                      )}
+
+                      {toolCall.error && (
+                        <div
+                          className={cn(
+                            "ml-5 mt-2 p-2 rounded text-xs",
+                            isLightTheme
+                              ? "bg-red-50 text-red-600"
+                              : "bg-red-950/30 text-red-400",
+                          )}
+                        >
+                          Error: {toolCall.error}
                         </div>
                       )}
                     </div>
                   </div>
                 );
               })
-            ) : isLoading ? (
-              <div className={cn("relative pl-7 pb-2 animate-pulse")}>
-                <div
-                  className={cn(
-                    "absolute left-0 top-1 h-6 w-6 rounded-full",
-                    "flex items-center justify-center",
-                    "bg-gradient-to-br from-amber-500 to-orange-500",
-                    "ring-4 ring-background/50",
-                  )}
-                >
-                  <Loader2 className="h-3 w-3 animate-spin text-white" />
-                </div>
-                <p
-                  className={cn(
-                    "text-sm font-medium",
-                    isLightTheme ? "text-slate-600" : "text-foreground",
-                  )}
-                >
-                  Waiting for tools...
-                </p>
+            ) : (
+              <div
+                className={cn(
+                  "text-center py-4 text-sm",
+                  isLightTheme ? "text-slate-500" : "text-muted-foreground",
+                )}
+              >
+                No tool calls
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       )}

@@ -155,7 +155,8 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
   console.log(`[POST /runs/stream] Has Command: ${!!command}`);
 
   // Construct the configuration for the graph run
-  const streamMode = body.stream_mode || ["updates", "messages"];
+  // Include "custom" stream mode to receive UI events during tool execution
+  const streamMode = body.stream_mode || ["updates", "messages", "custom"];
 
   console.log(`[POST /runs/stream] Stream Mode:`, streamMode);
 

@@ -23,8 +23,11 @@ export interface Message {
     result?: string;
     status: "loading" | "success" | "error" | "completed";
   }>;
-  // Reference to original LangGraph message for branching support
   _originalMessage?: unknown;
+  reasoning?: string;
+  _groupId?: string;
+  _isLastInGroup?: boolean;
+  _retryTargetId?: string;
 }
 
 export interface AttachedFile {
@@ -53,10 +56,7 @@ export function ChatInterface() {
   useEffect(() => {
     const handleGlobalDragEnter = (e: DragEvent) => {
       // Check if files are being dragged
-      if (
-        e.dataTransfer?.types &&
-        e.dataTransfer.types.indexOf("Files") > -1
-      ) {
+      if (e.dataTransfer?.types && e.dataTransfer.types.indexOf("Files") > -1) {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(true);
@@ -73,40 +73,45 @@ export function ChatInterface() {
     setIsDragging(false);
   }, []);
 
-  const handleOverlayDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+  const handleOverlayDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
 
-    const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
-    if (!files || files.length === 0) return;
+      const files = e.dataTransfer?.files
+        ? Array.from(e.dataTransfer.files)
+        : [];
+      if (!files || files.length === 0) return;
 
-    const MAX_SIZE = 100 * 1024 * 1024; // 100MB
-    const validFiles: File[] = [];
+      const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+      const validFiles: File[] = [];
 
-    files.forEach((file) => {
-      if (file.size > MAX_SIZE) {
-        toast.error(`File ${file.name} exceeds the 100MB limit.`);
-      } else {
-        validFiles.push(file);
+      files.forEach((file) => {
+        if (file.size > MAX_SIZE) {
+          toast.error(`File ${file.name} exceeds the 100MB limit.`);
+        } else {
+          validFiles.push(file);
+        }
+      });
+
+      if (validFiles.length > 0) {
+        const newAttachedFiles: AttachedFile[] = validFiles.map((file) => ({
+          id: `file-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          url: URL.createObjectURL(file), // Generate local preview URL
+          file,
+        }));
+        setAttachedFiles((prev) => [...prev, ...newAttachedFiles]);
+        toast.success(
+          `Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`,
+        );
       }
-    });
-
-    if (validFiles.length > 0) {
-      const newAttachedFiles: AttachedFile[] = validFiles.map((file) => ({
-        id: `file-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        url: URL.createObjectURL(file), // Generate local preview URL
-        file,
-      }));
-      setAttachedFiles((prev) => [...prev, ...newAttachedFiles]);
-      toast.success(
-        `Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`
-      );
-    }
-  }, []);
+    },
+    [],
+  );
 
   const { currentThreadId, setCurrentThreadId } = useConversationStore();
 

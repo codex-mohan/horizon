@@ -68,6 +68,9 @@ export interface UseChatReturn {
   threadId: string | undefined;
   lastEvent: Record<string, unknown> | null;
 
+  // UI state for generative UI
+  ui: UIMessage[];
+
   // Interrupt handling
   interrupt: Record<string, unknown> | null;
   isWaitingForInterrupt: boolean;
@@ -224,11 +227,28 @@ function formatNodeName(name: string): string {
 }
 
 // ============================================================================
+// UI MESSAGE TYPE
+// ============================================================================
+
+export interface UIMessage {
+  id: string;
+  name: string;
+  props: Record<string, any>;
+  metadata?: {
+    message_id?: string;
+    tool_call_id?: string;
+    tool_name?: string;
+    [key: string]: any;
+  };
+}
+
+// ============================================================================
 // STATE TYPE
 // ============================================================================
 
 interface ChatState {
   messages: Message[];
+  ui?: UIMessage[];
 }
 
 // ============================================================================
@@ -258,6 +278,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   const [interrupt, setInterrupt] = useState<Record<string, unknown> | null>(
     null,
   );
+  const [uiMessages, setUIMessages] = useState<UIMessage[]>([]);
   const onThreadIdCalledRef = useRef(false);
 
   // Handle thread ID callback
@@ -301,6 +322,66 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     [onInterrupt],
   );
 
+  // Handle custom events for real-time UI updates
+  const handleCustomEvent = useCallback((event: unknown) => {
+    console.log("[useChat] Custom event received:", event);
+    const customEvent = event as { event?: string; data?: UIMessage };
+
+    if (customEvent.event === "ui" && customEvent.data) {
+      const uiMessage = customEvent.data;
+
+      setUIMessages((prev) => {
+        const existingIndex = prev.findIndex((m) => m.id === uiMessage.id);
+
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            props: { ...updated[existingIndex].props, ...uiMessage.props },
+            metadata: {
+              ...updated[existingIndex].metadata,
+              ...uiMessage.metadata,
+            },
+          };
+          return updated;
+        } else {
+          return [...prev, uiMessage];
+        }
+      });
+    }
+
+    // Handle status updates by tool_call_id for better real-time updates
+    if (customEvent.event === "status" && customEvent.data) {
+      const statusData = customEvent.data as unknown as {
+        tool_call_id?: string;
+        status: string;
+        [key: string]: unknown;
+      };
+      if (statusData.tool_call_id) {
+        setUIMessages((prev) => {
+          const existingIndex = prev.findIndex(
+            (m) => m.metadata?.tool_call_id === statusData.tool_call_id,
+          );
+
+          if (existingIndex >= 0) {
+            const updated = [...prev];
+            const { tool_call_id, status, ...rest } = statusData;
+            updated[existingIndex] = {
+              ...updated[existingIndex],
+              props: {
+                ...updated[existingIndex].props,
+                status,
+                ...rest,
+              },
+            };
+            return updated;
+          }
+          return prev;
+        });
+      }
+    }
+  }, []);
+
   // Reset thread callback tracking when threadId changes
   useEffect(() => {
     if (initialThreadId) {
@@ -324,12 +405,26 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     onError: handleError,
     onUpdateEvent: handleUpdateEvent,
     onInterrupt: handleInterrupt,
-    // Throttle to prevent excessive re-renders
-    throttle: 100,
+    onCustomEvent: handleCustomEvent,
+    // Throttle for smoother updates (30ms balances responsiveness with performance)
+    throttle: 30,
     // Enable experimental branching support
     experimental_branchTree: true,
     fetchStateHistory,
   } as any); // Cast to any because experimental_branchTree might not be in the strict type definition yet
+
+  // Reset UI messages when streaming stops (conversation ends)
+  useEffect(() => {
+    if (!stream.isLoading && uiMessages.length > 0) {
+      // Keep the final state but could optionally clear here
+      // setUIMessages([]);
+    }
+  }, [stream.isLoading, uiMessages.length]);
+
+  // Clear UI messages when starting a new submission (retry/edit)
+  const clearUIMessages = useCallback(() => {
+    setUIMessages([]);
+  }, []);
 
   // Submit function with full branching support
   const submit = useCallback(
@@ -337,6 +432,9 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       input: { messages: Array<{ type: string; content: string }> } | undefined,
       options?: SubmitOptions,
     ) => {
+      // Clear UI messages when starting a new submission (retry/edit/regenerate)
+      clearUIMessages();
+
       const submitOptions: Record<string, unknown> = {};
 
       // Add checkpoint for branching (edit/regenerate)
@@ -360,7 +458,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         submitOptions.optimisticValues = options.optimisticValues;
       }
 
-      // Add metadata (e.g., user_id)
+      // Add metadata (e.g. user_id)
       if (userId || options?.metadata) {
         submitOptions.metadata = {
           ...(userId ? { user_id: userId } : {}),
@@ -379,7 +477,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         stream.submit(undefined, submitOptions);
       }
     },
-    [stream.submit, userId],
+    [stream.submit, userId, clearUIMessages],
   );
 
   // Stable stop function
@@ -420,6 +518,47 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       }
       try {
         const meta = stream.getMessagesMetadata(message);
+
+        // If branchOptions is missing, try to extract from fork tree structure
+        if (!meta?.branchOptions && stream.experimental_branchTree) {
+          console.log(
+            "[useChat] No branchOptions in metadata, checking fork tree",
+          );
+          const treeAny = stream.experimental_branchTree as any;
+
+          // Check if this is a fork tree with items array
+          if (
+            typeof treeAny.type === "string" &&
+            treeAny.type === "fork" &&
+            Array.isArray(treeAny.items)
+          ) {
+            const branchOptions = treeAny.items.map(
+              (_item: any, index: number) => {
+                // Extract branch identifier from the path array
+                // Items in a fork have a path with checkpoint IDs
+                const itemPath = _item?.path;
+                if (Array.isArray(itemPath) && itemPath.length > 0) {
+                  const checkpointId = itemPath[0];
+                  if (typeof checkpointId === "string") {
+                    return checkpointId;
+                  }
+                }
+                return `branch-${index}`;
+              },
+            );
+
+            console.log(
+              "[useChat] Extracted branchOptions from fork:",
+              branchOptions,
+            );
+            return {
+              ...meta,
+              branchOptions,
+              branch: meta?.branch || branchOptions[branchOptions.length - 1],
+            } as MessageMetadata;
+          }
+        }
+
         return meta as MessageMetadata | null;
       } catch (err) {
         console.error("[useChat] getMessagesMetadata error:", err);
@@ -452,12 +591,44 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
   console.log("[useChat] Messages:", stream.messages);
 
+  // Use real-time UI messages from custom events
+  // Merge stream UI with real-time updates, preferring real-time for updates
+  const streamUIMessages = (stream.values?.ui as UIMessage[]) ?? [];
+
+  // Create a map of existing UI messages by ID for deduplication
+  const uiMessageMap = new Map<string, UIMessage>();
+
+  // Add stream UI messages first (as fallback)
+  streamUIMessages.forEach((msg) => {
+    uiMessageMap.set(msg.id, msg);
+  });
+
+  // Overlay with real-time UI messages (these take precedence)
+  uiMessages.forEach((msg) => {
+    const existing = uiMessageMap.get(msg.id);
+    if (existing) {
+      // Merge with existing
+      uiMessageMap.set(msg.id, {
+        ...existing,
+        props: { ...existing.props, ...msg.props },
+        metadata: { ...existing.metadata, ...msg.metadata },
+      });
+    } else {
+      uiMessageMap.set(msg.id, msg);
+    }
+  });
+
+  const mergedUIMessages = Array.from(uiMessageMap.values());
+
   return {
     messages,
     isLoading: stream.isLoading,
     error: stream.error,
     threadId: currentThreadId,
     lastEvent,
+
+    // UI state for generative UI - use real-time updates merged with stream
+    ui: mergedUIMessages,
 
     // Interrupt handling
     interrupt,

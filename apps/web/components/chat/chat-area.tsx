@@ -1,23 +1,26 @@
 "use client";
 
-import type React from "react";
-import {
+import React, {
   useState,
   useRef,
   useEffect,
   useCallback,
   useMemo,
-  memo,
 } from "react";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
 import { FileBadge } from "./file-badge";
 import { ChatBubble } from "./chat-bubble";
-import { ChatInput, type AttachedFile as ChatInputAttachedFile } from "./chat-input";
+import {
+  ChatInput,
+  type AttachedFile as ChatInputAttachedFile,
+} from "./chat-input";
 import { cn } from "@workspace/ui/lib/utils";
 import type { Message, AttachedFile } from "./chat-interface";
 import { ActivityTimeline } from "./activity-timeline";
 import { ToolCallMessage, type ToolCall } from "./tool-call-message";
+import { GenerativeUIRenderer } from "./generative-ui-renderer";
+import { hasCustomUI, getToolUIConfig } from "@/lib/tool-config";
 
 import { BranchSwitcher } from "./branch-switcher";
 import {
@@ -39,11 +42,33 @@ import { useTheme } from "@/components/theme/theme-provider";
 import { createThreadsClient } from "@/lib/threads";
 import { generateConversationTitle } from "@/lib/title-utils";
 import { useAuthStore } from "@/lib/stores/auth";
+import { getReasoningFromMessage } from "@/lib/reasoning-utils";
 import { toast } from "sonner";
-
-// ============================================================================
-// STATIC DATA
-// ============================================================================
+import {
+  Copy,
+  RotateCcw,
+  Volume2,
+  FileText,
+  Forklift as Fork,
+  Share,
+  MoreHorizontal,
+  MessageSquare,
+  Trash2,
+} from "lucide-react";
+import { Button } from "@workspace/ui/components/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 
 const suggestedPrompts = [
   "Explain quantum computing in simple terms",
@@ -53,123 +78,233 @@ const suggestedPrompts = [
 ] as const;
 
 // ============================================================================
-// MESSAGE DISPLAY COMPONENT
+// GROUP CONTROLS COMPONENT
 // ============================================================================
 
-interface MessageDisplayProps {
-  message: Message;
-  showAvatar: boolean;
-  showActions: boolean;
-  showToolCalls: boolean;
-  isStreaming: boolean;
-  onEdit: (id: string, content: string) => void;
+interface GroupControlsProps {
+  retryTargetId: string | null;
+  branch: string | undefined;
+  branchOptions: string[] | undefined;
+  onBranchSelect: (branch: string) => void;
   onRetry: (id: string, content: string) => void;
-  onDelete: (id: string) => void;
-  // Branching props - now using simple string types from SDK
-  branchMetadata?: MessageMetadata | null;
-  onBranchSelect?: (branch: string) => void;
+  onSpeak?: (id: string, content: string) => void;
+  onSummarize?: (id: string, content: string) => void;
+  onFork?: (id: string, content: string) => void;
+  onShare?: (id: string, content: string) => void;
+  onDelete?: (id: string) => void;
+  copyContent: string;
 }
 
-// MessageDisplay Component Refactor for robust branching
-const MessageDisplay = function MessageDisplay({
-  message,
-  showAvatar,
-  showActions,
-  showToolCalls,
-  isStreaming,
-  onEdit,
-  onRetry,
-  onDelete,
-  branchMetadata,
+function GroupControls({
+  retryTargetId,
+  branch,
+  branchOptions,
   onBranchSelect,
-}: MessageDisplayProps) {
-  const noopHandler = useCallback(() => { }, []);
+  onRetry,
+  onSpeak,
+  onSummarize,
+  onFork,
+  onShare,
+  onDelete,
+  copyContent,
+}: GroupControlsProps) {
+  const [copied, setCopied] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const showSwitcher = branch && branchOptions && branchOptions.length > 1;
 
-  // Construct effective metadata - DIRECT from SDK (No caching)
-  const effectiveBranch = branchMetadata?.branch;
-  const effectiveOptions = branchMetadata?.branchOptions;
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(copyContent);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [copyContent]);
 
-  const handleBranchSelect = useCallback(
-    (branch: string) => {
-      onBranchSelect?.(branch);
-    },
-    [onBranchSelect]
-  );
+  const handleRetry = useCallback(() => {
+    if (retryTargetId) {
+      onRetry(retryTargetId, "");
+    }
+  }, [retryTargetId, onRetry]);
 
-
-
+  const handleSpeak = useCallback(() => {
+    if ("speechSynthesis" in window) {
+      if (isSpeaking) {
+        window.speechSynthesis.cancel();
+        setIsSpeaking(false);
+      } else {
+        const utterance = new SpeechSynthesisUtterance(copyContent);
+        utterance.onend = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+        setIsSpeaking(true);
+      }
+    }
+  }, [copyContent, isSpeaking]);
 
   return (
-    <div className="space-y-3">
-      <div
-        className={cn(
-          "flex items-start gap-3",
-          message.role === "user" && "justify-end"
-        )}
-      >
-        {message.role === "user" ? (
-          <div className="flex flex-col items-end gap-1">
-            <ChatBubble
-              message={message}
-              onEdit={onEdit}
-              onRetry={onRetry}
-              onFork={noopHandler}
-              onSpeak={noopHandler}
-              onSummarize={noopHandler}
-              onShare={noopHandler}
-              onDelete={onDelete}
-              branch={effectiveBranch}
-              branchOptions={effectiveOptions}
-              onBranchSelect={handleBranchSelect}
-            />
-          </div>
-        ) : (
-          <div className="w-full space-y-3">
-            <div className="flex flex-col gap-1">
-              {/* Only show bubble if there is content or if it's not a pure tool-caller message */}
-              {/* Actually, we should nearly always show the bubble if it's an AI message, 
-                  unless it's PURELY tool calls and we want to hide those (but we usually show tool calls separately). 
-                  If content is empty string, ChatBubble might process it as empty. */}
+    <div className="flex items-center gap-2 transition-all duration-300 group-hover:opacity-100">
+      {showSwitcher && (
+        <BranchSwitcher
+          branch={branch}
+          branchOptions={branchOptions}
+          onSelect={onBranchSelect}
+          className="mr-1"
+        />
+      )}
 
-              {(message.content || !message._combinedToolCalls?.length) && (
-                <ChatBubble
-                  message={message}
-                  onEdit={onEdit}
-                  onRetry={onRetry}
-                  onFork={noopHandler}
-                  onSpeak={noopHandler}
-                  onSummarize={noopHandler}
-                  onShare={noopHandler}
-                  onDelete={onDelete}
-                  showAvatar={showAvatar}
-                  showActions={showActions}
-                  branch={effectiveBranch}
-                  branchOptions={effectiveOptions}
-                  onBranchSelect={handleBranchSelect}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={handleCopy}
+              className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+            >
+              {copied ? (
+                <span className="text-green-500 text-xs">Copied!</span>
+              ) : (
+                <Copy className="size-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Copy response</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={handleRetry}
+              disabled={!retryTargetId}
+              className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+            >
+              <RotateCcw className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Retry</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {onSpeak && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={handleSpeak}
+                className={cn(
+                  "size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110",
+                  isSpeaking && "text-primary",
+                )}
+              >
+                <Volume2
+                  className={cn("size-4", isSpeaking && "animate-pulse")}
                 />
-              )}
-            </div>
-
-            {message._combinedToolCalls &&
-              message._combinedToolCalls.length > 0 &&
-              showToolCalls &&
-              !isStreaming && (
-                <div className="ml-14">
-                  <ToolCallMessage
-                    toolCalls={message._combinedToolCalls as ToolCall[]}
-                    isLoading={false}
-                    branch={effectiveBranch}
-                    branchOptions={effectiveOptions}
-                    onBranchSelect={handleBranchSelect}
-                  />
-                </div>
-              )}
-          </div>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{isSpeaking ? "Stop" : "Speak"}</p>
+            </TooltipContent>
+          </Tooltip>
         )}
-      </div>
+
+        {onSummarize && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() =>
+                  retryTargetId && onSummarize(retryTargetId, copyContent)
+                }
+                disabled={!retryTargetId}
+                className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+              >
+                <FileText className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Summarize</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {onFork && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() =>
+                  retryTargetId && onFork(retryTargetId, copyContent)
+                }
+                disabled={!retryTargetId}
+                className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+              >
+                <Fork className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Fork to new conversation</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {(onShare || onDelete) && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+              >
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="z-[100] animate-scale-in glass border border-border"
+            >
+              {onShare && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    retryTargetId && onShare(retryTargetId, copyContent)
+                  }
+                >
+                  <Share className="size-4 mr-2" />
+                  Share
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleCopy}>
+                <Copy className="size-4 mr-2" />
+                Copy response
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(copyContent)}
+              >
+                <FileText className="size-4 mr-2" />
+                Copy as markdown
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {onDelete && (
+                <DropdownMenuItem
+                  onClick={() => retryTargetId && onDelete(retryTargetId)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="size-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </TooltipProvider>
     </div>
   );
-};
+}
 
 // ============================================================================
 // MAIN CHAT AREA
@@ -196,8 +331,6 @@ export function ChatArea({
 }: ChatAreaProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const lastMessageFingerprintRef = useRef("");
-  const updateScheduledRef = useRef(false);
-  const pendingMessagesRef = useRef<Message[] | null>(null);
 
   const { themeMode } = useTheme();
   const isLightTheme = themeMode === "light";
@@ -205,18 +338,26 @@ export function ChatArea({
   const { user } = useAuthStore();
 
   const [chatError, setChatError] = useState<string | null>(null);
-  const [liveActivityEvents, setLiveActivityEvents] = useState<ChatProcessedEvent[]>([]);
+  const [liveActivityEvents, setLiveActivityEvents] = useState<
+    ChatProcessedEvent[]
+  >([]);
   const [currentToolCalls, setCurrentToolCalls] = useState<ToolCall[]>([]);
-  const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(
+    new Set(),
+  );
 
-  // ---- Chat Hook ----
+  const [currentBranch, setCurrentBranch] = useState<string | null>(null);
+  const [currentBranchCheckpoint, setCurrentBranchCheckpoint] = useState<{
+    checkpoint_id: string;
+  } | null>(null);
+
   const handleThreadId = useCallback(
     (newId: string) => {
       if (newId && !threadId) {
         onThreadChange?.(newId);
       }
     },
-    [threadId, onThreadChange]
+    [threadId, onThreadChange],
   );
 
   const handleError = useCallback((error: ChatError) => {
@@ -225,23 +366,26 @@ export function ChatArea({
 
   const handleEvent = useCallback(
     (event: Record<string, unknown>) => {
-      // Process for tool calls display
       if (event.tools && settings.showToolCalls) {
         const toolsData = event.tools as Record<string, unknown>;
         if (Array.isArray(toolsData.tool_calls)) {
           const calls: ToolCall[] = toolsData.tool_calls.map(
-            (tc: Record<string, unknown>, i: number) => ({
-              id: `tool-${Date.now()}-${i}`,
-              name: (tc.name as string) || "unknown",
-              arguments: (tc.input as Record<string, unknown>) || {},
-              status: "loading" as const,
-            })
+            (tc: Record<string, unknown>, i: number) => {
+              const toolName = (tc.name as string) || "unknown";
+              const toolConfig = getToolUIConfig(toolName);
+              return {
+                id: `tool-${Date.now()}-${i}`,
+                name: toolName,
+                arguments: (tc.input as Record<string, unknown>) || {},
+                status: "loading" as const,
+                namespace: toolConfig.namespace,
+              };
+            },
           );
           setCurrentToolCalls((prev) => [...prev, ...calls]);
         }
       }
 
-      // Process for activity timeline
       if (event.event === "updates" && event.data) {
         const data = event.data as Record<string, unknown>;
         const nodeNames = Object.keys(data);
@@ -265,12 +409,13 @@ export function ChatArea({
         }
       }
     },
-    [settings.showToolCalls]
+    [settings.showToolCalls],
   );
 
   const chatOptions = useMemo<UseChatOptions>(
     () => ({
-      apiUrl: process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
+      apiUrl:
+        process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
       assistantId: "agent",
       threadId: threadId ?? undefined,
       userId: user?.id,
@@ -279,44 +424,34 @@ export function ChatArea({
       onEvent: handleEvent,
       fetchStateHistory: true,
     }),
-    [threadId, user?.id, handleThreadId, handleError, handleEvent]
+    [threadId, user?.id, handleThreadId, handleError, handleEvent],
   );
 
   const chat = useChat(chatOptions);
 
-  // ---- Process messages directly from SDK (no intermediate state) ----
-  // This preserves object references for branch metadata lookup
   const processedMessages = useMemo(() => {
     if (chat.messages.length === 0) return [];
 
-    // DEBUG: Deep inspection of branching state
-    if (process.env.NODE_ENV === 'development') {
-      console.log("[ChatArea] Branch Tree Debug:", {
-        branchTree: chat.stream.experimental_branchTree,
-        currentBranch: chat.stream.branch,
-        message0: chat.messages[0],
-        message0_meta: chat.getMessagesMetadata(chat.messages[0]),
-      });
-      // Dump the entire tree structure json to help debugging
-      try {
-        console.log("[ChatArea] Full Tree JSON:", JSON.stringify(chat.stream.experimental_branchTree, null, 2));
-      } catch (e) { }
-    }
-
     try {
-      const { messages: combined, toolCallsMap } = combineToolMessages(chat.messages);
+      const { messages: combined, toolCallsMap } = combineToolMessages(
+        chat.messages,
+      );
 
       return combined
-        .filter((m: LangGraphMessage) => !isToolMessage(m) && !isSystemMessage(m))
+        .filter(
+          (m: LangGraphMessage) => !isToolMessage(m) && !isSystemMessage(m),
+        )
         .map((m: LangGraphMessage, i: number) => {
           const tools = getCombinedToolCallsFromMap(m, toolCallsMap);
           return {
             id: m.id || `msg-${i}`,
             role: m.type === "human" ? "user" : "assistant",
-            content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+            content:
+              typeof m.content === "string"
+                ? m.content
+                : JSON.stringify(m.content),
             timestamp: new Date(),
             ...(tools?.length ? { _combinedToolCalls: tools } : {}),
-            // Keep the ORIGINAL LangGraph message for branch metadata lookup
             _originalMessage: m,
           } as Message;
         });
@@ -326,10 +461,11 @@ export function ChatArea({
     }
   }, [chat.messages]);
 
-  // Sync processed messages to parent (for other components that need message list)
   useEffect(() => {
     if (processedMessages.length > 0) {
-      const fp = processedMessages.map((m) => `${m.id}:${m.content.length}`).join("|");
+      const fp = processedMessages
+        .map((m) => `${m.id}:${m.content.length}`)
+        .join("|");
       if (fp !== lastMessageFingerprintRef.current) {
         lastMessageFingerprintRef.current = fp;
         onMessagesChange(processedMessages);
@@ -338,7 +474,6 @@ export function ChatArea({
     }
   }, [processedMessages, onMessagesChange]);
 
-  // Clear state when loading stops
   useEffect(() => {
     if (!chat.isLoading) {
       setCurrentToolCalls([]);
@@ -346,7 +481,6 @@ export function ChatArea({
     }
   }, [chat.isLoading]);
 
-  // Reset on new conversation
   useEffect(() => {
     if (!threadId) {
       onMessagesChange([]);
@@ -357,7 +491,6 @@ export function ChatArea({
     }
   }, [threadId, onMessagesChange, onAttachedFilesChange]);
 
-  // Scroll to bottom
   useEffect(() => {
     chatContainerRef.current?.scrollTo({
       top: chatContainerRef.current.scrollHeight,
@@ -365,40 +498,103 @@ export function ChatArea({
     });
   }, [messages.length]);
 
-  // ---- Handlers ----
   const handleSubmit = useCallback(
     async (text: string, files: ChatInputAttachedFile[]) => {
-      // Normal submit with optimistic update
       const newMessage = { type: "human" as const, content: text };
-      chat.submit(
-        { messages: [newMessage] },
-        {
-          optimisticValues: (prev) => ({
-            ...prev,
-            messages: [...(prev.messages ?? []), {
+
+      const submitOptions: Record<string, any> = {
+        optimisticValues: (prev: any) => ({
+          ...prev,
+          messages: [
+            ...(prev.messages ?? []),
+            {
               id: `optimistic-${Date.now()}`,
               type: "human",
               content: text,
-            } as unknown as LangGraphMessage],
-          }),
-        }
-      );
+            } as unknown as LangGraphMessage,
+          ],
+        }),
+      };
+
+      if (currentBranchCheckpoint) {
+        submitOptions.checkpoint = currentBranchCheckpoint;
+      }
+
+      chat.submit({ messages: [newMessage] }, submitOptions);
       onAttachedFilesChange([]);
 
-      // Update title on first message
-      if (chat.threadId && chat.messages.filter(m => m.type !== "system").length === 0) {
+      setCurrentBranch(null);
+      setCurrentBranchCheckpoint(null);
+
+      if (
+        chat.threadId &&
+        chat.messages.filter((m) => m.type !== "system").length === 0
+      ) {
         try {
           const client = createThreadsClient(
-            process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024"
+            process.env.NEXT_PUBLIC_LANGGRAPH_API_URL ||
+              "http://localhost:2024",
           );
           client.updateThread(chat.threadId, {
             title: generateConversationTitle(text),
           });
-        } catch { }
+        } catch {}
       }
     },
-    [messages, onAttachedFilesChange, chat]
+    [
+      messages,
+      onAttachedFilesChange,
+      chat,
+      currentBranch,
+      currentBranchCheckpoint,
+    ],
   );
+
+  // DUMMY TITLE GENERATION LOGIC
+  useEffect(() => {
+    // Check if we have exactly 1 user message and 1 assistant message (first turn)
+    const userMessages = chat.messages.filter((m) => m.type === "human");
+    const aiMessages = chat.messages.filter((m) => m.type === "ai");
+
+    if (
+      userMessages.length === 1 &&
+      aiMessages.length === 1 &&
+      chat.threadId &&
+      !chat.isLoading
+    ) {
+      console.log(
+        "[Dummy Logic] Analyzing first response for title generation...",
+      );
+
+      // Simulate API call delay
+      const timeoutId = setTimeout(() => {
+        const dummyTitle = `Title: ${userMessages[0].content.slice(0, 15)}... (AI Generated)`;
+        console.log(`[Dummy Logic] Generated title: "${dummyTitle}"`);
+        toast.info("Conversaton title updated (Dummy Logic)");
+
+        // In a real implementation, we would call the API to update the title here.
+        // For now, we'll just log it.
+        // We could also update it using the threads client if we wanted to see it in the UI,
+        // but the requirements said "dummy logic so it does nothing for now", implies logging/stubbing.
+        // However, updating the actual thread title would be cool. Let's do it.
+
+        try {
+          const client = createThreadsClient(
+            process.env.NEXT_PUBLIC_LANGGRAPH_API_URL ||
+              "http://localhost:2024",
+          );
+          client.updateThread(chat.threadId!, {
+            title: dummyTitle,
+          });
+          console.log("[Dummy Logic] Title actually updated in backend");
+        } catch (e) {
+          console.error("[Dummy Logic] Failed to update title", e);
+        }
+      }, 2000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [chat.messages, chat.threadId, chat.isLoading]);
 
   const handleStop = useCallback(() => {
     chat.stop();
@@ -406,7 +602,6 @@ export function ChatArea({
 
   const handleEdit = useCallback(
     (id: string, content: string) => {
-      // Find message in live stream for metadata lookup
       const messageIndex = chat.messages.findIndex((m) => m.id === id);
       const liveMessage = chat.messages[messageIndex];
 
@@ -416,44 +611,32 @@ export function ChatArea({
       }
 
       const metadata = chat.getMessagesMetadata(liveMessage);
-      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+      let parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
 
-      // If we have a parent checkpoint, use it to branch
+      if (currentBranchCheckpoint && !parentCheckpoint) {
+        parentCheckpoint = currentBranchCheckpoint;
+      }
+
       if (parentCheckpoint) {
-        console.log("[ChatArea] Branching from checkpoint:", parentCheckpoint);
         chat.submit(
           { messages: [{ type: "human", content }] },
-          { checkpoint: parentCheckpoint }
+          { checkpoint: parentCheckpoint },
         );
       } else if (messageIndex === 0) {
-        // Special case: Editing the very first message.
-        // The parent checkpoint is effectively the "empty" beginning.
-        // We typically can't "branch" the root in the same way without a root checkpoint ID,
-        // but often the first message HAS a parent checkpoint (the empty one).
-        // If it's missing, we might be in a weird state.
-        // We'll try to just submit (which might append) but log a warning.
-        //Ideally, we should start a new thread or find the root checkpoint. 
-        console.warn("[ChatArea] No parent checkpoint for first message. This might append instead of branch.");
-
-        // Attempt to create a NEW conversation if we can't branch the first message properly?
-        // Or just let it append and hope the backend deduplicates? 
-        // For now, let's treat it as a new submission if we can't find a checkpoint.
-        // Actually, let's try passing the current threadId to force context?
-        chat.submit(
-          { messages: [{ type: "human", content }] }
-          // No checkpoint available implies root.
+        console.warn(
+          "[ChatArea] No parent checkpoint for first message. This might append instead of branch.",
         );
+        chat.submit({ messages: [{ type: "human", content }] });
       } else {
         toast.error("Unable to edit: No checkpoint available");
         console.error("Missing checkpoint for message:", liveMessage);
       }
     },
-    [chat]
+    [chat, currentBranchCheckpoint],
   );
 
   const handleRetry = useCallback(
     (id: string, _content: string) => {
-      // Find message in live stream for metadata lookup
       const liveMessage = chat.messages.find((m) => m.id === id);
       if (!liveMessage) {
         toast.error("Message not found in current session");
@@ -461,36 +644,46 @@ export function ChatArea({
       }
 
       const metadata = chat.getMessagesMetadata(liveMessage);
-      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+      let parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+
+      if (currentBranchCheckpoint && !parentCheckpoint) {
+        parentCheckpoint = currentBranchCheckpoint;
+      }
 
       if (parentCheckpoint) {
         if (liveMessage.type === "human") {
-          // For user messages: resubmit the same content from parent checkpoint
-          const content = typeof liveMessage.content === 'string'
-            ? liveMessage.content
-            : JSON.stringify(liveMessage.content);
+          const content =
+            typeof liveMessage.content === "string"
+              ? liveMessage.content
+              : JSON.stringify(liveMessage.content);
           chat.submit(
             { messages: [{ type: "human", content }] },
-            { checkpoint: parentCheckpoint }
+            { checkpoint: parentCheckpoint },
           );
         } else {
-          // For assistant messages: regenerate by submitting undefined
           chat.submit(undefined, { checkpoint: parentCheckpoint });
         }
       } else {
-        // Fallback for retry if no checkpoint (rare)
         toast.error("Unable to retry: No checkpoint available");
       }
     },
-    [chat]
+    [chat, currentBranchCheckpoint],
   );
 
-  // Handler for switching between message branches
   const handleBranchSelect = useCallback(
     (branch: string) => {
       chat.setBranch(branch);
+      setCurrentBranch(branch);
+
+      const lastMessage = chat.messages[chat.messages.length - 1];
+      if (lastMessage) {
+        const meta = chat.getMessagesMetadata(lastMessage);
+        if (meta?.firstSeenState?.parent_checkpoint) {
+          setCurrentBranchCheckpoint(meta.firstSeenState.parent_checkpoint);
+        }
+      }
     },
-    [chat]
+    [chat],
   );
 
   const handleDelete = useCallback(
@@ -500,50 +693,49 @@ export function ChatArea({
         next.add(id);
         return next;
       });
-      // Also notify parent for consistency, though we don't render from it
       onMessagesChange(processedMessages.filter((m) => m.id !== id));
     },
-    [processedMessages, onMessagesChange]
+    [processedMessages, onMessagesChange],
   );
 
   const handleRemoveFile = useCallback(
     (fileId: string) => {
       onAttachedFilesChange(attachedFiles.filter((f) => f.id !== fileId));
     },
-    [attachedFiles, onAttachedFilesChange]
+    [attachedFiles, onAttachedFilesChange],
   );
 
-  // ---- Render ----
-  const hasMessages = chat.messages.filter(m => m.type !== "system").length > 0;
+  const hasMessages =
+    chat.messages.filter((m) => m.type !== "system").length > 0;
   const showLoading =
     chat.isLoading &&
-    (chat.messages.length === 0 || chat.messages[chat.messages.length - 1]?.type === "human");
+    (chat.messages.length === 0 ||
+      chat.messages[chat.messages.length - 1]?.type === "human");
 
   return (
     <div className="flex-1 flex flex-col relative z-10">
-      {/* Messages Area */}
       <div
         ref={chatContainerRef}
         className={cn(
           "flex-1 overflow-y-auto custom-scrollbar",
-          hasMessages ? "p-4" : "flex items-center justify-center"
+          hasMessages ? "p-4" : "flex items-center justify-center",
         )}
       >
         {!hasMessages ? (
-          /* Welcome Screen */
           <div className="max-w-3xl w-full space-y-8 animate-slide-up">
             <div className="text-center space-y-4">
               <div className="text-6xl font-bold bg-linear-to-r from-(--gradient-from) via-(--gradient-via) to-(--gradient-to) bg-clip-text text-transparent animate-pulse font-display tracking-tight">
                 Horizon
               </div>
-              <div className="text-sm text-muted-foreground">by Singularity.ai</div>
+              <div className="text-sm text-muted-foreground">
+                by Singularity.ai
+              </div>
               <p className="text-xl text-muted-foreground">
                 Experience the event horizon of AI conversations
               </p>
             </div>
 
             <div className="glass-strong rounded-xl p-4 space-y-3">
-              {/* File Badges Area */}
               {attachedFiles.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {attachedFiles.map((file) => (
@@ -586,7 +778,6 @@ export function ChatArea({
             </div>
           </div>
         ) : (
-          /* Messages List */
           <div className="max-w-4xl mx-auto w-full space-y-6">
             {chatError && (
               <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
@@ -595,104 +786,318 @@ export function ChatArea({
               </div>
             )}
 
-            {/* Messages List - Iterating directly over stream messages for correct branching */}
-            {chat.messages.map((msg, i) => {
-              // Skip system messages.
-              // Note: We do NOT skip tool messages here if we want to debug them, but normally we hide them 
-              // because they are attached to the AI message via getToolCalls.
-              if (msg.type === "system" || msg.type === "tool") return null;
-              if (msg.id && hiddenMessageIds.has(msg.id)) return null;
+            {(() => {
+              console.log(
+                "[BranchDebug] ==================== MESSAGE PROCESSING START ====================",
+              );
+              console.log(
+                "[BranchDebug] Total messages:",
+                chat.messages.length,
+              );
+              console.log("[BranchDebug] Current threadId:", chat.threadId);
+              console.log(
+                "[BranchDebug] Current stream branch:",
+                (chat as any).stream?.branch,
+              );
+              console.log(
+                "[BranchDebug] experimental_branchTree:",
+                JSON.stringify(
+                  (chat as any).stream?.experimental_branchTree,
+                  null,
+                  2,
+                ),
+              );
 
-              const isLast = i === chat.messages.length - 1;
-              const prev = i > 0 ? chat.messages[i - 1] : null;
+              const processed: Array<{
+                uiMessage: Message;
+                isLastInGroup: boolean;
+                retryTargetId: string | null;
+                branch: string | undefined;
+                branchOptions: string[] | undefined;
+                groupCopyContent: string;
+              }> = [];
 
-              // Get metadata and tool calls using SDK methods
-              // Get metadata and tool calls using SDK methods
-              let branchMetadata = chat.getMessagesMetadata(msg);
-              const toolCalls = chat.getToolCalls(msg);
+              let groupFirstAiId: string | null = null;
+              let groupMessages: Array<{ role: string; content: string }> = [];
 
-              // Branching logic removed as per request
+              for (let i = 0; i < chat.messages.length; i++) {
+                const msg = chat.messages[i];
 
+                if (msg.type === "system" || msg.type === "tool") continue;
+                if (msg.id && hiddenMessageIds.has(msg.id)) continue;
 
-              if (process.env.NODE_ENV === 'development' && branchMetadata?.branchOptions) {
-                console.log(`[ChatArea] Msg ${i} (${msg.id?.slice(0, 8)}):`, branchMetadata);
+                console.log(`[BranchDebug] --- Processing message ${i} ---`);
+                console.log("[BranchDebug] Message id:", msg.id);
+                console.log("[BranchDebug] Message type:", msg.type);
+                console.log(
+                  "[BranchDebug] Message content preview:",
+                  typeof msg.content === "string"
+                    ? msg.content.slice(0, 50)
+                    : "complex",
+                );
+
+                if (msg.type === "human") {
+                  groupFirstAiId = null;
+                  groupMessages = [];
+                  console.log("[BranchDebug] NEW GROUP STARTED");
+                }
+
+                const branchMetadata = chat.getMessagesMetadata(msg);
+                console.log("[BranchDebug] branchMetadata:", {
+                  branch: branchMetadata?.branch,
+                  branchOptions: branchMetadata?.branchOptions,
+                  branchOptionsLength: branchMetadata?.branchOptions?.length,
+                  hasFirstSeenState: !!branchMetadata?.firstSeenState,
+                  parentCheckpointId:
+                    branchMetadata?.firstSeenState?.parent_checkpoint
+                      ?.checkpoint_id,
+                });
+
+                const toolCalls = chat.getToolCalls(msg);
+                console.log(
+                  "[BranchDebug] Tool calls count:",
+                  toolCalls.length,
+                );
+
+                const reasoning = (msg as any)._originalMessage
+                  ? getReasoningFromMessage((msg as any)._originalMessage)
+                  : undefined;
+
+                const content =
+                  typeof msg.content === "string"
+                    ? msg.content
+                    : Array.isArray(msg.content)
+                      ? msg.content.map((c: any) => c.text || "").join("")
+                      : JSON.stringify(msg.content);
+
+                if (msg.type === "ai") {
+                  groupMessages.push({ role: "assistant", content });
+                }
+
+                const uiMessage: Message = {
+                  id: msg.id || `msg-${i}`,
+                  role: msg.type === "human" ? "user" : "assistant",
+                  content,
+                  timestamp: new Date(),
+                  _originalMessage: msg,
+                  reasoning,
+                  _combinedToolCalls: toolCalls.map((tc) => {
+                    const uiMsg = chat.ui.find(
+                      (ui) => ui.metadata?.tool_call_id === tc.call.id,
+                    );
+                    const toolConfig = getToolUIConfig(tc.call.name);
+
+                    return {
+                      id: tc.call.id || "",
+                      name: tc.call.name,
+                      arguments: tc.call.args,
+                      result: tc.result?.content as string,
+                      status:
+                        uiMsg?.props?.status === "executing"
+                          ? "loading"
+                          : uiMsg?.props?.status === "failed"
+                            ? "error"
+                            : uiMsg?.props?.status === "completed"
+                              ? "success"
+                              : tc.state === "pending"
+                                ? "loading"
+                                : tc.state === "error"
+                                  ? "error"
+                                  : "success",
+                      startedAt: uiMsg?.props?.startedAt,
+                      completedAt: uiMsg?.props?.completedAt,
+                      error: uiMsg?.props?.error,
+                      namespace: toolConfig.namespace,
+                    };
+                  }),
+                };
+
+                if (msg.type === "ai" && groupFirstAiId === null) {
+                  groupFirstAiId = uiMessage.id;
+                }
+
+                let isLastInGroup = false;
+                for (let j = i + 1; j < chat.messages.length; j++) {
+                  if (chat.messages[j].type === "human") {
+                    isLastInGroup = true;
+                    break;
+                  }
+                }
+                if (i === chat.messages.length - 1) isLastInGroup = true;
+
+                const groupCopyContent = groupMessages
+                  .map((m) => m.content)
+                  .join("\n\n");
+
+                processed.push({
+                  uiMessage,
+                  isLastInGroup,
+                  retryTargetId: groupFirstAiId,
+                  branch: branchMetadata?.branch,
+                  branchOptions: branchMetadata?.branchOptions,
+                  groupCopyContent,
+                });
+
+                console.log("[BranchDebug] Added to processed:", {
+                  id: uiMessage.id,
+                  role: uiMessage.role,
+                  isLastInGroup,
+                  retryTargetId: groupFirstAiId,
+                  branchOptionsLength: branchMetadata?.branchOptions?.length,
+                });
               }
 
-              // Adapt LangGraph message to UI Message interface on the fly
-              const uiMessage: Message = {
-                id: msg.id || `msg-${i}`,
-                role: msg.type === "human" ? "user" : "assistant",
-                content: typeof msg.content === "string"
-                  ? msg.content
-                  : Array.isArray(msg.content)
-                    ? msg.content.map(c => (c as any).text || "").join("")
-                    : JSON.stringify(msg.content),
-                timestamp: new Date(), // Timestamp not available in SDK message
-                _originalMessage: msg,
-                // Map SDK tool calls to our UI format
-                _combinedToolCalls: toolCalls.map(tc => ({
-                  id: tc.call.id || "",
-                  name: tc.call.name,
-                  arguments: tc.call.args,
-                  result: tc.result?.content as string,
-                  status: tc.state === "pending" ? "loading" : tc.state === "error" ? "error" : "success"
-                }))
-              };
-
-              // Calculate if the bubble should show the avatar
-              // Show avatar if:
-              // 1. It's an assistant message
-              // 2. AND (it's the first message OR the previous message was NOT from assistant)
-              const showAvatar = uiMessage.role === "assistant" && (i === 0 || prev?.type === "human");
-
-              // Fix for "Only 2 messages shown":
-              // This was likely caused by the previous logic filtering or strict content checks.
-              // With the logic above, we iterate ALL messages and only filter system/tool/hidden.
-
-              return (
-                <MessageDisplay
-                  key={msg.id || i}
-                  message={uiMessage}
-                  showAvatar={showAvatar}
-                  showActions={uiMessage.role === "assistant"}
-                  showToolCalls={settings.showToolCalls}
-                  isStreaming={isLast && chat.isLoading && uiMessage.role === "assistant"}
-                  onEdit={handleEdit}
-                  onRetry={handleRetry}
-                  onDelete={handleDelete}
-                  branchMetadata={branchMetadata}
-                  onBranchSelect={handleBranchSelect}
-                />
+              console.log("[BranchDebug] Total processed:", processed.length);
+              console.log(
+                "[BranchDebug] ==================== END ====================",
               );
-            })}
 
-            {/* Loading State */}
+              return processed.map(
+                (
+                  {
+                    uiMessage,
+                    isLastInGroup,
+                    retryTargetId,
+                    branch,
+                    branchOptions,
+                    groupCopyContent,
+                  },
+                  idx,
+                ) => {
+                  const prevMsg = idx > 0 ? processed[idx - 1].uiMessage : null;
+                  const showAvatar =
+                    uiMessage.role === "assistant" &&
+                    (idx === 0 || prevMsg?.role === "user");
+
+                  return (
+                    <React.Fragment key={uiMessage.id}>
+                      <ChatBubble
+                        message={uiMessage}
+                        showAvatar={showAvatar}
+                        showActions={uiMessage.role === "user"}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+
+                      {uiMessage._combinedToolCalls &&
+                        uiMessage._combinedToolCalls.length > 0 &&
+                        settings.showToolCalls &&
+                        !showLoading && (
+                          <GenerativeUIRenderer
+                            toolCalls={
+                              uiMessage._combinedToolCalls.filter((tc) =>
+                                hasCustomUI(tc.name),
+                              ) as ToolCall[]
+                            }
+                            isLoading={uiMessage._combinedToolCalls.some(
+                              (tc) => tc.status === "loading",
+                            )}
+                          />
+                        )}
+
+                      {uiMessage._combinedToolCalls &&
+                        uiMessage._combinedToolCalls.length > 0 &&
+                        settings.showToolCalls &&
+                        !showLoading &&
+                        uiMessage._combinedToolCalls.some(
+                          (tc) => !hasCustomUI(tc.name),
+                        ) && (
+                          <div className="ml-14 mt-3">
+                            <ToolCallMessage
+                              toolCalls={
+                                uiMessage._combinedToolCalls.filter(
+                                  (tc) => !hasCustomUI(tc.name),
+                                ) as ToolCall[]
+                              }
+                              isLoading={uiMessage._combinedToolCalls.some(
+                                (tc) => tc.status === "loading",
+                              )}
+                            />
+                          </div>
+                        )}
+
+                      {isLastInGroup && uiMessage.role === "assistant" && (
+                        <>
+                          {console.log("[BranchDebug] GroupControls:", {
+                            id: uiMessage.id,
+                            hasRetryTarget: !!retryTargetId,
+                            hasBranch: !!branch,
+                            branchOptionsLength: branchOptions?.length,
+                          })}
+                          <div className="flex items-center gap-2 mt-2 ml-14 group-hover:opacity-100 transition-opacity">
+                            <GroupControls
+                              retryTargetId={retryTargetId}
+                              branch={branch}
+                              branchOptions={branchOptions}
+                              onBranchSelect={handleBranchSelect}
+                              onRetry={handleRetry}
+                              copyContent={groupCopyContent}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </React.Fragment>
+                  );
+                },
+              );
+            })()}
+
             {showLoading && (
               <div className="flex items-start gap-3">
                 <div
                   className={cn(
                     "rounded-xl p-3 w-full min-h-[56px]",
-                    isLightTheme ? "glass-strong bg-white/60" : "glass bg-card/60"
+                    isLightTheme
+                      ? "glass-strong bg-white/60"
+                      : "glass bg-card/60",
                   )}
                 >
-                  {currentToolCalls.length > 0 || liveActivityEvents.length > 0 ? (
+                  {currentToolCalls.length > 0 ||
+                  liveActivityEvents.length > 0 ? (
                     <div className="space-y-3">
-                      {settings.showToolCalls && currentToolCalls.length > 0 && (
-                        <ToolCallMessage toolCalls={currentToolCalls} isLoading />
-                      )}
-                      {settings.showActivityTimeline && liveActivityEvents.length > 0 && (
-                        <ActivityTimeline processedEvents={liveActivityEvents} isLoading />
-                      )}
+                      {settings.showToolCalls &&
+                        currentToolCalls.length > 0 && (
+                          <>
+                            <GenerativeUIRenderer
+                              toolCalls={currentToolCalls.filter((tc) =>
+                                hasCustomUI(tc.name),
+                              )}
+                              isLoading
+                            />
+
+                            {currentToolCalls.some(
+                              (tc) => !hasCustomUI(tc.name),
+                            ) && (
+                              <ToolCallMessage
+                                toolCalls={currentToolCalls.filter(
+                                  (tc) => !hasCustomUI(tc.name),
+                                )}
+                                isLoading
+                              />
+                            )}
+                          </>
+                        )}
+                      {settings.showActivityTimeline &&
+                        liveActivityEvents.length > 0 && (
+                          <ActivityTimeline
+                            processedEvents={liveActivityEvents}
+                            isLoading
+                          />
+                        )}
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Loader2
                         className={cn(
                           "size-5 animate-spin",
-                          isLightTheme ? "text-slate-600" : "text-primary"
+                          isLightTheme ? "text-slate-600" : "text-primary",
                         )}
                       />
-                      <span className={isLightTheme ? "text-slate-600" : "text-foreground"}>
+                      <span
+                        className={
+                          isLightTheme ? "text-slate-600" : "text-foreground"
+                        }
+                      >
                         Processing...
                       </span>
                     </div>
@@ -704,11 +1109,9 @@ export function ChatArea({
         )}
       </div>
 
-      {/* Bottom Input (when messages exist) */}
       {hasMessages && (
         <div className="border-t border-border p-4">
           <div className="max-w-4xl mx-auto glass-strong rounded-xl p-4">
-            {/* File Badges Area */}
             {attachedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {attachedFiles.map((file) => (

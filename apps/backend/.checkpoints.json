@@ -1740,5 +1740,6215 @@
         "signal": {}
       }
     }
+  ],
+  "417abd5d-9407-4adc-a0df-4e167cef94ea": [
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-1344-6010-ffff-f828f6804c2b",
+        "ts": "2026-02-08T14:57:09.265Z",
+        "channel_values": {
+          "messages": [],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 0,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "ui": [],
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message A",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+                }
+              }
+            ]
+          }
+        },
+        "channel_versions": {
+          "__start__": 1
+        },
+        "versions_seen": {
+          "__input__": {}
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "input",
+        "writes": {
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message A",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+                }
+              }
+            ]
+          }
+        },
+        "step": -1,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-154c-6060-8000-ec678ba1038c",
+        "ts": "2026-02-08T14:57:09.478Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            }
+          ],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 0,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:StartMiddleware": null
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 2,
+          "branch:to:StartMiddleware": 2
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": null,
+        "step": 0,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-1344-6010-ffff-f828f6804c2b"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-1622-6de0-8001-86b61e6a4805",
+        "ts": "2026-02-08T14:57:09.566Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            }
+          ],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:MemoryRetrieval": null
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 2,
+          "branch:to:StartMiddleware": 3,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 3
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "StartMiddleware": {
+            "start_time": 1770562629521
+          }
+        },
+        "step": 1,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-154c-6060-8000-ec678ba1038c"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-167d-6330-8002-1c2722bd84de",
+        "ts": "2026-02-08T14:57:09.603Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            }
+          ],
+          "model_calls": 0,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:AgentNode": null
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 2,
+          "branch:to:StartMiddleware": 3,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 4
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "MemoryRetrieval": {}
+        },
+        "step": 2,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-1622-6de0-8001-86b61e6a4805"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-26d8-6360-8003-c204103ab369",
+        "ts": "2026-02-08T14:57:11.318Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 0,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 0
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:EndMiddleware": "AgentNode"
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 5,
+          "branch:to:StartMiddleware": 3,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 5
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "AgentNode": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "AIMessage"
+                ],
+                "kwargs": {
+                  "content": "I don't have access to Message A information. Can I help you with something else?",
+                  "additional_kwargs": {},
+                  "tool_calls": [],
+                  "invalid_tool_calls": [],
+                  "usage_metadata": {
+                    "input_tokens": 966,
+                    "output_tokens": 18,
+                    "total_tokens": 984
+                  },
+                  "response_metadata": {
+                    "tokenUsage": {
+                      "completionTokens": 18,
+                      "promptTokens": 966,
+                      "totalTokens": 984
+                    },
+                    "finish_reason": "stop"
+                  },
+                  "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e"
+                }
+              }
+            ],
+            "model_calls": 1
+          }
+        },
+        "step": 3,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-167d-6330-8002-1c2722bd84de"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-2743-6a20-8004-772d2a404e14",
+        "ts": "2026-02-08T14:57:11.362Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": []
+        },
+        "channel_versions": {
+          "__start__": 2,
+          "messages": 5,
+          "branch:to:StartMiddleware": 3,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "EndMiddleware": {
+            "end_time": 1770562631332,
+            "middleware_metrics": {
+              "token_usage": {
+                "input": 0,
+                "output": 0,
+                "total": 0
+              },
+              "rate_limit_hits": 0,
+              "retries": 0,
+              "pii_detected": false,
+              "pii_types": [],
+              "processing_time_ms": 1811
+            }
+          }
+        },
+        "step": 4,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-26d8-6360-8003-c204103ab369"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-27aa-62c0-8005-0ea285717c07",
+        "ts": "2026-02-08T14:57:11.404Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message B1",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+                }
+              }
+            ]
+          }
+        },
+        "channel_versions": {
+          "__start__": 7,
+          "messages": 5,
+          "branch:to:StartMiddleware": 3,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "input",
+        "writes": {
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message B1",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+                }
+              }
+            ]
+          }
+        },
+        "step": 5,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-27fa-6bd0-8006-3a8ac100514a",
+        "ts": "2026-02-08T14:57:11.437Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:StartMiddleware": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 8,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": null,
+        "step": 6,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-27aa-62c0-8005-0ea285717c07"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-282e-6020-8007-d8d7a94fcfa0",
+        "ts": "2026-02-08T14:57:11.458Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562631448,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:MemoryRetrieval": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 9,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "StartMiddleware": {
+            "start_time": 1770562631448
+          }
+        },
+        "step": 7,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-27fa-6bd0-8006-3a8ac100514a"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-289b-6df0-8008-dbb179c7b31c",
+        "ts": "2026-02-08T14:57:11.503Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562631448,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:AgentNode": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 10,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "MemoryRetrieval": {}
+        },
+        "step": 8,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-282e-6020-8007-d8d7a94fcfa0"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-2e39-6dc0-8009-fca2cc76667a",
+        "ts": "2026-02-08T14:57:12.092Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B1 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-2559d86a-c6c7-41c5-afe7-04bbb37f8bf2"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562631448,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:EndMiddleware": "AgentNode"
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 11,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 11,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "AgentNode": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "AIMessage"
+                ],
+                "kwargs": {
+                  "content": "I don't have access to Message B1 information. Can I help you with something else?",
+                  "additional_kwargs": {},
+                  "tool_calls": [],
+                  "invalid_tool_calls": [],
+                  "usage_metadata": {
+                    "input_tokens": 996,
+                    "output_tokens": 19,
+                    "total_tokens": 1015
+                  },
+                  "response_metadata": {
+                    "tokenUsage": {
+                      "completionTokens": 19,
+                      "promptTokens": 996,
+                      "totalTokens": 1015
+                    },
+                    "finish_reason": "stop"
+                  },
+                  "id": "run-2559d86a-c6c7-41c5-afe7-04bbb37f8bf2"
+                }
+              }
+            ],
+            "model_calls": 1
+          }
+        },
+        "step": 9,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-289b-6df0-8008-dbb179c7b31c"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-2ea0-6660-800a-1faa3dfe231a",
+        "ts": "2026-02-08T14:57:12.134Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B1 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-2559d86a-c6c7-41c5-afe7-04bbb37f8bf2"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562631448,
+          "end_time": 1770562632113,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 665
+          },
+          "errors": [],
+          "ui": []
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 11,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 12,
+          "end_time": 12,
+          "middleware_metrics": 12
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 11
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "EndMiddleware": {
+            "end_time": 1770562632113,
+            "middleware_metrics": {
+              "token_usage": {
+                "input": 0,
+                "output": 0,
+                "total": 0
+              },
+              "rate_limit_hits": 0,
+              "retries": 0,
+              "pii_detected": false,
+              "pii_types": [],
+              "processing_time_ms": 665
+            }
+          }
+        },
+        "step": 10,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2e39-6dc0-8009-fca2cc76667a"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-2ef5-6d90-8005-59ead02c39ca",
+        "ts": "2026-02-08T14:57:12.169Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message B2",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "c2f86a33-e1d9-44c3-811f-f476219d2733"
+                }
+              }
+            ]
+          }
+        },
+        "channel_versions": {
+          "__start__": 7,
+          "messages": 5,
+          "branch:to:StartMiddleware": 3,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "input",
+        "writes": {
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message B2",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "c2f86a33-e1d9-44c3-811f-f476219d2733"
+                }
+              }
+            ]
+          }
+        },
+        "step": 5,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-2f1c-6e90-8006-2e39d9c33b35",
+        "ts": "2026-02-08T14:57:12.185Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B2",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "c2f86a33-e1d9-44c3-811f-f476219d2733"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:StartMiddleware": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 8,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": null,
+        "step": 6,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2ef5-6d90-8005-59ead02c39ca"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-2f6d-67a0-8007-6e021989448f",
+        "ts": "2026-02-08T14:57:12.218Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B2",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "c2f86a33-e1d9-44c3-811f-f476219d2733"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562632206,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:MemoryRetrieval": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 9,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "StartMiddleware": {
+            "start_time": 1770562632206
+          }
+        },
+        "step": 7,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2f1c-6e90-8006-2e39d9c33b35"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-2fb1-6d60-8008-1c35634db20e",
+        "ts": "2026-02-08T14:57:12.246Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B2",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "c2f86a33-e1d9-44c3-811f-f476219d2733"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562632206,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:AgentNode": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 10,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "MemoryRetrieval": {}
+        },
+        "step": 8,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2f6d-67a0-8007-6e021989448f"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-3465-6730-8009-ad927a035dfc",
+        "ts": "2026-02-08T14:57:12.739Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B2",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "c2f86a33-e1d9-44c3-811f-f476219d2733"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B2 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-ef5f5f8d-8488-490d-8f0b-01b096d8f1aa"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562632206,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:EndMiddleware": "AgentNode"
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 11,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 11,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "AgentNode": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "AIMessage"
+                ],
+                "kwargs": {
+                  "content": "I don't have access to Message B2 information. Can I help you with something else?",
+                  "additional_kwargs": {},
+                  "tool_calls": [],
+                  "invalid_tool_calls": [],
+                  "usage_metadata": {
+                    "input_tokens": 996,
+                    "output_tokens": 19,
+                    "total_tokens": 1015
+                  },
+                  "response_metadata": {
+                    "tokenUsage": {
+                      "completionTokens": 19,
+                      "promptTokens": 996,
+                      "totalTokens": 1015
+                    },
+                    "finish_reason": "stop"
+                  },
+                  "id": "run-ef5f5f8d-8488-490d-8f0b-01b096d8f1aa"
+                }
+              }
+            ],
+            "model_calls": 1
+          }
+        },
+        "step": 9,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2fb1-6d60-8008-1c35634db20e"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-34b6-6040-800a-8395b50711c6",
+        "ts": "2026-02-08T14:57:12.772Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B2",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "c2f86a33-e1d9-44c3-811f-f476219d2733"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B2 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-ef5f5f8d-8488-490d-8f0b-01b096d8f1aa"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562632206,
+          "end_time": 1770562632751,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 545
+          },
+          "errors": [],
+          "ui": []
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 11,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 12,
+          "end_time": 12,
+          "middleware_metrics": 12
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 11
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "EndMiddleware": {
+            "end_time": 1770562632751,
+            "middleware_metrics": {
+              "token_usage": {
+                "input": 0,
+                "output": 0,
+                "total": 0
+              },
+              "rate_limit_hits": 0,
+              "retries": 0,
+              "pii_detected": false,
+              "pii_types": [],
+              "processing_time_ms": 545
+            }
+          }
+        },
+        "step": 10,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-3465-6730-8009-ad927a035dfc"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-352b-6340-8005-65cd7f7815ec",
+        "ts": "2026-02-08T14:57:12.820Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message B3",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "e63f463c-caf1-45f6-b6e2-53d3984d87aa"
+                }
+              }
+            ]
+          }
+        },
+        "channel_versions": {
+          "__start__": 7,
+          "messages": 5,
+          "branch:to:StartMiddleware": 3,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "input",
+        "writes": {
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message B3",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "e63f463c-caf1-45f6-b6e2-53d3984d87aa"
+                }
+              }
+            ]
+          }
+        },
+        "step": 5,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-3559-6970-8006-c682cd540486",
+        "ts": "2026-02-08T14:57:12.839Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B3",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "e63f463c-caf1-45f6-b6e2-53d3984d87aa"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:StartMiddleware": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 8,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": null,
+        "step": 6,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-352b-6340-8005-65cd7f7815ec"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-35b8-6ce0-8007-91bfbd43c8d8",
+        "ts": "2026-02-08T14:57:12.878Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B3",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "e63f463c-caf1-45f6-b6e2-53d3984d87aa"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562632859,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:MemoryRetrieval": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 9,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "StartMiddleware": {
+            "start_time": 1770562632859
+          }
+        },
+        "step": 7,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-3559-6970-8006-c682cd540486"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-362b-68d0-8008-78553a70bb12",
+        "ts": "2026-02-08T14:57:12.925Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B3",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "e63f463c-caf1-45f6-b6e2-53d3984d87aa"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562632859,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:AgentNode": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 10,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "MemoryRetrieval": {}
+        },
+        "step": 8,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-35b8-6ce0-8007-91bfbd43c8d8"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-3ace-6130-8009-9e852a33b558",
+        "ts": "2026-02-08T14:57:13.411Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B3",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "e63f463c-caf1-45f6-b6e2-53d3984d87aa"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B3 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-f013b9e8-9b71-41e5-94b7-51586a52b688"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562632859,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:EndMiddleware": "AgentNode"
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 11,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 11,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "AgentNode": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "AIMessage"
+                ],
+                "kwargs": {
+                  "content": "I don't have access to Message B3 information. Can I help you with something else?",
+                  "additional_kwargs": {},
+                  "tool_calls": [],
+                  "invalid_tool_calls": [],
+                  "usage_metadata": {
+                    "input_tokens": 996,
+                    "output_tokens": 19,
+                    "total_tokens": 1015
+                  },
+                  "response_metadata": {
+                    "tokenUsage": {
+                      "completionTokens": 19,
+                      "promptTokens": 996,
+                      "totalTokens": 1015
+                    },
+                    "finish_reason": "stop"
+                  },
+                  "id": "run-f013b9e8-9b71-41e5-94b7-51586a52b688"
+                }
+              }
+            ],
+            "model_calls": 1
+          }
+        },
+        "step": 9,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-362b-68d0-8008-78553a70bb12"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-3b34-69d0-800a-472ed9db69f1",
+        "ts": "2026-02-08T14:57:13.453Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B3",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "e63f463c-caf1-45f6-b6e2-53d3984d87aa"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B3 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-f013b9e8-9b71-41e5-94b7-51586a52b688"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562632859,
+          "end_time": 1770562633440,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 581
+          },
+          "errors": [],
+          "ui": []
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 11,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 12,
+          "end_time": 12,
+          "middleware_metrics": 12
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 11
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "EndMiddleware": {
+            "end_time": 1770562633440,
+            "middleware_metrics": {
+              "token_usage": {
+                "input": 0,
+                "output": 0,
+                "total": 0
+              },
+              "rate_limit_hits": 0,
+              "retries": 0,
+              "pii_detected": false,
+              "pii_types": [],
+              "processing_time_ms": 581
+            }
+          }
+        },
+        "step": 10,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-3ace-6130-8009-9e852a33b558"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-3b8c-6810-8005-7829935542a6",
+        "ts": "2026-02-08T14:57:13.489Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message B4",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "2c96bcf7-7930-495b-8d0a-cc94725aaab1"
+                }
+              }
+            ]
+          }
+        },
+        "channel_versions": {
+          "__start__": 7,
+          "messages": 5,
+          "branch:to:StartMiddleware": 3,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 1
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "input",
+        "writes": {
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message B4",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "2c96bcf7-7930-495b-8d0a-cc94725aaab1"
+                }
+              }
+            ]
+          }
+        },
+        "step": 5,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-3bba-6e40-8006-744ed90db8e9",
+        "ts": "2026-02-08T14:57:13.508Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B4",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "2c96bcf7-7930-495b-8d0a-cc94725aaab1"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562629521,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:StartMiddleware": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 8,
+          "start_time": 3,
+          "branch:to:MemoryRetrieval": 4,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 2
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": null,
+        "step": 6,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-3b8c-6810-8005-7829935542a6"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-3c17-6aa0-8007-cf3ad90b9dc6",
+        "ts": "2026-02-08T14:57:13.546Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B4",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "2c96bcf7-7930-495b-8d0a-cc94725aaab1"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562633531,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:MemoryRetrieval": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 9,
+          "branch:to:AgentNode": 5,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 3
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "StartMiddleware": {
+            "start_time": 1770562633531
+          }
+        },
+        "step": 7,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-3bba-6e40-8006-744ed90db8e9"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-3c46-60d0-8008-669c4ef06f93",
+        "ts": "2026-02-08T14:57:13.565Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B4",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "2c96bcf7-7930-495b-8d0a-cc94725aaab1"
+              }
+            }
+          ],
+          "model_calls": 1,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562633531,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:AgentNode": null
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 8,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 10,
+          "model_calls": 5,
+          "branch:to:EndMiddleware": 6,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 4
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "MemoryRetrieval": {}
+        },
+        "step": 8,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-3c17-6aa0-8007-cf3ad90b9dc6"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-4158-6e10-8009-2d80b39012b3",
+        "ts": "2026-02-08T14:57:14.097Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B4",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "2c96bcf7-7930-495b-8d0a-cc94725aaab1"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B4 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-469daded-4e22-4d4f-b43f-1df3e486d9f7"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562633531,
+          "end_time": 1770562631332,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 1811
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:EndMiddleware": "AgentNode"
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 11,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 11,
+          "end_time": 6,
+          "middleware_metrics": 6
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 5
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "AgentNode": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "AIMessage"
+                ],
+                "kwargs": {
+                  "content": "I don't have access to Message B4 information. Can I help you with something else?",
+                  "additional_kwargs": {},
+                  "tool_calls": [],
+                  "invalid_tool_calls": [],
+                  "usage_metadata": {
+                    "input_tokens": 996,
+                    "output_tokens": 19,
+                    "total_tokens": 1015
+                  },
+                  "response_metadata": {
+                    "tokenUsage": {
+                      "completionTokens": 19,
+                      "promptTokens": 996,
+                      "totalTokens": 1015
+                    },
+                    "finish_reason": "stop"
+                  },
+                  "id": "run-469daded-4e22-4d4f-b43f-1df3e486d9f7"
+                }
+              }
+            ],
+            "model_calls": 1
+          }
+        },
+        "step": 9,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-3c46-60d0-8008-669c4ef06f93"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-41a9-6720-800a-dbba33166849",
+        "ts": "2026-02-08T14:57:14.130Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B4",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "2c96bcf7-7930-495b-8d0a-cc94725aaab1"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B4 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-469daded-4e22-4d4f-b43f-1df3e486d9f7"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562633531,
+          "end_time": 1770562634114,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 583
+          },
+          "errors": [],
+          "ui": []
+        },
+        "channel_versions": {
+          "__start__": 8,
+          "messages": 11,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 12,
+          "end_time": 12,
+          "middleware_metrics": 12
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 11
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "EndMiddleware": {
+            "end_time": 1770562634114,
+            "middleware_metrics": {
+              "token_usage": {
+                "input": 0,
+                "output": 0,
+                "total": 0
+              },
+              "rate_limit_hits": 0,
+              "retries": 0,
+              "pii_detected": false,
+              "pii_types": [],
+              "processing_time_ms": 583
+            }
+          }
+        },
+        "step": 10,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2743-6a20-8004-772d2a404e14"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-4158-6e10-8009-2d80b39012b3"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-422f-6b90-800b-f848f45f6b51",
+        "ts": "2026-02-08T14:57:14.185Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B1 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-2559d86a-c6c7-41c5-afe7-04bbb37f8bf2"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562631448,
+          "end_time": 1770562632113,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 665
+          },
+          "errors": [],
+          "ui": [],
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message C",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "4f8a171d-0e1b-42b1-95f0-ddb1e567f953"
+                }
+              }
+            ]
+          }
+        },
+        "channel_versions": {
+          "__start__": 13,
+          "messages": 11,
+          "branch:to:StartMiddleware": 9,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 12,
+          "end_time": 12,
+          "middleware_metrics": 12
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 7
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 11
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "input",
+        "writes": {
+          "__start__": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "HumanMessage"
+                ],
+                "kwargs": {
+                  "content": "Message C",
+                  "additional_kwargs": {},
+                  "response_metadata": {},
+                  "id": "4f8a171d-0e1b-42b1-95f0-ddb1e567f953"
+                }
+              }
+            ]
+          }
+        },
+        "step": 11,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2ea0-6660-800a-1faa3dfe231a"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2ea0-6660-800a-1faa3dfe231a"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-4254-6580-800c-18b74ac1b82a",
+        "ts": "2026-02-08T14:57:14.200Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B1 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-2559d86a-c6c7-41c5-afe7-04bbb37f8bf2",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message C",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "4f8a171d-0e1b-42b1-95f0-ddb1e567f953"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562631448,
+          "end_time": 1770562632113,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 665
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:StartMiddleware": null
+        },
+        "channel_versions": {
+          "__start__": 14,
+          "messages": 14,
+          "branch:to:StartMiddleware": 14,
+          "start_time": 9,
+          "branch:to:MemoryRetrieval": 10,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 12,
+          "end_time": 12,
+          "middleware_metrics": 12
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 13
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 8
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 11
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": null,
+        "step": 12,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2ea0-6660-800a-1faa3dfe231a"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-422f-6b90-800b-f848f45f6b51"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-42c9-6880-800d-83425493c49d",
+        "ts": "2026-02-08T14:57:14.249Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B1 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-2559d86a-c6c7-41c5-afe7-04bbb37f8bf2",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message C",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "4f8a171d-0e1b-42b1-95f0-ddb1e567f953"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562634241,
+          "end_time": 1770562632113,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 665
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:MemoryRetrieval": null
+        },
+        "channel_versions": {
+          "__start__": 14,
+          "messages": 14,
+          "branch:to:StartMiddleware": 15,
+          "start_time": 15,
+          "branch:to:MemoryRetrieval": 15,
+          "branch:to:AgentNode": 11,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 12,
+          "end_time": 12,
+          "middleware_metrics": 12
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 13
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 14
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 9
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 11
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "StartMiddleware": {
+            "start_time": 1770562634241
+          }
+        },
+        "step": 13,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2ea0-6660-800a-1faa3dfe231a"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-4254-6580-800c-18b74ac1b82a"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-432b-6300-800e-e5cd798eebce",
+        "ts": "2026-02-08T14:57:14.288Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B1 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-2559d86a-c6c7-41c5-afe7-04bbb37f8bf2",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message C",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "4f8a171d-0e1b-42b1-95f0-ddb1e567f953"
+              }
+            }
+          ],
+          "model_calls": 2,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562634241,
+          "end_time": 1770562632113,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 665
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:AgentNode": null
+        },
+        "channel_versions": {
+          "__start__": 14,
+          "messages": 14,
+          "branch:to:StartMiddleware": 15,
+          "start_time": 15,
+          "branch:to:MemoryRetrieval": 16,
+          "branch:to:AgentNode": 16,
+          "model_calls": 11,
+          "branch:to:EndMiddleware": 12,
+          "end_time": 12,
+          "middleware_metrics": 12
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 13
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 14
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 15
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 10
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 11
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "MemoryRetrieval": {}
+        },
+        "step": 14,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2ea0-6660-800a-1faa3dfe231a"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-42c9-6880-800d-83425493c49d"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-4a46-6090-800f-12a6b36fa843",
+        "ts": "2026-02-08T14:57:15.033Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B1 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-2559d86a-c6c7-41c5-afe7-04bbb37f8bf2",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message C",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "4f8a171d-0e1b-42b1-95f0-ddb1e567f953"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message C information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 1026,
+                  "output_tokens": 18,
+                  "total_tokens": 1044
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 1026,
+                    "totalTokens": 1044
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-7e3d91eb-31fd-43e9-b9b7-8522b53f3d7e"
+              }
+            }
+          ],
+          "model_calls": 3,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562634241,
+          "end_time": 1770562632113,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 665
+          },
+          "errors": [],
+          "ui": [],
+          "branch:to:EndMiddleware": "AgentNode"
+        },
+        "channel_versions": {
+          "__start__": 14,
+          "messages": 17,
+          "branch:to:StartMiddleware": 15,
+          "start_time": 15,
+          "branch:to:MemoryRetrieval": 16,
+          "branch:to:AgentNode": 17,
+          "model_calls": 17,
+          "branch:to:EndMiddleware": 17,
+          "end_time": 12,
+          "middleware_metrics": 12
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 13
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 14
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 15
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 16
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 11
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "AgentNode": {
+            "messages": [
+              {
+                "lc": 1,
+                "type": "constructor",
+                "id": [
+                  "langchain_core",
+                  "messages",
+                  "AIMessage"
+                ],
+                "kwargs": {
+                  "content": "I don't have access to Message C information. Can I help you with something else?",
+                  "additional_kwargs": {},
+                  "tool_calls": [],
+                  "invalid_tool_calls": [],
+                  "usage_metadata": {
+                    "input_tokens": 1026,
+                    "output_tokens": 18,
+                    "total_tokens": 1044
+                  },
+                  "response_metadata": {
+                    "tokenUsage": {
+                      "completionTokens": 18,
+                      "promptTokens": 1026,
+                      "totalTokens": 1044
+                    },
+                    "finish_reason": "stop"
+                  },
+                  "id": "run-7e3d91eb-31fd-43e9-b9b7-8522b53f3d7e"
+                }
+              }
+            ],
+            "model_calls": 1
+          }
+        },
+        "step": 15,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2ea0-6660-800a-1faa3dfe231a"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-432b-6300-800e-e5cd798eebce"
+        },
+        "signal": {}
+      }
+    },
+    {
+      "checkpoint": {
+        "v": 1,
+        "id": "1f104fe7-4baa-67b0-8010-1516d7a7ee87",
+        "ts": "2026-02-08T14:57:15.179Z",
+        "channel_values": {
+          "messages": [
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message A",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "85d4d2bd-a7fd-4197-b1a9-7f0a0079fad2"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message A information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 966,
+                  "output_tokens": 18,
+                  "total_tokens": 984
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 966,
+                    "totalTokens": 984
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-e67543aa-1598-4e05-bed5-9b4299eee03e",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message B1",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "65db9c4d-2c15-47a5-9883-335106dc9f94"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message B1 information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 996,
+                  "output_tokens": 19,
+                  "total_tokens": 1015
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 19,
+                    "promptTokens": 996,
+                    "totalTokens": 1015
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-2559d86a-c6c7-41c5-afe7-04bbb37f8bf2",
+                "tool_calls": []
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "HumanMessage"
+              ],
+              "kwargs": {
+                "content": "Message C",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "4f8a171d-0e1b-42b1-95f0-ddb1e567f953"
+              }
+            },
+            {
+              "lc": 1,
+              "type": "constructor",
+              "id": [
+                "langchain_core",
+                "messages",
+                "AIMessage"
+              ],
+              "kwargs": {
+                "content": "I don't have access to Message C information. Can I help you with something else?",
+                "additional_kwargs": {},
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                  "input_tokens": 1026,
+                  "output_tokens": 18,
+                  "total_tokens": 1044
+                },
+                "response_metadata": {
+                  "tokenUsage": {
+                    "completionTokens": 18,
+                    "promptTokens": 1026,
+                    "totalTokens": 1044
+                  },
+                  "finish_reason": "stop"
+                },
+                "id": "run-7e3d91eb-31fd-43e9-b9b7-8522b53f3d7e"
+              }
+            }
+          ],
+          "model_calls": 3,
+          "token_usage": {
+            "input": 0,
+            "output": 0,
+            "total": 0
+          },
+          "metadata": {},
+          "interrupt_status": "idle",
+          "interrupt_data": null,
+          "pending_tool_calls": [],
+          "executed_tool_calls": [],
+          "rejected_tool_calls": [],
+          "reasoning_steps": [],
+          "action_steps": [],
+          "start_time": 1770562634241,
+          "end_time": 1770562635116,
+          "middleware_metrics": {
+            "token_usage": {
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "rate_limit_hits": 0,
+            "retries": 0,
+            "pii_detected": false,
+            "pii_types": [],
+            "processing_time_ms": 875
+          },
+          "errors": [],
+          "ui": []
+        },
+        "channel_versions": {
+          "__start__": 14,
+          "messages": 17,
+          "branch:to:StartMiddleware": 15,
+          "start_time": 15,
+          "branch:to:MemoryRetrieval": 16,
+          "branch:to:AgentNode": 17,
+          "model_calls": 17,
+          "branch:to:EndMiddleware": 18,
+          "end_time": 18,
+          "middleware_metrics": 18
+        },
+        "versions_seen": {
+          "__input__": {},
+          "__start__": {
+            "__start__": 13
+          },
+          "StartMiddleware": {
+            "branch:to:StartMiddleware": 14
+          },
+          "MemoryRetrieval": {
+            "branch:to:MemoryRetrieval": 15
+          },
+          "AgentNode": {
+            "branch:to:AgentNode": 16
+          },
+          "EndMiddleware": {
+            "branch:to:EndMiddleware": 17
+          }
+        },
+        "pending_sends": []
+      },
+      "metadata": {
+        "source": "loop",
+        "writes": {
+          "EndMiddleware": {
+            "end_time": 1770562635116,
+            "middleware_metrics": {
+              "token_usage": {
+                "input": 0,
+                "output": 0,
+                "total": 0
+              },
+              "rate_limit_hits": 0,
+              "retries": 0,
+              "pii_detected": false,
+              "pii_types": [],
+              "processing_time_ms": 875
+            }
+          }
+        },
+        "step": 16,
+        "parents": {}
+      },
+      "parentConfig": {
+        "tags": [],
+        "metadata": {
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-2ea0-6660-800a-1faa3dfe231a"
+        },
+        "recursionLimit": 25,
+        "configurable": {
+          "checkpoint_ns": "",
+          "thread_id": "417abd5d-9407-4adc-a0df-4e167cef94ea",
+          "checkpoint_id": "1f104fe7-4a46-6090-800f-12a6b36fa843"
+        },
+        "signal": {}
+      }
+    }
   ]
 }

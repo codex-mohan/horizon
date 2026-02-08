@@ -5,7 +5,16 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "@horizon/shell#build": {
+      "outputs": ["dist/**"]
+    },
+    "@horizon/agent-memory#build": {
+      "outputs": ["dist/**"]
+    },
+    "@horizon/agent-web#build": {
+      "outputs": ["dist/**"]
     },
     "lint": {
       "dependsOn": ["^lint"]

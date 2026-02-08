@@ -2,6 +2,51 @@ import { BaseMessage } from "@langchain/core/messages";
 import { Annotation, messagesStateReducer } from "@langchain/langgraph";
 
 /**
+ * UI Message Definition for Generative UI
+ * Used to stream UI updates to the frontend
+ */
+export interface UIMessage {
+  id: string;
+  name: string;
+  props: Record<string, any>;
+  metadata?: {
+    message_id?: string;
+    tool_call_id?: string;
+    tool_name?: string;
+    [key: string]: any;
+  };
+}
+
+/**
+ * Reducer for UI messages
+ * Handles adding new messages and updating existing ones (for streaming)
+ */
+function uiMessageReducer(
+  existing: UIMessage[],
+  updates: UIMessage | UIMessage[],
+): UIMessage[] {
+  const updatesArray = Array.isArray(updates) ? updates : [updates];
+  const existingMap = new Map(existing.map((msg) => [msg.id, msg]));
+
+  for (const update of updatesArray) {
+    const existing = existingMap.get(update.id);
+    if (existing) {
+      // Merge with existing message
+      existingMap.set(update.id, {
+        ...existing,
+        props: { ...existing.props, ...update.props },
+        metadata: { ...existing.metadata, ...update.metadata },
+      });
+    } else {
+      // Add new message
+      existingMap.set(update.id, update);
+    }
+  }
+
+  return Array.from(existingMap.values());
+}
+
+/**
  * Tool Call Definition
  */
 export interface ToolCall {
@@ -188,6 +233,12 @@ export const AgentStateAnnotation = Annotation.Root({
   // Error tracking
   errors: Annotation<string[]>({
     reducer: (x, y) => [...(x ?? []), ...(y ?? [])],
+    default: () => [],
+  }),
+
+  // UI state for generative UI
+  ui: Annotation<UIMessage[]>({
+    reducer: uiMessageReducer,
     default: () => [],
   }),
 });

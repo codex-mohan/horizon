@@ -1,8 +1,30 @@
-import { AgentState } from "../state.js";
+import { AgentState, UIMessage } from "../state.js";
 import { RunnableConfig } from "@langchain/core/runnables";
 import { ToolMessage } from "@langchain/core/messages";
 import { toolMap } from "../tools/index.js";
 import { agentConfig } from "../../lib/config.js";
+import { v4 as uuidv4 } from "uuid";
+
+/**
+ * Helper to emit a custom event for real-time UI updates
+ * This allows streaming UI status during tool execution
+ */
+async function emitUIEvent(
+  config: RunnableConfig,
+  uiMessage: UIMessage,
+): Promise<void> {
+  // Check if we're in a streaming context with custom event emitter
+  const streamEvents = (config as any).streamEvents;
+  if (streamEvents && typeof streamEvents === "function") {
+    await streamEvents({
+      event: "ui",
+      data: uiMessage,
+    });
+  }
+
+  // Also emit via console for debugging
+  console.log(`[UI Event] ${uiMessage.name}: ${uiMessage.props.status}`);
+}
 
 export async function ToolExecution(
   state: AgentState,
@@ -11,6 +33,7 @@ export async function ToolExecution(
   const updates: Partial<AgentState> = {};
   const executedTools: typeof state.executed_tool_calls = [];
   const toolMessages: ToolMessage[] = [];
+  const uiMessages: UIMessage[] = [];
   let totalRetries = 0;
 
   const approvedTools = state.pending_tool_calls?.filter(
@@ -23,8 +46,29 @@ export async function ToolExecution(
 
   for (const toolCall of approvedTools) {
     const tool = toolMap[toolCall.name];
+    const uiMessageId = uuidv4();
 
     if (!tool) {
+      // Emit UI message for error
+      const errorUIMessage: UIMessage = {
+        id: uiMessageId,
+        name: toolCall.name,
+        props: {
+          toolName: toolCall.name,
+          status: "failed",
+          args: toolCall.args,
+          error: `Tool "${toolCall.name}" not found`,
+          completedAt: Date.now(),
+        },
+        metadata: {
+          tool_call_id: toolCall.id,
+          tool_name: toolCall.name,
+        },
+      };
+
+      uiMessages.push(errorUIMessage);
+      await emitUIEvent(config, errorUIMessage);
+
       executedTools.push({
         ...toolCall,
         status: "failed" as const,
@@ -41,9 +85,29 @@ export async function ToolExecution(
       continue;
     }
 
+    // Emit initial UI message for tool execution start (REAL-TIME)
+    const startUIMessage: UIMessage = {
+      id: uiMessageId,
+      name: toolCall.name,
+      props: {
+        toolName: toolCall.name,
+        status: "executing",
+        args: toolCall.args,
+        startedAt: Date.now(),
+      },
+      metadata: {
+        tool_call_id: toolCall.id,
+        tool_name: toolCall.name,
+      },
+    };
+
+    uiMessages.push(startUIMessage);
+    await emitUIEvent(config, startUIMessage);
+
     let result: string;
     let retries = 0;
     const maxRetries = agentConfig.MAX_RETRIES || 3;
+    const startedAt = Date.now();
 
     while (true) {
       try {
@@ -53,6 +117,28 @@ export async function ToolExecution(
             ? toolResult
             : JSON.stringify(toolResult);
         console.log(`[ToolExecution] ${toolCall.name} completed`);
+
+        // Emit completion UI message (REAL-TIME)
+        const completeUIMessage: UIMessage = {
+          id: uiMessageId,
+          name: toolCall.name,
+          props: {
+            toolName: toolCall.name,
+            status: "completed",
+            args: toolCall.args,
+            result,
+            startedAt,
+            completedAt: Date.now(),
+          },
+          metadata: {
+            tool_call_id: toolCall.id,
+            tool_name: toolCall.name,
+          },
+        };
+
+        uiMessages.push(completeUIMessage);
+        await emitUIEvent(config, completeUIMessage);
+
         break;
       } catch (error) {
         retries++;
@@ -65,6 +151,28 @@ export async function ToolExecution(
 
         if (retries >= maxRetries) {
           result = `Error after ${retries} attempts: ${errorMessage}`;
+
+          // Emit failure UI message (REAL-TIME)
+          const failUIMessage: UIMessage = {
+            id: uiMessageId,
+            name: toolCall.name,
+            props: {
+              toolName: toolCall.name,
+              status: "failed",
+              args: toolCall.args,
+              error: errorMessage,
+              startedAt,
+              completedAt: Date.now(),
+            },
+            metadata: {
+              tool_call_id: toolCall.id,
+              tool_name: toolCall.name,
+            },
+          };
+
+          uiMessages.push(failUIMessage);
+          await emitUIEvent(config, failUIMessage);
+
           break;
         }
 
@@ -98,6 +206,7 @@ export async function ToolExecution(
   ];
   updates.messages = toolMessages;
   updates.pending_tool_calls = [];
+  updates.ui = uiMessages;
 
   if (totalRetries > 0) {
     updates.middleware_metrics = {
