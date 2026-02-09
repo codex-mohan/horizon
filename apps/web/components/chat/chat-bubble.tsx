@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Copy, Pencil, Bot, User } from "lucide-react";
+import { Copy, Pencil, Bot, User, RefreshCw } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import {
   Tooltip,
@@ -14,24 +14,49 @@ import MarkdownView from "@/components/markdown-view";
 import type { Message } from "./chat-interface";
 import { useTheme } from "@/components/theme/theme-provider";
 import { FileBadge } from "./file-badge";
-
 import { Textarea } from "@workspace/ui/components/textarea";
+import { BranchSwitcher } from "./branch-switcher";
 
 interface ChatBubbleProps {
   message: Message;
-  onEdit?: (messageId: string, content: string) => void;
+  onEdit?: (messageId: string, content: string, isLastGroup: boolean) => void;
   onDelete?: (messageId: string) => void;
+  onRegenerate?: (messageId: string, isLastGroup: boolean) => void;
+  onBranchChange?: (branch: string) => void;
   showAvatar?: boolean;
   showActions?: boolean;
+  isLoading?: boolean;
+  isLastInGroup?: boolean; // Is this the last message in its group?
+  isLastGroup?: boolean; // Is this message in the last group of the conversation?
+  isLastMessage?: boolean; // Is this the absolute last message?
+  branch?: string;
+  branchOptions?: string[];
 }
 
+/**
+ * ChatBubble - Individual chat message component with branching support
+ *
+ * Features:
+ * - Displays user and assistant messages
+ * - Supports inline editing for user messages
+ * - Shows branch switcher when multiple branches exist
+ * - Handles message regeneration for assistant messages
+ */
 export const ChatBubble = React.memo(
   ({
     message,
     onEdit,
     onDelete,
+    onRegenerate,
+    onBranchChange,
     showAvatar = true,
     showActions = true,
+    isLoading = false,
+    isLastInGroup = false,
+    isLastGroup = false,
+    isLastMessage = false,
+    branch,
+    branchOptions,
   }: ChatBubbleProps) => {
     const isUser = message.role === "user";
     const [isEditing, setIsEditing] = useState(false);
@@ -39,14 +64,12 @@ export const ChatBubble = React.memo(
     const { themeMode } = useTheme();
     const isLightTheme = themeMode === "light";
 
-    const handleCreateBranch = useCallback(() => {
+    const handleSaveEdit = useCallback(() => {
       if (onEdit && editContent.trim() !== message.content) {
-        onEdit(message.id, editContent);
-        setIsEditing(false);
-      } else {
-        setIsEditing(false);
+        onEdit(message.id, editContent, isLastGroup);
       }
-    }, [onEdit, editContent, message.id, message.content]);
+      setIsEditing(false);
+    }, [onEdit, editContent, message.id, message.content, isLastGroup]);
 
     const handleCancelEdit = useCallback(() => {
       setEditContent(message.content);
@@ -57,6 +80,29 @@ export const ChatBubble = React.memo(
       navigator.clipboard.writeText(message.content);
     }, [message.content]);
 
+    const handleEditClick = useCallback(() => {
+      setIsEditing(true);
+      setEditContent(message.content);
+    }, [message.content]);
+
+    const handleRegenerateClick = useCallback(() => {
+      if (onRegenerate && !isLoading) {
+        onRegenerate(message.id, isLastGroup);
+      }
+    }, [onRegenerate, isLoading, message.id, isLastGroup]);
+
+    const handleBranchSelect = useCallback(
+      (newBranch: string) => {
+        if (onBranchChange && newBranch !== branch) {
+          onBranchChange(newBranch);
+        }
+      },
+      [onBranchChange, branch],
+    );
+
+    // Show branch switcher only if multiple branches exist
+    const hasMultipleBranches = branchOptions && branchOptions.length > 1;
+
     return (
       <div
         className={cn(
@@ -65,6 +111,7 @@ export const ChatBubble = React.memo(
           isEditing && "w-full",
         )}
       >
+        {/* Avatar */}
         <div
           className={cn(
             "size-10 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-200 hover:scale-110 self-start",
@@ -82,13 +129,15 @@ export const ChatBubble = React.memo(
           )}
         </div>
 
+        {/* Message Content */}
         <div
           className={cn(
-            "flex flex-col gap-2 max-w-[85%]",
+            "flex flex-col gap-2",
             isUser ? "items-end" : "items-start",
-            isEditing && "w-full max-w-full",
+            isEditing ? "w-full max-w-full" : "max-w-[85%]",
           )}
         >
+          {/* File Attachments */}
           {message.attachments &&
             message.attachments.length > 0 &&
             !isEditing && (
@@ -110,6 +159,7 @@ export const ChatBubble = React.memo(
               </div>
             )}
 
+          {/* Inline Editing Mode */}
           {isEditing ? (
             <div
               className={cn(
@@ -135,78 +185,160 @@ export const ChatBubble = React.memo(
                 >
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleCreateBranch} className="h-8">
-                  Send
+                <Button
+                  size="sm"
+                  onClick={handleSaveEdit}
+                  className="h-8"
+                  disabled={
+                    !editContent.trim() ||
+                    editContent.trim() === message.content
+                  }
+                >
+                  Save & Branch
                 </Button>
               </div>
             </div>
           ) : (
-            <div
-              className={cn(
-                "rounded-xl p-4 relative wrap-break-word font-body leading-relaxed",
-                isUser
-                  ? cn(
-                      isLightTheme
-                        ? "glass-user-bubble-light"
-                        : "glass-user-bubble",
-                      "text-foreground",
-                    )
-                  : "w-full text-foreground",
-              )}
-            >
-              {message.reasoning && (
-                <div className="mb-4">
-                  <div className="text-xs font-medium text-amber-400/80 mb-2">
-                    Reasoning
-                  </div>
-                  <div className="bg-amber-950/50 border border-amber-500/20 rounded-2xl px-4 py-3">
-                    <div className="text-sm text-amber-100/90 whitespace-pre-wrap">
-                      {message.reasoning}
+            /* Normal Message Display */
+            <>
+              <div
+                className={cn(
+                  "rounded-xl p-4 relative wrap-break-word font-body leading-relaxed",
+                  isUser
+                    ? cn(
+                        isLightTheme
+                          ? "glass-user-bubble-light"
+                          : "glass-user-bubble",
+                        "text-foreground",
+                      )
+                    : "w-full text-foreground",
+                )}
+              >
+                {/* Reasoning Block */}
+                {message.reasoning && (
+                  <div className="mb-4">
+                    <div className="text-xs font-medium text-amber-400/80 mb-2">
+                      Reasoning
+                    </div>
+                    <div className="bg-amber-950/50 border border-amber-500/20 rounded-2xl px-4 py-3">
+                      <div className="text-sm text-amber-100/90 whitespace-pre-wrap">
+                        {message.reasoning}
+                      </div>
                     </div>
                   </div>
+                )}
+
+                {/* Message Content */}
+                <MarkdownView text={message.content} />
+              </div>
+
+              {/* Actions Bar */}
+              {showActions && (
+                <div
+                  className={cn(
+                    "flex items-center gap-1 transition-opacity duration-200",
+                    "opacity-0 group-hover:opacity-100",
+                    isUser ? "flex-row-reverse" : "flex-row",
+                  )}
+                >
+                  {/* Branch Switcher - Only on absolute last message */}
+                  {isLastMessage && hasMultipleBranches && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <BranchSwitcher
+                              branch={branch}
+                              branchOptions={branchOptions}
+                              onSelect={handleBranchSelect}
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Navigate between branches</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+
+                  {/* Edit Button (user messages only) */}
+                  {isUser && onEdit && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={handleEditClick}
+                            disabled={isLoading}
+                            className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {isLastGroup
+                              ? "Edit message (creates new branch)"
+                              : "Edit message (replaces conversation from here)"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+
+                  {/* Regenerate Button (assistant messages only) */}
+                  {!isUser && onRegenerate && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={handleRegenerateClick}
+                            disabled={isLoading}
+                            className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                          >
+                            <RefreshCw
+                              className={cn(
+                                "size-4",
+                                isLoading && "animate-spin",
+                              )}
+                            />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {isLastGroup
+                              ? "Regenerate response (creates new branch)"
+                              : "Regenerate response (replaces conversation from here)"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+
+                  {/* Copy Button */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={handleCopy}
+                          className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                        >
+                          <Copy className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Copy message</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               )}
-
-              <MarkdownView text={message.content} />
-            </div>
-          )}
-
-          {!isEditing && showActions && isUser && (
-            <div className="flex items-center gap-2 transition-all duration-300 opacity-0 group-hover:opacity-100">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => setIsEditing(true)}
-                      className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="animate-scale-in">
-                    <p>Edit</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={handleCopy}
-                      className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-                    >
-                      <Copy className="size-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="animate-scale-in">
-                    <p>Copy</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+            </>
           )}
         </div>
       </div>

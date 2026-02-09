@@ -95,7 +95,20 @@ export function createThreadsClient(apiUrl: string): ThreadsClient {
         },
 
         async updateThread(threadId: string, metadata: Record<string, unknown>): Promise<Thread> {
-            const thread = await client.threads.update(threadId, { metadata });
+            // First get existing metadata to merge with new values
+            // This ensures we don't lose user_id or other important fields
+            let existingMetadata: Record<string, unknown> = {};
+            try {
+                const existing = await client.threads.get(threadId);
+                if (existing?.metadata) {
+                    existingMetadata = existing.metadata as Record<string, unknown>;
+                }
+            } catch {
+                // Thread might not exist yet, continue with empty metadata
+            }
+
+            const mergedMetadata = { ...existingMetadata, ...metadata };
+            const thread = await client.threads.update(threadId, { metadata: mergedMetadata });
             return {
                 thread_id: thread.thread_id,
                 created_at: thread.created_at || new Date().toISOString(),

@@ -7,8 +7,15 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Pencil, RefreshCw, Copy, GitBranch } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@workspace/ui/components/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip";
 import { FileBadge } from "./file-badge";
 import { ChatBubble } from "./chat-bubble";
 import {
@@ -21,54 +28,25 @@ import { ActivityTimeline } from "./activity-timeline";
 import { ToolCallMessage, type ToolCall } from "./tool-call-message";
 import { GenerativeUIRenderer } from "./generative-ui-renderer";
 import { hasCustomUI, getToolUIConfig } from "@/lib/tool-config";
-
-import { BranchSwitcher } from "./branch-switcher";
 import {
   useChat,
   ProcessedEvent as ChatProcessedEvent,
   type UseChatOptions,
   type ChatError,
-  type MessageMetadata,
 } from "@/lib/chat";
 import { useChatSettings } from "@/lib/stores/chat-settings";
-import {
-  combineToolMessages,
-  getCombinedToolCallsFromMap,
-  isToolMessage,
-  isSystemMessage,
-} from "@/lib/chat-utils";
-import type { Message as LangGraphMessage } from "@langchain/langgraph-sdk";
+import { combineToolMessages } from "@/lib/chat-utils";
+import type {
+  AIMessage,
+  Message as LangGraphMessage,
+} from "@langchain/langgraph-sdk";
 import { useTheme } from "@/components/theme/theme-provider";
 import { createThreadsClient } from "@/lib/threads";
 import { generateConversationTitle } from "@/lib/title-utils";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getReasoningFromMessage } from "@/lib/reasoning-utils";
 import { toast } from "sonner";
-import {
-  Copy,
-  RotateCcw,
-  Volume2,
-  FileText,
-  Forklift as Fork,
-  Share,
-  MoreHorizontal,
-  MessageSquare,
-  Trash2,
-} from "lucide-react";
-import { Button } from "@workspace/ui/components/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
+import { BranchSwitcher } from "./branch-switcher";
 
 const suggestedPrompts = [
   "Explain quantum computing in simple terms",
@@ -78,232 +56,124 @@ const suggestedPrompts = [
 ] as const;
 
 // ============================================================================
-// GROUP CONTROLS COMPONENT
+// MESSAGE GROUPING TYPES
 // ============================================================================
 
-interface GroupControlsProps {
-  retryTargetId: string | null;
-  branch: string | undefined;
-  branchOptions: string[] | undefined;
-  onBranchSelect: (branch: string) => void;
-  onRetry: (id: string, content: string) => void;
-  onSpeak?: (id: string, content: string) => void;
-  onSummarize?: (id: string, content: string) => void;
-  onFork?: (id: string, content: string) => void;
-  onShare?: (id: string, content: string) => void;
-  onDelete?: (id: string) => void;
-  copyContent: string;
+interface MessageGroup {
+  id: string;
+  userMessage: Message | null;
+  assistantMessage: Message | null;
+  toolCalls: ToolCall[];
+  isLastGroup: boolean;
+  branch?: string;
+  branchOptions?: string[];
 }
 
-function GroupControls({
-  retryTargetId,
-  branch,
-  branchOptions,
-  onBranchSelect,
-  onRetry,
-  onSpeak,
-  onSummarize,
-  onFork,
-  onShare,
-  onDelete,
-  copyContent,
-}: GroupControlsProps) {
-  const [copied, setCopied] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const showSwitcher = branch && branchOptions && branchOptions.length > 1;
+// ============================================================================
+// MESSAGE GROUPING LOGIC
+// ============================================================================
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(copyContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [copyContent]);
+function groupMessages(
+  messages: LangGraphMessage[],
+  chat: ReturnType<typeof useChat>,
+  hiddenMessageIds: Set<string>,
+): MessageGroup[] {
+  if (messages.length === 0) return [];
 
-  const handleRetry = useCallback(() => {
-    if (retryTargetId) {
-      onRetry(retryTargetId, "");
-    }
-  }, [retryTargetId, onRetry]);
+  const groups: MessageGroup[] = [];
+  let currentGroup: MessageGroup | null = null;
 
-  const handleSpeak = useCallback(() => {
-    if ("speechSynthesis" in window) {
-      if (isSpeaking) {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-      } else {
-        const utterance = new SpeechSynthesisUtterance(copyContent);
-        utterance.onend = () => setIsSpeaking(false);
-        window.speechSynthesis.speak(utterance);
-        setIsSpeaking(true);
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+
+    // Skip system and hidden messages
+    if (msg.type === "system" || msg.type === "tool") continue;
+    if (msg.id && hiddenMessageIds.has(msg.id)) continue;
+
+    // Get metadata
+    const metadata = chat.getMessagesMetadata(msg);
+    const reasoning = getReasoningFromMessage(msg as AIMessage);
+
+    // Extract content
+    const content =
+      typeof msg.content === "string"
+        ? msg.content
+        : Array.isArray(msg.content)
+          ? msg.content.map((c: any) => c.text || "").join("")
+          : JSON.stringify(msg.content);
+
+    if (msg.type === "human") {
+      // Start a new group for user messages
+      if (currentGroup) {
+        groups.push(currentGroup);
+      }
+
+      currentGroup = {
+        id: `group-${msg.id || i}`,
+        userMessage: {
+          id: msg.id || `msg-${i}`,
+          role: "user",
+          content,
+          timestamp: new Date(),
+          _originalMessage: msg,
+        },
+        assistantMessage: null,
+        toolCalls: [],
+        isLastGroup: false,
+        branch: metadata?.branch,
+        branchOptions: metadata?.branchOptions,
+      };
+    } else if (msg.type === "ai" && currentGroup) {
+      // Get tool calls for this AI message
+      const toolCalls = chat.getToolCalls(msg as any);
+      const toolCallsWithUI: ToolCall[] = toolCalls.map((tc) => {
+        const toolConfig = getToolUIConfig(tc.call.name);
+        return {
+          id: tc.call.id || "",
+          name: tc.call.name,
+          arguments: tc.call.args,
+          result: tc.result?.content as string,
+          status: (tc.state === "pending"
+            ? "loading"
+            : tc.state === "error"
+              ? "error"
+              : "success") as "loading" | "error" | "success" | "completed",
+          namespace: toolConfig.namespace,
+        };
+      });
+
+      currentGroup.assistantMessage = {
+        id: msg.id || `msg-${i}`,
+        role: "assistant",
+        content,
+        timestamp: new Date(),
+        _originalMessage: msg,
+        reasoning,
+        _combinedToolCalls: toolCallsWithUI,
+      };
+      currentGroup.toolCalls = toolCallsWithUI;
+
+      // Update branch metadata from assistant message (more reliable than user message)
+      if (metadata?.branch !== undefined) {
+        currentGroup.branch = metadata.branch;
+      }
+      if (metadata?.branchOptions !== undefined) {
+        currentGroup.branchOptions = metadata.branchOptions;
       }
     }
-  }, [copyContent, isSpeaking]);
+  }
 
-  return (
-    <div className="flex items-center gap-2 transition-all duration-300 group-hover:opacity-100">
-      {showSwitcher && (
-        <BranchSwitcher
-          branch={branch}
-          branchOptions={branchOptions}
-          onSelect={onBranchSelect}
-          className="mr-1"
-        />
-      )}
+  // Push the last group
+  if (currentGroup) {
+    groups.push(currentGroup);
+  }
 
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={handleCopy}
-              className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-            >
-              {copied ? (
-                <span className="text-green-500 text-xs">Copied!</span>
-              ) : (
-                <Copy className="size-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Copy response</p>
-          </TooltipContent>
-        </Tooltip>
+  // Mark the last group
+  if (groups.length > 0) {
+    groups[groups.length - 1].isLastGroup = true;
+  }
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={handleRetry}
-              disabled={!retryTargetId}
-              className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-            >
-              <RotateCcw className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Retry</p>
-          </TooltipContent>
-        </Tooltip>
-
-        {onSpeak && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={handleSpeak}
-                className={cn(
-                  "size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110",
-                  isSpeaking && "text-primary",
-                )}
-              >
-                <Volume2
-                  className={cn("size-4", isSpeaking && "animate-pulse")}
-                />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{isSpeaking ? "Stop" : "Speak"}</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        {onSummarize && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() =>
-                  retryTargetId && onSummarize(retryTargetId, copyContent)
-                }
-                disabled={!retryTargetId}
-                className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-              >
-                <FileText className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Summarize</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        {onFork && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() =>
-                  retryTargetId && onFork(retryTargetId, copyContent)
-                }
-                disabled={!retryTargetId}
-                className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-              >
-                <Fork className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Fork to new conversation</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        {(onShare || onDelete) && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-              >
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="z-[100] animate-scale-in glass border border-border"
-            >
-              {onShare && (
-                <DropdownMenuItem
-                  onClick={() =>
-                    retryTargetId && onShare(retryTargetId, copyContent)
-                  }
-                >
-                  <Share className="size-4 mr-2" />
-                  Share
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleCopy}>
-                <Copy className="size-4 mr-2" />
-                Copy response
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(copyContent)}
-              >
-                <FileText className="size-4 mr-2" />
-                Copy as markdown
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {onDelete && (
-                <DropdownMenuItem
-                  onClick={() => retryTargetId && onDelete(retryTargetId)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="size-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </TooltipProvider>
-    </div>
-  );
+  return groups;
 }
 
 // ============================================================================
@@ -330,7 +200,6 @@ export function ChatArea({
   onThreadChange,
 }: ChatAreaProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const lastMessageFingerprintRef = useRef("");
 
   const { themeMode } = useTheme();
   const isLightTheme = themeMode === "light";
@@ -346,11 +215,7 @@ export function ChatArea({
     new Set(),
   );
 
-  const [currentBranch, setCurrentBranch] = useState<string | null>(null);
-  const [currentBranchCheckpoint, setCurrentBranchCheckpoint] = useState<{
-    checkpoint_id: string;
-  } | null>(null);
-
+  // Thread ID handler
   const handleThreadId = useCallback(
     (newId: string) => {
       if (newId && !threadId) {
@@ -360,10 +225,12 @@ export function ChatArea({
     [threadId, onThreadChange],
   );
 
+  // Error handler
   const handleError = useCallback((error: ChatError) => {
     setChatError(error.message);
   }, []);
 
+  // Event handler for tool calls and activity
   const handleEvent = useCallback(
     (event: Record<string, unknown>) => {
       if (event.tools && settings.showToolCalls) {
@@ -412,6 +279,7 @@ export function ChatArea({
     [settings.showToolCalls],
   );
 
+  // Chat options
   const chatOptions = useMemo<UseChatOptions>(
     () => ({
       apiUrl:
@@ -427,53 +295,15 @@ export function ChatArea({
     [threadId, user?.id, handleThreadId, handleError, handleEvent],
   );
 
+  // Initialize chat hook
   const chat = useChat(chatOptions);
 
-  const processedMessages = useMemo(() => {
-    if (chat.messages.length === 0) return [];
+  // Group messages
+  const messageGroups = useMemo(() => {
+    return groupMessages(chat.messages, chat, hiddenMessageIds);
+  }, [chat.messages, chat, hiddenMessageIds]);
 
-    try {
-      const { messages: combined, toolCallsMap } = combineToolMessages(
-        chat.messages,
-      );
-
-      return combined
-        .filter(
-          (m: LangGraphMessage) => !isToolMessage(m) && !isSystemMessage(m),
-        )
-        .map((m: LangGraphMessage, i: number) => {
-          const tools = getCombinedToolCallsFromMap(m, toolCallsMap);
-          return {
-            id: m.id || `msg-${i}`,
-            role: m.type === "human" ? "user" : "assistant",
-            content:
-              typeof m.content === "string"
-                ? m.content
-                : JSON.stringify(m.content),
-            timestamp: new Date(),
-            ...(tools?.length ? { _combinedToolCalls: tools } : {}),
-            _originalMessage: m,
-          } as Message;
-        });
-    } catch (err) {
-      console.error("Message processing error:", err);
-      return [];
-    }
-  }, [chat.messages]);
-
-  useEffect(() => {
-    if (processedMessages.length > 0) {
-      const fp = processedMessages
-        .map((m) => `${m.id}:${m.content.length}`)
-        .join("|");
-      if (fp !== lastMessageFingerprintRef.current) {
-        lastMessageFingerprintRef.current = fp;
-        onMessagesChange(processedMessages);
-        setChatError(null);
-      }
-    }
-  }, [processedMessages, onMessagesChange]);
-
+  // Clear loading states when done
   useEffect(() => {
     if (!chat.isLoading) {
       setCurrentToolCalls([]);
@@ -481,22 +311,122 @@ export function ChatArea({
     }
   }, [chat.isLoading]);
 
+  // Reset on thread change
   useEffect(() => {
     if (!threadId) {
       onMessagesChange([]);
       onAttachedFilesChange([]);
       setLiveActivityEvents([]);
       setCurrentToolCalls([]);
-      lastMessageFingerprintRef.current = "";
+      setHiddenMessageIds(new Set());
     }
   }, [threadId, onMessagesChange, onAttachedFilesChange]);
 
+  // Auto-scroll to bottom
   useEffect(() => {
     chatContainerRef.current?.scrollTo({
       top: chatContainerRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messages.length]);
+  }, [messageGroups.length]);
+
+  // ============================================================================
+  // MESSAGE ACTIONS
+  // ============================================================================
+
+  const handleEdit = useCallback(
+    (messageId: string, content: string, isLastGroup: boolean) => {
+      const messageIndex = chat.messages.findIndex((m) => m.id === messageId);
+      const liveMessage = chat.messages[messageIndex];
+
+      if (!liveMessage) {
+        toast.error("Message not found in current session");
+        return;
+      }
+
+      const metadata = chat.getMessagesMetadata(liveMessage);
+      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+
+      if (!isLastGroup) {
+        const confirmMsg = `This will replace all messages after this point. This action cannot be undone.`;
+        if (!window.confirm(confirmMsg)) {
+          return;
+        }
+      }
+
+      if (parentCheckpoint) {
+        chat.submit(
+          { messages: [{ type: "human", content }] },
+          { checkpoint: parentCheckpoint },
+        );
+        if (isLastGroup) {
+          toast.success("Created new branch from edited message");
+        } else {
+          toast.success("Replacing conversation from edited message");
+        }
+      } else if (messageIndex === 0) {
+        chat.submit({ messages: [{ type: "human", content }] });
+        toast.success(
+          isLastGroup ? "Message updated" : "Replacing conversation",
+        );
+      } else {
+        toast.error("Unable to edit: No checkpoint available");
+        console.error("Missing checkpoint for message:", liveMessage);
+      }
+    },
+    [chat],
+  );
+
+  const handleRegenerate = useCallback(
+    (messageId: string, isLastGroup: boolean) => {
+      const liveMessage = chat.messages.find((m) => m.id === messageId);
+      if (!liveMessage) {
+        toast.error("Message not found in current session");
+        return;
+      }
+
+      const metadata = chat.getMessagesMetadata(liveMessage);
+      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+
+      if (!isLastGroup) {
+        const confirmMsg = `This will replace all messages after this point. This action cannot be undone.`;
+        if (!window.confirm(confirmMsg)) {
+          return;
+        }
+      }
+
+      if (parentCheckpoint) {
+        chat.submit(undefined, { checkpoint: parentCheckpoint });
+        if (isLastGroup) {
+          toast.success("Regenerating response in new branch");
+        } else {
+          toast.success("Replacing conversation from this point");
+        }
+      } else {
+        toast.error("Unable to regenerate: No checkpoint available");
+      }
+    },
+    [chat],
+  );
+
+  const handleBranchChange = useCallback(
+    (branch: string) => {
+      chat.setBranch(branch);
+    },
+    [chat],
+  );
+
+  const handleDelete = useCallback(
+    (id: string) => {
+      setHiddenMessageIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+      onMessagesChange(messages.filter((m) => m.id !== id));
+    },
+    [messages, onMessagesChange],
+  );
 
   const handleSubmit = useCallback(
     async (text: string, files: ChatInputAttachedFile[]) => {
@@ -516,15 +446,8 @@ export function ChatArea({
         }),
       };
 
-      if (currentBranchCheckpoint) {
-        submitOptions.checkpoint = currentBranchCheckpoint;
-      }
-
       chat.submit({ messages: [newMessage] }, submitOptions);
       onAttachedFilesChange([]);
-
-      setCurrentBranch(null);
-      setCurrentBranchCheckpoint(null);
 
       if (
         chat.threadId &&
@@ -541,162 +464,12 @@ export function ChatArea({
         } catch {}
       }
     },
-    [
-      messages,
-      onAttachedFilesChange,
-      chat,
-      currentBranch,
-      currentBranchCheckpoint,
-    ],
+    [chat, onAttachedFilesChange],
   );
-
-  // DUMMY TITLE GENERATION LOGIC
-  useEffect(() => {
-    // Check if we have exactly 1 user message and 1 assistant message (first turn)
-    const userMessages = chat.messages.filter((m) => m.type === "human");
-    const aiMessages = chat.messages.filter((m) => m.type === "ai");
-
-    if (
-      userMessages.length === 1 &&
-      aiMessages.length === 1 &&
-      chat.threadId &&
-      !chat.isLoading
-    ) {
-      console.log(
-        "[Dummy Logic] Analyzing first response for title generation...",
-      );
-
-      // Simulate API call delay
-      const timeoutId = setTimeout(() => {
-        const dummyTitle = `Title: ${userMessages[0].content.slice(0, 15)}... (AI Generated)`;
-        console.log(`[Dummy Logic] Generated title: "${dummyTitle}"`);
-        toast.info("Conversaton title updated (Dummy Logic)");
-
-        // In a real implementation, we would call the API to update the title here.
-        // For now, we'll just log it.
-        // We could also update it using the threads client if we wanted to see it in the UI,
-        // but the requirements said "dummy logic so it does nothing for now", implies logging/stubbing.
-        // However, updating the actual thread title would be cool. Let's do it.
-
-        try {
-          const client = createThreadsClient(
-            process.env.NEXT_PUBLIC_LANGGRAPH_API_URL ||
-              "http://localhost:2024",
-          );
-          client.updateThread(chat.threadId!, {
-            title: dummyTitle,
-          });
-          console.log("[Dummy Logic] Title actually updated in backend");
-        } catch (e) {
-          console.error("[Dummy Logic] Failed to update title", e);
-        }
-      }, 2000);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [chat.messages, chat.threadId, chat.isLoading]);
 
   const handleStop = useCallback(() => {
     chat.stop();
   }, [chat]);
-
-  const handleEdit = useCallback(
-    (id: string, content: string) => {
-      const messageIndex = chat.messages.findIndex((m) => m.id === id);
-      const liveMessage = chat.messages[messageIndex];
-
-      if (!liveMessage) {
-        toast.error("Message not found in current session");
-        return;
-      }
-
-      const metadata = chat.getMessagesMetadata(liveMessage);
-      let parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
-
-      if (currentBranchCheckpoint && !parentCheckpoint) {
-        parentCheckpoint = currentBranchCheckpoint;
-      }
-
-      if (parentCheckpoint) {
-        chat.submit(
-          { messages: [{ type: "human", content }] },
-          { checkpoint: parentCheckpoint },
-        );
-      } else if (messageIndex === 0) {
-        console.warn(
-          "[ChatArea] No parent checkpoint for first message. This might append instead of branch.",
-        );
-        chat.submit({ messages: [{ type: "human", content }] });
-      } else {
-        toast.error("Unable to edit: No checkpoint available");
-        console.error("Missing checkpoint for message:", liveMessage);
-      }
-    },
-    [chat, currentBranchCheckpoint],
-  );
-
-  const handleRetry = useCallback(
-    (id: string, _content: string) => {
-      const liveMessage = chat.messages.find((m) => m.id === id);
-      if (!liveMessage) {
-        toast.error("Message not found in current session");
-        return;
-      }
-
-      const metadata = chat.getMessagesMetadata(liveMessage);
-      let parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
-
-      if (currentBranchCheckpoint && !parentCheckpoint) {
-        parentCheckpoint = currentBranchCheckpoint;
-      }
-
-      if (parentCheckpoint) {
-        if (liveMessage.type === "human") {
-          const content =
-            typeof liveMessage.content === "string"
-              ? liveMessage.content
-              : JSON.stringify(liveMessage.content);
-          chat.submit(
-            { messages: [{ type: "human", content }] },
-            { checkpoint: parentCheckpoint },
-          );
-        } else {
-          chat.submit(undefined, { checkpoint: parentCheckpoint });
-        }
-      } else {
-        toast.error("Unable to retry: No checkpoint available");
-      }
-    },
-    [chat, currentBranchCheckpoint],
-  );
-
-  const handleBranchSelect = useCallback(
-    (branch: string) => {
-      chat.setBranch(branch);
-      setCurrentBranch(branch);
-
-      const lastMessage = chat.messages[chat.messages.length - 1];
-      if (lastMessage) {
-        const meta = chat.getMessagesMetadata(lastMessage);
-        if (meta?.firstSeenState?.parent_checkpoint) {
-          setCurrentBranchCheckpoint(meta.firstSeenState.parent_checkpoint);
-        }
-      }
-    },
-    [chat],
-  );
-
-  const handleDelete = useCallback(
-    (id: string) => {
-      setHiddenMessageIds((prev) => {
-        const next = new Set(prev);
-        next.add(id);
-        return next;
-      });
-      onMessagesChange(processedMessages.filter((m) => m.id !== id));
-    },
-    [processedMessages, onMessagesChange],
-  );
 
   const handleRemoveFile = useCallback(
     (fileId: string) => {
@@ -705,8 +478,11 @@ export function ChatArea({
     [attachedFiles, onAttachedFilesChange],
   );
 
-  const hasMessages =
-    chat.messages.filter((m) => m.type !== "system").length > 0;
+  // ============================================================================
+  // RENDER HELPERS
+  // ============================================================================
+
+  const hasMessages = messageGroups.length > 0;
   const showLoading =
     chat.isLoading &&
     (chat.messages.length === 0 ||
@@ -714,6 +490,7 @@ export function ChatArea({
 
   return (
     <div className="flex-1 flex flex-col relative z-10">
+      {/* Messages Container */}
       <div
         ref={chatContainerRef}
         className={cn(
@@ -722,6 +499,7 @@ export function ChatArea({
         )}
       >
         {!hasMessages ? (
+          // Empty State
           <div className="max-w-3xl w-full space-y-8 animate-slide-up">
             <div className="text-center space-y-4">
               <div className="text-6xl font-bold bg-linear-to-r from-(--gradient-from) via-(--gradient-via) to-(--gradient-to) bg-clip-text text-transparent animate-pulse font-display tracking-tight">
@@ -778,7 +556,9 @@ export function ChatArea({
             </div>
           </div>
         ) : (
+          // Messages List - Render by Groups
           <div className="max-w-4xl mx-auto w-full space-y-6">
+            {/* Error Display */}
             {chatError && (
               <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
                 <p className="text-sm font-medium">Error</p>
@@ -786,262 +566,149 @@ export function ChatArea({
               </div>
             )}
 
-            {(() => {
-              console.log(
-                "[BranchDebug] ==================== MESSAGE PROCESSING START ====================",
-              );
-              console.log(
-                "[BranchDebug] Total messages:",
-                chat.messages.length,
-              );
-              console.log("[BranchDebug] Current threadId:", chat.threadId);
-              console.log(
-                "[BranchDebug] Current stream branch:",
-                (chat as any).stream?.branch,
-              );
-              console.log(
-                "[BranchDebug] experimental_branchTree:",
-                JSON.stringify(
-                  (chat as any).stream?.experimental_branchTree,
-                  null,
-                  2,
-                ),
-              );
+            {/* Message Groups */}
+            {messageGroups.map((group, groupIdx) => {
+              const isLastGroup = groupIdx === messageGroups.length - 1;
 
-              const processed: Array<{
-                uiMessage: Message;
-                isLastInGroup: boolean;
-                retryTargetId: string | null;
-                branch: string | undefined;
-                branchOptions: string[] | undefined;
-                groupCopyContent: string;
-              }> = [];
+              return (
+                <div key={group.id} className="space-y-3">
+                  {/* User Message */}
+                  {group.userMessage && (
+                    <ChatBubble
+                      message={group.userMessage}
+                      showAvatar={false}
+                      showActions={true}
+                      isLoading={chat.isLoading}
+                      isLastInGroup={true}
+                      isLastGroup={isLastGroup}
+                      isLastMessage={isLastGroup}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      branch={group.branch}
+                      branchOptions={group.branchOptions}
+                    />
+                  )}
 
-              let groupFirstAiId: string | null = null;
-              let groupMessages: Array<{ role: string; content: string }> = [];
-
-              for (let i = 0; i < chat.messages.length; i++) {
-                const msg = chat.messages[i];
-
-                if (msg.type === "system" || msg.type === "tool") continue;
-                if (msg.id && hiddenMessageIds.has(msg.id)) continue;
-
-                console.log(`[BranchDebug] --- Processing message ${i} ---`);
-                console.log("[BranchDebug] Message id:", msg.id);
-                console.log("[BranchDebug] Message type:", msg.type);
-                console.log(
-                  "[BranchDebug] Message content preview:",
-                  typeof msg.content === "string"
-                    ? msg.content.slice(0, 50)
-                    : "complex",
-                );
-
-                if (msg.type === "human") {
-                  groupFirstAiId = null;
-                  groupMessages = [];
-                  console.log("[BranchDebug] NEW GROUP STARTED");
-                }
-
-                const branchMetadata = chat.getMessagesMetadata(msg);
-                console.log("[BranchDebug] branchMetadata:", {
-                  branch: branchMetadata?.branch,
-                  branchOptions: branchMetadata?.branchOptions,
-                  branchOptionsLength: branchMetadata?.branchOptions?.length,
-                  hasFirstSeenState: !!branchMetadata?.firstSeenState,
-                  parentCheckpointId:
-                    branchMetadata?.firstSeenState?.parent_checkpoint
-                      ?.checkpoint_id,
-                });
-
-                const toolCalls = chat.getToolCalls(msg);
-                console.log(
-                  "[BranchDebug] Tool calls count:",
-                  toolCalls.length,
-                );
-
-                const reasoning = (msg as any)._originalMessage
-                  ? getReasoningFromMessage((msg as any)._originalMessage)
-                  : undefined;
-
-                const content =
-                  typeof msg.content === "string"
-                    ? msg.content
-                    : Array.isArray(msg.content)
-                      ? msg.content.map((c: any) => c.text || "").join("")
-                      : JSON.stringify(msg.content);
-
-                if (msg.type === "ai") {
-                  groupMessages.push({ role: "assistant", content });
-                }
-
-                const uiMessage: Message = {
-                  id: msg.id || `msg-${i}`,
-                  role: msg.type === "human" ? "user" : "assistant",
-                  content,
-                  timestamp: new Date(),
-                  _originalMessage: msg,
-                  reasoning,
-                  _combinedToolCalls: toolCalls.map((tc) => {
-                    const uiMsg = chat.ui.find(
-                      (ui) => ui.metadata?.tool_call_id === tc.call.id,
-                    );
-                    const toolConfig = getToolUIConfig(tc.call.name);
-
-                    return {
-                      id: tc.call.id || "",
-                      name: tc.call.name,
-                      arguments: tc.call.args,
-                      result: tc.result?.content as string,
-                      status:
-                        uiMsg?.props?.status === "executing"
-                          ? "loading"
-                          : uiMsg?.props?.status === "failed"
-                            ? "error"
-                            : uiMsg?.props?.status === "completed"
-                              ? "success"
-                              : tc.state === "pending"
-                                ? "loading"
-                                : tc.state === "error"
-                                  ? "error"
-                                  : "success",
-                      startedAt: uiMsg?.props?.startedAt,
-                      completedAt: uiMsg?.props?.completedAt,
-                      error: uiMsg?.props?.error,
-                      namespace: toolConfig.namespace,
-                    };
-                  }),
-                };
-
-                if (msg.type === "ai" && groupFirstAiId === null) {
-                  groupFirstAiId = uiMessage.id;
-                }
-
-                let isLastInGroup = false;
-                for (let j = i + 1; j < chat.messages.length; j++) {
-                  if (chat.messages[j].type === "human") {
-                    isLastInGroup = true;
-                    break;
-                  }
-                }
-                if (i === chat.messages.length - 1) isLastInGroup = true;
-
-                const groupCopyContent = groupMessages
-                  .map((m) => m.content)
-                  .join("\n\n");
-
-                processed.push({
-                  uiMessage,
-                  isLastInGroup,
-                  retryTargetId: groupFirstAiId,
-                  branch: branchMetadata?.branch,
-                  branchOptions: branchMetadata?.branchOptions,
-                  groupCopyContent,
-                });
-
-                console.log("[BranchDebug] Added to processed:", {
-                  id: uiMessage.id,
-                  role: uiMessage.role,
-                  isLastInGroup,
-                  retryTargetId: groupFirstAiId,
-                  branchOptionsLength: branchMetadata?.branchOptions?.length,
-                });
-              }
-
-              console.log("[BranchDebug] Total processed:", processed.length);
-              console.log(
-                "[BranchDebug] ==================== END ====================",
-              );
-
-              return processed.map(
-                (
-                  {
-                    uiMessage,
-                    isLastInGroup,
-                    retryTargetId,
-                    branch,
-                    branchOptions,
-                    groupCopyContent,
-                  },
-                  idx,
-                ) => {
-                  const prevMsg = idx > 0 ? processed[idx - 1].uiMessage : null;
-                  const showAvatar =
-                    uiMessage.role === "assistant" &&
-                    (idx === 0 || prevMsg?.role === "user");
-
-                  return (
-                    <React.Fragment key={uiMessage.id}>
+                  {/* Assistant Group */}
+                  {group.assistantMessage && (
+                    <div className="space-y-2 group">
+                      {/* Assistant Message (no actions inside bubble) */}
                       <ChatBubble
-                        message={uiMessage}
-                        showAvatar={showAvatar}
-                        showActions={uiMessage.role === "user"}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        message={group.assistantMessage}
+                        showAvatar={true}
+                        showActions={false} // Actions are outside the bubble
+                        isLoading={chat.isLoading}
+                        isLastInGroup={true}
+                        isLastGroup={isLastGroup}
+                        isLastMessage={isLastGroup}
                       />
 
-                      {uiMessage._combinedToolCalls &&
-                        uiMessage._combinedToolCalls.length > 0 &&
-                        settings.showToolCalls &&
-                        !showLoading && (
+                      {/* Tool Calls */}
+                      {group.toolCalls.length > 0 && settings.showToolCalls && (
+                        <div className="ml-14 space-y-2">
+                          {/* Custom Tool UIs */}
                           <GenerativeUIRenderer
-                            toolCalls={
-                              uiMessage._combinedToolCalls.filter((tc) =>
-                                hasCustomUI(tc.name),
-                              ) as ToolCall[]
-                            }
-                            isLoading={uiMessage._combinedToolCalls.some(
+                            toolCalls={group.toolCalls.filter((tc) =>
+                              hasCustomUI(tc.name),
+                            )}
+                            isLoading={group.toolCalls.some(
                               (tc) => tc.status === "loading",
                             )}
                           />
-                        )}
 
-                      {uiMessage._combinedToolCalls &&
-                        uiMessage._combinedToolCalls.length > 0 &&
-                        settings.showToolCalls &&
-                        !showLoading &&
-                        uiMessage._combinedToolCalls.some(
-                          (tc) => !hasCustomUI(tc.name),
-                        ) && (
-                          <div className="ml-14 mt-3">
+                          {/* Standard Tool Display */}
+                          {group.toolCalls.some(
+                            (tc) => !hasCustomUI(tc.name),
+                          ) && (
                             <ToolCallMessage
-                              toolCalls={
-                                uiMessage._combinedToolCalls.filter(
-                                  (tc) => !hasCustomUI(tc.name),
-                                ) as ToolCall[]
-                              }
-                              isLoading={uiMessage._combinedToolCalls.some(
+                              toolCalls={group.toolCalls.filter(
+                                (tc) => !hasCustomUI(tc.name),
+                              )}
+                              isLoading={group.toolCalls.some(
                                 (tc) => tc.status === "loading",
                               )}
                             />
-                          </div>
-                        )}
-
-                      {isLastInGroup && uiMessage.role === "assistant" && (
-                        <>
-                          {console.log("[BranchDebug] GroupControls:", {
-                            id: uiMessage.id,
-                            hasRetryTarget: !!retryTargetId,
-                            hasBranch: !!branch,
-                            branchOptionsLength: branchOptions?.length,
-                          })}
-                          <div className="flex items-center gap-2 mt-2 ml-14 group-hover:opacity-100 transition-opacity">
-                            <GroupControls
-                              retryTargetId={retryTargetId}
-                              branch={branch}
-                              branchOptions={branchOptions}
-                              onBranchSelect={handleBranchSelect}
-                              onRetry={handleRetry}
-                              copyContent={groupCopyContent}
-                            />
-                          </div>
-                        </>
+                          )}
+                        </div>
                       )}
-                    </React.Fragment>
-                  );
-                },
-              );
-            })()}
 
+                      {/* Actions Bar - OUTSIDE the bubble, at group level */}
+                      <div className="ml-14 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        {/* Branch Switcher - Only on last group */}
+                        {isLastGroup &&
+                          group.branchOptions &&
+                          group.branchOptions.length > 1 && (
+                            <BranchSwitcher
+                              branch={group.branch}
+                              branchOptions={group.branchOptions}
+                              onSelect={handleBranchChange}
+                            />
+                          )}
+
+                        {/* Regenerate Button */}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() =>
+                                  handleRegenerate(
+                                    group.assistantMessage!.id,
+                                    isLastGroup,
+                                  )
+                                }
+                                disabled={chat.isLoading}
+                                className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                              >
+                                <RefreshCw
+                                  className={cn(
+                                    "size-4 text-foreground",
+                                    chat.isLoading && "animate-spin",
+                                  )}
+                                />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {isLastGroup
+                                  ? "Regenerate response (creates new branch)"
+                                  : "Regenerate response (replaces conversation from here)"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        {/* Copy Button */}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() =>
+                                  navigator.clipboard.writeText(
+                                    group.assistantMessage!.content,
+                                  )
+                                }
+                                className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                              >
+                                <Copy className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Copy message</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Loading Indicator */}
             {showLoading && (
               <div className="flex items-start gap-3">
                 <div
@@ -1064,7 +731,6 @@ export function ChatArea({
                               )}
                               isLoading
                             />
-
                             {currentToolCalls.some(
                               (tc) => !hasCustomUI(tc.name),
                             ) && (
@@ -1109,6 +775,7 @@ export function ChatArea({
         )}
       </div>
 
+      {/* Input Area */}
       {hasMessages && (
         <div className="border-t border-border p-4">
           <div className="max-w-4xl mx-auto glass-strong rounded-xl p-4">

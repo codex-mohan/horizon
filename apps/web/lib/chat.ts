@@ -3,7 +3,7 @@
  *
  * Provides a full-featured interface for chat functionality including:
  * - Message streaming
- * - Branching (edit, regenerate, switch branches)
+ * - Message editing and regeneration
  * - Optimistic updates
  * - Event processing
  */
@@ -34,8 +34,10 @@ export interface MessageMetadata {
   firstSeenState?: {
     parent_checkpoint?: { checkpoint_id: string };
   };
+  // Branch navigation metadata
   branch?: string;
   branchOptions?: string[];
+
   // Stream metadata for multi-agent support
   streamMetadata?: {
     langgraph_node?: string;
@@ -82,14 +84,16 @@ export interface UseChatReturn {
   ) => void;
   stop: () => void;
 
+  // Branching actions
+  setBranch: (branch: string) => void;
+
   // Interrupt actions
   approveInterrupt: () => void;
   rejectInterrupt: (reason?: string) => void;
 
-  // Branching support
+  // Metadata support
   getMessagesMetadata: (message: Message) => MessageMetadata | null;
   getToolCalls: (message: any) => any[];
-  setBranch: (branch: string) => void;
 
   // Utilities
   processEvent: (event: Record<string, unknown>) => ProcessedEvent | null;
@@ -408,10 +412,9 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     onCustomEvent: handleCustomEvent,
     // Throttle for smoother updates (30ms balances responsiveness with performance)
     throttle: 30,
-    // Enable experimental branching support
-    experimental_branchTree: true,
+
     fetchStateHistory,
-  } as any); // Cast to any because experimental_branchTree might not be in the strict type definition yet
+  } as any);
 
   // Reset UI messages when streaming stops (conversation ends)
   useEffect(() => {
@@ -421,23 +424,15 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     }
   }, [stream.isLoading, uiMessages.length]);
 
-  // Clear UI messages when starting a new submission (retry/edit)
-  const clearUIMessages = useCallback(() => {
-    setUIMessages([]);
-  }, []);
-
-  // Submit function with full branching support
+  // Submit function
   const submit = useCallback(
     (
       input: { messages: Array<{ type: string; content: string }> } | undefined,
       options?: SubmitOptions,
     ) => {
-      // Clear UI messages when starting a new submission (retry/edit/regenerate)
-      clearUIMessages();
-
       const submitOptions: Record<string, unknown> = {};
 
-      // Add checkpoint for branching (edit/regenerate)
+      // Add checkpoint for edit/regenerate
       if (options?.checkpoint) {
         // robustly handle checkpoint as object or string
         const cp = options.checkpoint;
@@ -477,7 +472,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         stream.submit(undefined, submitOptions);
       }
     },
-    [stream.submit, userId, clearUIMessages],
+    [stream.submit, userId],
   );
 
   // Stable stop function
@@ -510,69 +505,17 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     [stream],
   );
 
-  // Get metadata for a message (branch info, parent checkpoint)
+  // Get metadata for a message (parent checkpoint)
   const getMessagesMetadata = useCallback(
     (message: Message): MessageMetadata | null => {
       if (!stream.getMessagesMetadata) {
         return null;
       }
       try {
-        const meta = stream.getMessagesMetadata(message);
-
-        // If branchOptions is missing, try to extract from fork tree structure
-        if (!meta?.branchOptions && stream.experimental_branchTree) {
-          console.log(
-            "[useChat] No branchOptions in metadata, checking fork tree",
-          );
-          const treeAny = stream.experimental_branchTree as any;
-
-          // Check if this is a fork tree with items array
-          if (
-            typeof treeAny.type === "string" &&
-            treeAny.type === "fork" &&
-            Array.isArray(treeAny.items)
-          ) {
-            const branchOptions = treeAny.items.map(
-              (_item: any, index: number) => {
-                // Extract branch identifier from the path array
-                // Items in a fork have a path with checkpoint IDs
-                const itemPath = _item?.path;
-                if (Array.isArray(itemPath) && itemPath.length > 0) {
-                  const checkpointId = itemPath[0];
-                  if (typeof checkpointId === "string") {
-                    return checkpointId;
-                  }
-                }
-                return `branch-${index}`;
-              },
-            );
-
-            console.log(
-              "[useChat] Extracted branchOptions from fork:",
-              branchOptions,
-            );
-            return {
-              ...meta,
-              branchOptions,
-              branch: meta?.branch || branchOptions[branchOptions.length - 1],
-            } as MessageMetadata;
-          }
-        }
-
-        return meta as MessageMetadata | null;
+        return stream.getMessagesMetadata(message) as MessageMetadata | null;
       } catch (err) {
         console.error("[useChat] getMessagesMetadata error:", err);
         return null;
-      }
-    },
-    [stream],
-  );
-
-  // Set branch for switching between alternative message versions
-  const setBranch = useCallback(
-    (branch: string) => {
-      if (stream.setBranch) {
-        stream.setBranch(branch);
       }
     },
     [stream],
@@ -586,7 +529,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     [],
   );
 
-  // Extract messages - rely on stream.messages for correct branch handling and metadata tracking
+  // Extract messages - rely on stream.messages
   const messages = stream.messages ?? [];
 
   console.log("[useChat] Messages:", stream.messages);
@@ -620,6 +563,16 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
   const mergedUIMessages = Array.from(uiMessageMap.values());
 
+  // Stable setBranch function for switching conversation branches
+  const setBranch = useCallback(
+    (branch: string) => {
+      if (stream.setBranch) {
+        stream.setBranch(branch);
+      }
+    },
+    [stream],
+  );
+
   return {
     messages,
     isLoading: stream.isLoading,
@@ -638,13 +591,15 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     submit,
     stop,
 
+    // Branching actions
+    setBranch,
+
     // Interrupt actions
     approveInterrupt,
     rejectInterrupt,
 
     getMessagesMetadata,
     getToolCalls: stream.getToolCalls,
-    setBranch,
     processEvent,
     stream, // Expose raw stream for advanced usage
   };

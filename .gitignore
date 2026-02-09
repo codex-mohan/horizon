@@ -34,3 +34,12 @@ npm-debug.log*
 # Misc
 .DS_Store
 *.pem
+
+# Executables
+*.exe
+*.out
+*.app
+*.dmg
+*.deb
+*.rpm
+*.apk

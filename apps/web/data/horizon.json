@@ -89,6 +89,14 @@
       "expiresAt": "2026-02-09T13:09:02.445Z",
       "rememberMe": false,
       "createdAt": "2026-02-08T13:09:02.466Z"
+    },
+    {
+      "id": "557f3e3e-2aa8-49d0-b725-b538d1b6205b",
+      "userId": "cfae84e8-b7bf-494f-9763-2e2871eeb523",
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJjZmFlODRlOC1iN2JmLTQ5NGYtOTc2My0yZTI4NzFlZWI1MjMiLCJzZXNzaW9uSWQiOiI1NTdmM2UzZS0yYWE4LTQ5ZDAtYjcyNS1iNTM4ZDFiNjIwNWIiLCJpYXQiOjE3NzA2NDY1ODIsImV4cCI6MTc3MzIzODU4Mn0.d8WUAjW1ZEc_hD9dHAauEiaXW-PcGOtn_mxkpCvKjiw",
+      "expiresAt": "2026-03-11T14:16:22.430Z",
+      "rememberMe": true,
+      "createdAt": "2026-02-09T14:16:22.443Z"
     }
   ],
   "assistants": []
