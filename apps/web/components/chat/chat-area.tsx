@@ -7,27 +7,11 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { Loader2, Pencil, RefreshCw, Copy, GitBranch } from "lucide-react";
-import { Badge } from "@workspace/ui/components/badge";
-import { Button } from "@workspace/ui/components/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
-import { FileBadge } from "./file-badge";
-import { ChatBubble } from "./chat-bubble";
-import {
-  ChatInput,
-  type AttachedFile as ChatInputAttachedFile,
-} from "./chat-input";
 import { cn } from "@workspace/ui/lib/utils";
 import type { Message, AttachedFile } from "./chat-interface";
-import { ActivityTimeline } from "./activity-timeline";
-import { ToolCallMessage, type ToolCall } from "./tool-call-message";
-import { GenerativeUIRenderer } from "./generative-ui-renderer";
-import { hasCustomUI, getToolUIConfig } from "@/lib/tool-config";
+import type {
+  Message as LangGraphMessage,
+} from "@langchain/langgraph-sdk";
 import {
   useChat,
   ProcessedEvent as ChatProcessedEvent,
@@ -35,146 +19,21 @@ import {
   type ChatError,
 } from "@/lib/chat";
 import { useChatSettings } from "@/lib/stores/chat-settings";
-import { combineToolMessages } from "@/lib/chat-utils";
-import type {
-  AIMessage,
-  Message as LangGraphMessage,
-} from "@langchain/langgraph-sdk";
 import { useTheme } from "@/components/theme/theme-provider";
 import { createThreadsClient } from "@/lib/threads";
 import { generateConversationTitle } from "@/lib/title-utils";
 import { useAuthStore } from "@/lib/stores/auth";
-import { getReasoningFromMessage } from "@/lib/reasoning-utils";
 import { toast } from "sonner";
-import { BranchSwitcher } from "./branch-switcher";
+import type { ToolCall } from "./tool-call-message";
+import { getToolUIConfig } from "@/lib/tool-config";
 
-const suggestedPrompts = [
-  "Explain quantum computing in simple terms",
-  "Write a Python function to sort an array",
-  "What are the latest trends in AI?",
-  "Help me plan a trip to Japan",
-] as const;
-
-// ============================================================================
-// MESSAGE GROUPING TYPES
-// ============================================================================
-
-interface MessageGroup {
-  id: string;
-  userMessage: Message | null;
-  assistantMessage: Message | null;
-  toolCalls: ToolCall[];
-  isLastGroup: boolean;
-  branch?: string;
-  branchOptions?: string[];
-}
-
-// ============================================================================
-// MESSAGE GROUPING LOGIC
-// ============================================================================
-
-function groupMessages(
-  messages: LangGraphMessage[],
-  chat: ReturnType<typeof useChat>,
-  hiddenMessageIds: Set<string>,
-): MessageGroup[] {
-  if (messages.length === 0) return [];
-
-  const groups: MessageGroup[] = [];
-  let currentGroup: MessageGroup | null = null;
-
-  for (let i = 0; i < messages.length; i++) {
-    const msg = messages[i];
-
-    // Skip system and hidden messages
-    if (msg.type === "system" || msg.type === "tool") continue;
-    if (msg.id && hiddenMessageIds.has(msg.id)) continue;
-
-    // Get metadata
-    const metadata = chat.getMessagesMetadata(msg);
-    const reasoning = getReasoningFromMessage(msg as AIMessage);
-
-    // Extract content
-    const content =
-      typeof msg.content === "string"
-        ? msg.content
-        : Array.isArray(msg.content)
-          ? msg.content.map((c: any) => c.text || "").join("")
-          : JSON.stringify(msg.content);
-
-    if (msg.type === "human") {
-      // Start a new group for user messages
-      if (currentGroup) {
-        groups.push(currentGroup);
-      }
-
-      currentGroup = {
-        id: `group-${msg.id || i}`,
-        userMessage: {
-          id: msg.id || `msg-${i}`,
-          role: "user",
-          content,
-          timestamp: new Date(),
-          _originalMessage: msg,
-        },
-        assistantMessage: null,
-        toolCalls: [],
-        isLastGroup: false,
-        branch: metadata?.branch,
-        branchOptions: metadata?.branchOptions,
-      };
-    } else if (msg.type === "ai" && currentGroup) {
-      // Get tool calls for this AI message
-      const toolCalls = chat.getToolCalls(msg as any);
-      const toolCallsWithUI: ToolCall[] = toolCalls.map((tc) => {
-        const toolConfig = getToolUIConfig(tc.call.name);
-        return {
-          id: tc.call.id || "",
-          name: tc.call.name,
-          arguments: tc.call.args,
-          result: tc.result?.content as string,
-          status: (tc.state === "pending"
-            ? "loading"
-            : tc.state === "error"
-              ? "error"
-              : "success") as "loading" | "error" | "success" | "completed",
-          namespace: toolConfig.namespace,
-        };
-      });
-
-      currentGroup.assistantMessage = {
-        id: msg.id || `msg-${i}`,
-        role: "assistant",
-        content,
-        timestamp: new Date(),
-        _originalMessage: msg,
-        reasoning,
-        _combinedToolCalls: toolCallsWithUI,
-      };
-      currentGroup.toolCalls = toolCallsWithUI;
-
-      // Update branch metadata from assistant message (more reliable than user message)
-      if (metadata?.branch !== undefined) {
-        currentGroup.branch = metadata.branch;
-      }
-      if (metadata?.branchOptions !== undefined) {
-        currentGroup.branchOptions = metadata.branchOptions;
-      }
-    }
-  }
-
-  // Push the last group
-  if (currentGroup) {
-    groups.push(currentGroup);
-  }
-
-  // Mark the last group
-  if (groups.length > 0) {
-    groups[groups.length - 1].isLastGroup = true;
-  }
-
-  return groups;
-}
+// Extracted components
+import { groupMessages, type MessageGroup as MessageGroupType } from "./message-grouping";
+import { ChatEmptyState } from "./chat-empty-state";
+import { ChatLoadingIndicator } from "./chat-loading-indicator";
+import { MessageGroup } from "./message-group";
+import { ChatInputArea } from "./chat-input-area";
+import type { AttachedFile as ChatInputAttachedFile } from "./chat-input";
 
 // ============================================================================
 // MAIN CHAT AREA
@@ -456,12 +315,12 @@ export function ChatArea({
         try {
           const client = createThreadsClient(
             process.env.NEXT_PUBLIC_LANGGRAPH_API_URL ||
-              "http://localhost:2024",
+            "http://localhost:2024",
           );
           client.updateThread(chat.threadId, {
             title: generateConversationTitle(text),
           });
-        } catch {}
+        } catch { }
       }
     },
     [chat, onAttachedFilesChange],
@@ -499,62 +358,18 @@ export function ChatArea({
         )}
       >
         {!hasMessages ? (
-          // Empty State
-          <div className="max-w-3xl w-full space-y-8 animate-slide-up">
-            <div className="text-center space-y-4">
-              <div className="text-6xl font-bold bg-linear-to-r from-(--gradient-from) via-(--gradient-via) to-(--gradient-to) bg-clip-text text-transparent animate-pulse font-display tracking-tight">
-                Horizon
-              </div>
-              <div className="text-sm text-muted-foreground">
-                by Singularity.ai
-              </div>
-              <p className="text-xl text-muted-foreground">
-                Experience the event horizon of AI conversations
-              </p>
-            </div>
-
-            <div className="glass-strong rounded-xl p-4 space-y-3">
-              {attachedFiles.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {attachedFiles.map((file) => (
-                    <FileBadge
-                      key={file.id}
-                      name={file.name}
-                      size={file.size}
-                      type={file.type}
-                      url={file.url}
-                      onRemove={() => handleRemoveFile(file.id)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              <ChatInput
-                onSubmit={handleSubmit}
-                onStop={handleStop}
-                isLoading={chat.isLoading}
-                onSettingsOpen={onSettingsOpen}
-                showToolCalls={settings.showToolCalls}
-                onToggleToolCalls={toggleShowToolCalls}
-                isLightTheme={isLightTheme}
-                attachedFiles={attachedFiles}
-                onAttachedFilesChange={onAttachedFilesChange}
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-2 justify-center">
-              {suggestedPrompts.map((prompt, i) => (
-                <Badge
-                  key={i}
-                  variant="outline"
-                  className="cursor-pointer hover:scale-105 transition-transform glass-badge"
-                  onClick={() => handleSubmit(prompt, [])}
-                >
-                  {prompt}
-                </Badge>
-              ))}
-            </div>
-          </div>
+          <ChatEmptyState
+            attachedFiles={attachedFiles}
+            onSubmit={handleSubmit}
+            onStop={handleStop}
+            isLoading={chat.isLoading}
+            onSettingsOpen={onSettingsOpen}
+            showToolCalls={settings.showToolCalls}
+            onToggleToolCalls={toggleShowToolCalls}
+            isLightTheme={isLightTheme}
+            onAttachedFilesChange={onAttachedFilesChange}
+            onRemoveFile={handleRemoveFile}
+          />
         ) : (
           // Messages List - Render by Groups
           <div className="max-w-4xl mx-auto w-full space-y-6">
@@ -571,205 +386,34 @@ export function ChatArea({
               const isLastGroup = groupIdx === messageGroups.length - 1;
 
               return (
-                <div key={group.id} className="space-y-3">
-                  {/* User Message */}
-                  {group.userMessage && (
-                    <ChatBubble
-                      message={group.userMessage}
-                      showAvatar={false}
-                      showActions={true}
-                      isLoading={chat.isLoading}
-                      isLastInGroup={true}
-                      isLastGroup={isLastGroup}
-                      isLastMessage={isLastGroup}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      branch={group.branch}
-                      branchOptions={group.branchOptions}
-                    />
-                  )}
-
-                  {/* Assistant Group */}
-                  {group.assistantMessage && (
-                    <div className="space-y-2 group">
-                      {/* Assistant Message (no actions inside bubble) */}
-                      <ChatBubble
-                        message={group.assistantMessage}
-                        showAvatar={true}
-                        showActions={false} // Actions are outside the bubble
-                        isLoading={chat.isLoading}
-                        isLastInGroup={true}
-                        isLastGroup={isLastGroup}
-                        isLastMessage={isLastGroup}
-                      />
-
-                      {/* Tool Calls */}
-                      {group.toolCalls.length > 0 && settings.showToolCalls && (
-                        <div className="ml-14 space-y-2">
-                          {/* Custom Tool UIs */}
-                          <GenerativeUIRenderer
-                            toolCalls={group.toolCalls.filter((tc) =>
-                              hasCustomUI(tc.name),
-                            )}
-                            isLoading={group.toolCalls.some(
-                              (tc) => tc.status === "loading",
-                            )}
-                          />
-
-                          {/* Standard Tool Display */}
-                          {group.toolCalls.some(
-                            (tc) => !hasCustomUI(tc.name),
-                          ) && (
-                            <ToolCallMessage
-                              toolCalls={group.toolCalls.filter(
-                                (tc) => !hasCustomUI(tc.name),
-                              )}
-                              isLoading={group.toolCalls.some(
-                                (tc) => tc.status === "loading",
-                              )}
-                            />
-                          )}
-                        </div>
-                      )}
-
-                      {/* Actions Bar - OUTSIDE the bubble, at group level */}
-                      <div className="ml-14 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        {/* Branch Switcher - Only on last group */}
-                        {isLastGroup &&
-                          group.branchOptions &&
-                          group.branchOptions.length > 1 && (
-                            <BranchSwitcher
-                              branch={group.branch}
-                              branchOptions={group.branchOptions}
-                              onSelect={handleBranchChange}
-                            />
-                          )}
-
-                        {/* Regenerate Button */}
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() =>
-                                  handleRegenerate(
-                                    group.assistantMessage!.id,
-                                    isLastGroup,
-                                  )
-                                }
-                                disabled={chat.isLoading}
-                                className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-                              >
-                                <RefreshCw
-                                  className={cn(
-                                    "size-4 text-foreground",
-                                    chat.isLoading && "animate-spin",
-                                  )}
-                                />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>
-                                {isLastGroup
-                                  ? "Regenerate response (creates new branch)"
-                                  : "Regenerate response (replaces conversation from here)"}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        {/* Copy Button */}
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() =>
-                                  navigator.clipboard.writeText(
-                                    group.assistantMessage!.content,
-                                  )
-                                }
-                                className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
-                              >
-                                <Copy className="size-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Copy message</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <MessageGroup
+                  key={group.id}
+                  id={group.id}
+                  userMessage={group.userMessage}
+                  assistantMessage={group.assistantMessage}
+                  toolCalls={group.toolCalls}
+                  isLastGroup={isLastGroup}
+                  branch={group.branch}
+                  branchOptions={group.branchOptions}
+                  isLoading={chat.isLoading}
+                  showToolCalls={settings.showToolCalls}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onRegenerate={handleRegenerate}
+                  onBranchChange={handleBranchChange}
+                />
               );
             })}
 
             {/* Loading Indicator */}
             {showLoading && (
-              <div className="flex items-start gap-3">
-                <div
-                  className={cn(
-                    "rounded-xl p-3 w-full min-h-[56px]",
-                    isLightTheme
-                      ? "glass-strong bg-white/60"
-                      : "glass bg-card/60",
-                  )}
-                >
-                  {currentToolCalls.length > 0 ||
-                  liveActivityEvents.length > 0 ? (
-                    <div className="space-y-3">
-                      {settings.showToolCalls &&
-                        currentToolCalls.length > 0 && (
-                          <>
-                            <GenerativeUIRenderer
-                              toolCalls={currentToolCalls.filter((tc) =>
-                                hasCustomUI(tc.name),
-                              )}
-                              isLoading
-                            />
-                            {currentToolCalls.some(
-                              (tc) => !hasCustomUI(tc.name),
-                            ) && (
-                              <ToolCallMessage
-                                toolCalls={currentToolCalls.filter(
-                                  (tc) => !hasCustomUI(tc.name),
-                                )}
-                                isLoading
-                              />
-                            )}
-                          </>
-                        )}
-                      {settings.showActivityTimeline &&
-                        liveActivityEvents.length > 0 && (
-                          <ActivityTimeline
-                            processedEvents={liveActivityEvents}
-                            isLoading
-                          />
-                        )}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Loader2
-                        className={cn(
-                          "size-5 animate-spin",
-                          isLightTheme ? "text-slate-600" : "text-primary",
-                        )}
-                      />
-                      <span
-                        className={
-                          isLightTheme ? "text-slate-600" : "text-foreground"
-                        }
-                      >
-                        Processing...
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <ChatLoadingIndicator
+                isLightTheme={isLightTheme}
+                showToolCalls={settings.showToolCalls}
+                showActivityTimeline={settings.showActivityTimeline}
+                currentToolCalls={currentToolCalls}
+                liveActivityEvents={liveActivityEvents}
+              />
             )}
           </div>
         )}
@@ -777,36 +421,18 @@ export function ChatArea({
 
       {/* Input Area */}
       {hasMessages && (
-        <div className="border-t border-border p-4">
-          <div className="max-w-4xl mx-auto glass-strong rounded-xl p-4">
-            {attachedFiles.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {attachedFiles.map((file) => (
-                  <FileBadge
-                    key={file.id}
-                    name={file.name}
-                    size={file.size}
-                    type={file.type}
-                    url={file.url}
-                    onRemove={() => handleRemoveFile(file.id)}
-                  />
-                ))}
-              </div>
-            )}
-
-            <ChatInput
-              onSubmit={handleSubmit}
-              onStop={handleStop}
-              isLoading={chat.isLoading}
-              onSettingsOpen={onSettingsOpen}
-              showToolCalls={settings.showToolCalls}
-              onToggleToolCalls={toggleShowToolCalls}
-              isLightTheme={isLightTheme}
-              attachedFiles={attachedFiles}
-              onAttachedFilesChange={onAttachedFilesChange}
-            />
-          </div>
-        </div>
+        <ChatInputArea
+          attachedFiles={attachedFiles}
+          onSubmit={handleSubmit}
+          onStop={handleStop}
+          isLoading={chat.isLoading}
+          onSettingsOpen={onSettingsOpen}
+          showToolCalls={settings.showToolCalls}
+          onToggleToolCalls={toggleShowToolCalls}
+          isLightTheme={isLightTheme}
+          onAttachedFilesChange={onAttachedFilesChange}
+          onRemoveFile={handleRemoveFile}
+        />
       )}
     </div>
   );
