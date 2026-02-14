@@ -1,9 +1,9 @@
-import { AgentState, UIMessage } from "../state.js";
-import { RunnableConfig } from "@langchain/core/runnables";
 import { ToolMessage } from "@langchain/core/messages";
-import { toolMap } from "../tools/index.js";
-import { agentConfig } from "../../lib/config.js";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { v4 as uuidv4 } from "uuid";
+import { agentConfig } from "../../lib/config.js";
+import type { AgentState, UIMessage } from "../state.js";
+import { toolMap } from "../tools/index.js";
 
 /**
  * Helper to emit a custom event for real-time UI updates
@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
  */
 async function emitUIEvent(
   config: RunnableConfig,
-  uiMessage: UIMessage,
+  uiMessage: UIMessage
 ): Promise<void> {
   // Check if we're in a streaming context with custom event emitter
   const streamEvents = (config as any).streamEvents;
@@ -28,7 +28,7 @@ async function emitUIEvent(
 
 export async function ToolExecution(
   state: AgentState,
-  config: RunnableConfig,
+  config: RunnableConfig
 ): Promise<Partial<AgentState>> {
   const updates: Partial<AgentState> = {};
   const executedTools: typeof state.executed_tool_calls = [];
@@ -37,10 +37,12 @@ export async function ToolExecution(
   let totalRetries = 0;
 
   const approvedTools = state.pending_tool_calls?.filter(
-    (tc) => tc.status === "approved",
+    (tc) => tc.status === "approved"
   );
 
-  if (!approvedTools || approvedTools.length === 0) return updates;
+  if (!approvedTools || approvedTools.length === 0) {
+    return updates;
+  }
 
   console.log(`[ToolExecution] Executing ${approvedTools.length} tool(s)`);
 
@@ -80,7 +82,7 @@ export async function ToolExecution(
           content: `Error: Tool "${toolCall.name}" not found`,
           tool_call_id: toolCall.id,
           name: toolCall.name,
-        }),
+        })
       );
       continue;
     }
@@ -146,7 +148,7 @@ export async function ToolExecution(
         const errorMessage =
           error instanceof Error ? error.message : String(error);
         console.error(
-          `[ToolExecution] ${toolCall.name} failed (${retries}/${maxRetries}): ${errorMessage}`,
+          `[ToolExecution] ${toolCall.name} failed (${retries}/${maxRetries}): ${errorMessage}`
         );
 
         if (retries >= maxRetries) {
@@ -177,7 +179,7 @@ export async function ToolExecution(
         }
 
         await new Promise((resolve) =>
-          setTimeout(resolve, Math.pow(2, retries) * 1000),
+          setTimeout(resolve, 2 ** retries * 1000)
         );
       }
     }
@@ -196,7 +198,7 @@ export async function ToolExecution(
         content: result,
         tool_call_id: toolCall.id,
         name: toolCall.name,
-      }),
+      })
     );
   }
 

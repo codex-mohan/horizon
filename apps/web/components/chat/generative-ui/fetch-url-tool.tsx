@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { cn } from "@workspace/ui/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Globe,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
   FileText,
+  Globe,
 } from "lucide-react";
-import { ToolStatusBadge, ModernSpinner, ShimmerText } from "./loading-effects";
-import { getToolUIConfig } from "@/lib/tool-config";
+import { useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
+import { getToolUIConfig } from "@/lib/tool-config";
+import { ModernSpinner, ShimmerText, ToolStatusBadge } from "./loading-effects";
 
 interface FetchUrlToolProps {
   toolName: string;
@@ -51,36 +51,36 @@ export function FetchUrlTool({
   const shouldTruncate = result && result.length > previewLength;
   const displayResult =
     shouldTruncate && !isExpanded
-      ? result.slice(0, previewLength) + "..."
+      ? `${result.slice(0, previewLength)}...`
       : result;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "rounded-xl overflow-hidden border shadow-xl",
+        "overflow-hidden rounded-xl border shadow-xl",
         isLight
-          ? "bg-gradient-to-br from-cyan-500/5 to-blue-500/5 border-border"
-          : "bg-gradient-to-br from-cyan-950/30 to-blue-950/30 border-cyan-500/20",
+          ? "border-border bg-gradient-to-br from-cyan-500/5 to-blue-500/5"
+          : "border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-blue-950/30"
       )}
+      initial={{ opacity: 0, y: 10 }}
     >
       {/* Header */}
       <div
         className={cn(
-          "flex items-center justify-between px-4 py-3 border-b",
-          isLight ? "border-border" : "border-cyan-500/20",
+          "flex items-center justify-between border-b px-4 py-3",
+          isLight ? "border-border" : "border-cyan-500/20"
         )}
       >
         <div className="flex items-center gap-3">
-          <div className={cn("p-2 rounded-xl", config.icon.bgColor)}>
-            <Globe className={cn("w-5 h-5", config.icon.color)} />
+          <div className={cn("rounded-xl p-2", config.icon.bgColor)}>
+            <Globe className={cn("h-5 w-5", config.icon.color)} />
           </div>
           <div>
             <span
               className={cn(
-                "text-sm font-semibold",
-                isLight ? "text-foreground" : "text-slate-200",
+                "font-semibold text-sm",
+                isLight ? "text-foreground" : "text-slate-200"
               )}
             >
               {config.displayName}
@@ -88,7 +88,7 @@ export function FetchUrlTool({
             <p
               className={cn(
                 "text-xs",
-                isLight ? "text-muted-foreground" : "text-slate-500",
+                isLight ? "text-muted-foreground" : "text-slate-500"
               )}
             >
               Web page content
@@ -102,66 +102,66 @@ export function FetchUrlTool({
       <div
         className={cn(
           "border-b",
-          isLight ? "border-border/50" : "border-cyan-500/10",
+          isLight ? "border-border/50" : "border-cyan-500/10"
         )}
       >
         <button
-          onClick={() => setShowArgs(!showArgs)}
           className={cn(
-            "w-full flex items-center justify-between px-4 py-2.5 text-xs transition-colors",
+            "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
             isLight
               ? "text-muted-foreground hover:text-foreground"
-              : "text-slate-400 hover:text-slate-300",
+              : "text-slate-400 hover:text-slate-300"
           )}
+          onClick={() => setShowArgs(!showArgs)}
         >
           <span className="font-medium uppercase tracking-wider">Source</span>
           {showArgs ? (
-            <ChevronUp className="w-3.5 h-3.5" />
+            <ChevronUp className="h-3.5 w-3.5" />
           ) : (
-            <ChevronDown className="w-3.5 h-3.5" />
+            <ChevronDown className="h-3.5 w-3.5" />
           )}
         </button>
 
         <AnimatePresence>
           {showArgs && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
+              exit={{ height: 0, opacity: 0 }}
+              initial={{ height: 0, opacity: 0 }}
             >
               <div className="px-4 pb-3">
                 <a
-                  href={args.url || args.link || args.href || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border transition-colors group",
+                    "group flex items-center gap-2 rounded-lg border p-3 transition-colors",
                     isLight
-                      ? "bg-primary/5 border-primary/20 hover:bg-primary/10"
-                      : "bg-cyan-950/20 border-cyan-500/20 hover:bg-cyan-950/30",
+                      ? "border-primary/20 bg-primary/5 hover:bg-primary/10"
+                      : "border-cyan-500/20 bg-cyan-950/20 hover:bg-cyan-950/30"
                   )}
+                  href={args.url || args.link || args.href || "#"}
+                  rel="noopener noreferrer"
+                  target="_blank"
                 >
                   <Globe
                     className={cn(
-                      "w-4 h-4",
-                      isLight ? "text-primary" : "text-cyan-400",
+                      "h-4 w-4",
+                      isLight ? "text-primary" : "text-cyan-400"
                     )}
                   />
                   <span
                     className={cn(
-                      "text-sm truncate flex-1",
-                      isLight ? "text-primary" : "text-cyan-300",
+                      "flex-1 truncate text-sm",
+                      isLight ? "text-primary" : "text-cyan-300"
                     )}
                   >
                     {args.url || args.link || args.href || JSON.stringify(args)}
                   </span>
                   <ExternalLink
                     className={cn(
-                      "w-4 h-4 transition-colors",
+                      "h-4 w-4 transition-colors",
                       isLight
                         ? "text-primary/50 group-hover:text-primary"
-                        : "text-cyan-400/50 group-hover:text-cyan-400",
+                        : "text-cyan-400/50 group-hover:text-cyan-400"
                     )}
                   />
                 </a>
@@ -174,17 +174,17 @@ export function FetchUrlTool({
       {/* Content Section */}
       <div className="p-4">
         {isLoading && !result && !error ? (
-          <div className="flex flex-col items-center justify-center py-8 gap-4">
+          <div className="flex flex-col items-center justify-center gap-4 py-8">
             <ModernSpinner size="md" />
             <div className="text-center">
               <ShimmerText
-                text="Fetching content..."
                 className={cn("text-sm", isLight ? "text-foreground" : "")}
+                text="Fetching content..."
               />
               <p
                 className={cn(
-                  "text-xs mt-1",
-                  isLight ? "text-muted-foreground" : "text-slate-500",
+                  "mt-1 text-xs",
+                  isLight ? "text-muted-foreground" : "text-slate-500"
                 )}
               >
                 Loading page
@@ -192,28 +192,28 @@ export function FetchUrlTool({
             </div>
           </div>
         ) : error ? (
-          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-destructive" />
-              <span className="text-sm font-medium text-destructive">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-destructive" />
+              <span className="font-medium text-destructive text-sm">
                 Failed to fetch
               </span>
             </div>
-            <p className="text-xs text-destructive/80">{error}</p>
+            <p className="text-destructive/80 text-xs">{error}</p>
           </div>
         ) : result ? (
           <div>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="mb-3 flex items-center gap-2">
               <FileText
                 className={cn(
-                  "w-4 h-4",
-                  isLight ? "text-primary" : "text-cyan-400",
+                  "h-4 w-4",
+                  isLight ? "text-primary" : "text-cyan-400"
                 )}
               />
               <span
                 className={cn(
-                  "text-xs uppercase tracking-wider font-medium",
-                  isLight ? "text-muted-foreground" : "text-slate-500",
+                  "font-medium text-xs uppercase tracking-wider",
+                  isLight ? "text-muted-foreground" : "text-slate-500"
                 )}
               >
                 Content
@@ -221,17 +221,17 @@ export function FetchUrlTool({
             </div>
             <div
               className={cn(
-                "relative p-4 rounded-lg border",
+                "relative rounded-lg border p-4",
                 isLight
-                  ? "bg-muted/30 border-border"
-                  : "bg-slate-900/30 border-slate-700/30",
-                !isExpanded && shouldTruncate && "max-h-48 overflow-hidden",
+                  ? "border-border bg-muted/30"
+                  : "border-slate-700/30 bg-slate-900/30",
+                !isExpanded && shouldTruncate && "max-h-48 overflow-hidden"
               )}
             >
               <pre
                 className={cn(
-                  "text-xs whitespace-pre-wrap font-sans leading-relaxed",
-                  isLight ? "text-foreground" : "text-slate-300",
+                  "whitespace-pre-wrap font-sans text-xs leading-relaxed",
+                  isLight ? "text-foreground" : "text-slate-300"
                 )}
               >
                 {displayResult}
@@ -239,32 +239,32 @@ export function FetchUrlTool({
               {!isExpanded && shouldTruncate && (
                 <div
                   className={cn(
-                    "absolute bottom-0 left-0 right-0 h-16",
+                    "absolute right-0 bottom-0 left-0 h-16",
                     isLight
                       ? "bg-gradient-to-t from-muted/80 to-transparent"
-                      : "bg-gradient-to-t from-slate-900/80 to-transparent",
+                      : "bg-gradient-to-t from-slate-900/80 to-transparent"
                   )}
                 />
               )}
             </div>
             {shouldTruncate && (
               <button
-                onClick={() => setIsExpanded(!isExpanded)}
                 className={cn(
-                  "mt-2 text-xs flex items-center gap-1 transition-colors",
+                  "mt-2 flex items-center gap-1 text-xs transition-colors",
                   isLight
                     ? "text-primary hover:text-primary/80"
-                    : "text-cyan-400 hover:text-cyan-300",
+                    : "text-cyan-400 hover:text-cyan-300"
                 )}
+                onClick={() => setIsExpanded(!isExpanded)}
               >
                 {isExpanded ? (
                   <>
-                    <ChevronUp className="w-3.5 h-3.5" />
+                    <ChevronUp className="h-3.5 w-3.5" />
                     Show less
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="w-3.5 h-3.5" />
+                    <ChevronDown className="h-3.5 w-3.5" />
                     Show more ({result.length - previewLength} characters)
                   </>
                 )}

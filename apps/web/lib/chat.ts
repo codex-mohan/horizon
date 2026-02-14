@@ -8,9 +8,9 @@
  * - Event processing
  */
 
-import { useCallback, useRef, useState, useEffect, useMemo } from "react";
-import { useStream } from "@langchain/langgraph-sdk/react";
 import type { Message } from "@langchain/langgraph-sdk";
+import { useStream } from "@langchain/langgraph-sdk/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // ============================================================================
 // TYPES
@@ -80,7 +80,7 @@ export interface UseChatReturn {
   // Core actions
   submit: (
     input: { messages: Array<{ type: string; content: string }> } | undefined,
-    options?: SubmitOptions,
+    options?: SubmitOptions
   ) => void;
   stop: () => void;
 
@@ -155,27 +155,37 @@ const nodeStartTimes = new Map<string, number>();
 
 function getIconForNode(nodeName: string): string {
   const lower = nodeName.toLowerCase();
-  if (lower.includes("search") || lower.includes("retriev")) return "search";
-  if (lower.includes("tool") || lower.includes("action")) return "wrench";
+  if (lower.includes("search") || lower.includes("retriev")) {
+    return "search";
+  }
+  if (lower.includes("tool") || lower.includes("action")) {
+    return "wrench";
+  }
   if (
     lower.includes("think") ||
     lower.includes("reason") ||
     lower.includes("agent")
-  )
+  ) {
     return "brain";
-  if (lower.includes("start") || lower.includes("init")) return "rocket";
+  }
+  if (lower.includes("start") || lower.includes("init")) {
+    return "rocket";
+  }
   if (
     lower.includes("done") ||
     lower.includes("complete") ||
     lower.includes("finish")
-  )
+  ) {
     return "check";
-  if (lower.includes("compress") || lower.includes("summar")) return "compress";
+  }
+  if (lower.includes("compress") || lower.includes("summar")) {
+    return "compress";
+  }
   return "sparkles";
 }
 
 function processStreamEvent(
-  event: Record<string, unknown>,
+  event: Record<string, unknown>
 ): ProcessedEvent | null {
   if (event.event === "updates" && event.data) {
     const data = event.data as Record<string, unknown>;
@@ -197,16 +207,15 @@ function processStreamEvent(
           icon: "check",
           timestamp: now,
         };
-      } else {
-        nodeStartTimes.set(nodeName, now);
-
-        return {
-          title: formattedName,
-          data: "Running...",
-          icon: getIconForNode(nodeName),
-          timestamp: now,
-        };
       }
+      nodeStartTimes.set(nodeName, now);
+
+      return {
+        title: formattedName,
+        data: "Running...",
+        icon: getIconForNode(nodeName),
+        timestamp: now,
+      };
     }
   }
 
@@ -274,13 +283,13 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
   // Track thread ID locally since useStream uses callback
   const [currentThreadId, setCurrentThreadId] = useState<string | undefined>(
-    initialThreadId ?? undefined,
+    initialThreadId ?? undefined
   );
   const [lastEvent, setLastEvent] = useState<Record<string, unknown> | null>(
-    null,
+    null
   );
   const [interrupt, setInterrupt] = useState<Record<string, unknown> | null>(
-    null,
+    null
   );
   const [uiMessages, setUIMessages] = useState<UIMessage[]>([]);
   const onThreadIdCalledRef = useRef(false);
@@ -289,12 +298,12 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   const handleThreadId = useCallback(
     (threadId: string) => {
       setCurrentThreadId(threadId);
-      if (!onThreadIdCalledRef.current && !initialThreadId) {
+      if (!(onThreadIdCalledRef.current || initialThreadId)) {
         onThreadIdCalledRef.current = true;
         onThreadId?.(threadId);
       }
     },
-    [initialThreadId, onThreadId],
+    [initialThreadId, onThreadId]
   );
 
   // Handle errors
@@ -302,7 +311,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     (error: unknown) => {
       onError?.(classifyError(error));
     },
-    [onError],
+    [onError]
   );
 
   // Handle update events (for tracking & timeline)
@@ -312,7 +321,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       setLastEvent(eventObj);
       onEvent?.(eventObj);
     },
-    [onEvent],
+    [onEvent]
   );
 
   // Handle interrupt events (Human-in-the-Loop)
@@ -323,7 +332,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       setInterrupt(interruptObj);
       onInterrupt?.(interruptObj);
     },
-    [onInterrupt],
+    [onInterrupt]
   );
 
   // Handle custom events for real-time UI updates
@@ -348,9 +357,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
             },
           };
           return updated;
-        } else {
-          return [...prev, uiMessage];
         }
+        return [...prev, uiMessage];
       });
     }
 
@@ -364,7 +372,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       if (statusData.tool_call_id) {
         setUIMessages((prev) => {
           const existingIndex = prev.findIndex(
-            (m) => m.metadata?.tool_call_id === statusData.tool_call_id,
+            (m) => m.metadata?.tool_call_id === statusData.tool_call_id
           );
 
           if (existingIndex >= 0) {
@@ -428,7 +436,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   const submit = useCallback(
     (
       input: { messages: Array<{ type: string; content: string }> } | undefined,
-      options?: SubmitOptions,
+      options?: SubmitOptions
     ) => {
       const submitOptions: Record<string, unknown> = {};
 
@@ -465,14 +473,14 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       if (input) {
         stream.submit(
           { messages: input.messages as unknown as Message[] },
-          Object.keys(submitOptions).length > 0 ? submitOptions : undefined,
+          Object.keys(submitOptions).length > 0 ? submitOptions : undefined
         );
       } else {
         // For regeneration - submit undefined to replay from checkpoint
         stream.submit(undefined, submitOptions);
       }
     },
-    [stream.submit, userId],
+    [stream.submit, userId]
   );
 
   // Stable stop function
@@ -502,7 +510,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         command: { resume: reason || "rejected" },
       });
     },
-    [stream],
+    [stream]
   );
 
   // Get metadata for a message (parent checkpoint)
@@ -518,7 +526,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         return null;
       }
     },
-    [stream],
+    [stream]
   );
 
   // Stable event processor
@@ -526,7 +534,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     (event: Record<string, unknown>): ProcessedEvent | null => {
       return processStreamEvent(event);
     },
-    [],
+    []
   );
 
   // Extract messages - rely on stream.messages
@@ -570,7 +578,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         stream.setBranch(branch);
       }
     },
-    [stream],
+    [stream]
   );
 
   return {

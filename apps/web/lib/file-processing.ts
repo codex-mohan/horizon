@@ -47,7 +47,7 @@ export function fileToAttachedFile(file: File): AttachedFile {
  */
 export function validateFile(
   file: File,
-  maxFileSize: number = DEFAULT_MAX_FILE_SIZE,
+  maxFileSize: number = DEFAULT_MAX_FILE_SIZE
 ): { isValid: boolean; error?: string } {
   if (file.size > maxFileSize) {
     return {
@@ -64,7 +64,7 @@ export function validateFile(
  */
 export function processFiles(
   files: File[],
-  options: FileProcessingOptions = {},
+  options: FileProcessingOptions = {}
 ): FileValidationResult {
   const { maxFileSize = DEFAULT_MAX_FILE_SIZE } = options;
   const validFiles: AttachedFile[] = [];
@@ -87,8 +87,12 @@ export function processFiles(
  * Formats file size to human-readable string
  */
 export function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
@@ -119,7 +123,7 @@ export function isImageFile(file: File | AttachedFile): boolean {
  */
 export function isSupportedFileType(
   fileName: string,
-  allowedExtensions?: string[],
+  allowedExtensions?: string[]
 ): boolean {
   if (!allowedExtensions || allowedExtensions.length === 0) {
     return true;
@@ -134,7 +138,7 @@ export function isSupportedFileType(
  */
 export function revokeFileUrls(files: AttachedFile[]): void {
   files.forEach((file) => {
-    if (file.url && file.url.startsWith("blob:")) {
+    if (file.url?.startsWith("blob:")) {
       URL.revokeObjectURL(file.url);
     }
   });

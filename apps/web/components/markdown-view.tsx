@@ -1,33 +1,29 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { FiCheck, FiCopy, FiDownload } from "react-icons/fi";
-import { EditorView, lineNumbers } from "@codemirror/view";
-import { LanguageDescription } from "@codemirror/language";
-
 import { cpp } from "@codemirror/lang-cpp";
-import { python } from "@codemirror/lang-python";
-import { javascript } from "@codemirror/lang-javascript";
 import { html } from "@codemirror/lang-html";
+import { javascript } from "@codemirror/lang-javascript";
 import { json } from "@codemirror/lang-json";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { mermaid as mermaidLanguage } from "codemirror-lang-mermaid";
+import { python } from "@codemirror/lang-python";
 import { rust } from "@codemirror/lang-rust";
 import { sql } from "@codemirror/lang-sql";
-
+import { LanguageDescription } from "@codemirror/language";
+import { EditorView, lineNumbers } from "@codemirror/view";
 import { langs } from "@uiw/codemirror-extensions-langs";
-
+import { mermaid as mermaidLanguage } from "codemirror-lang-mermaid";
+import dynamic from "next/dynamic";
+import React, { useEffect, useMemo, useState } from "react";
+import { FiCheck, FiCopy, FiDownload } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import dynamic from "next/dynamic";
-import { useTheme } from "@/components/theme/theme-provider";
 import SmartLink from "@/components/smart-link";
+import { useTheme } from "@/components/theme/theme-provider";
+import { createCodeMirrorTheme } from "@/lib/codemirror-theme";
 import ZoomableImageWithLoader from "./image-with-loader";
 import MermaidDiagram from "./mermaid-diagram";
-import mermaid from "mermaid";
-import { createCodeMirrorTheme } from "@/lib/codemirror-theme";
 
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
   ssr: false,
@@ -48,7 +44,9 @@ const ensureKatexCSS = () => {
 
 // FIXED: Use direct language extensions instead of langs object
 const getLanguageExtension = (lang: string) => {
-  if (!lang) return null;
+  if (!lang) {
+    return null;
+  }
 
   const langKey = lang.toLowerCase();
 
@@ -224,7 +222,7 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
 
     const cmTheme = useMemo(
       () => createCodeMirrorTheme(themeMode === "dark", false),
-      [themeMode],
+      [themeMode]
     );
 
     const extensions = useMemo(() => {
@@ -265,21 +263,21 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
     return (
       <div className="mt-1 overflow-hidden rounded-xl border border-border">
         <div className="flex items-center justify-between bg-muted/50 px-4 py-1.5 text-xs">
-          <span className="font-semibold uppercase text-muted-foreground">
+          <span className="font-semibold text-muted-foreground uppercase">
             {langHint || "code"}
           </span>
           <div className="flex items-center gap-1.5">
             <button
-              onClick={handleDownload}
               className="flex items-center gap-1.5 rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-muted"
+              onClick={handleDownload}
               title="Download code"
             >
               <FiDownload size={14} />
               Download
             </button>
             <button
-              onClick={handleCopy}
               className="flex items-center gap-1.5 rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-muted"
+              onClick={handleCopy}
               title="Copy code"
             >
               {isCopied ? (
@@ -304,27 +302,27 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
           }}
         >
           <CodeMirror
-            value={code.replace(/\n$/, "")}
-            height="auto"
-            extensions={extensions}
-            editable={false}
             basicSetup={{
               foldGutter: true,
               highlightActiveLine: false,
               highlightActiveLineGutter: false,
               dropCursor: false,
             }}
-            theme={cmTheme}
             className="font-mono"
+            editable={false}
+            extensions={extensions}
+            height="auto"
             style={{
               fontFamily:
                 "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace",
             }}
+            theme={cmTheme}
+            value={code.replace(/\n$/, "")}
           />
         </div>
       </div>
     );
-  },
+  }
 );
 CodeBlock.displayName = "CodeBlock";
 
@@ -332,9 +330,11 @@ export { CodeBlock };
 
 // Helper function to extract a YouTube video ID from various URL formats
 const getYouTubeVideoId = (url: string): string | null => {
-  if (!url) return null;
+  if (!url) {
+    return null;
+  }
   const regex =
-    /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    /(?:youtube\.com\/(?:[^/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
   const match: any = url.match(regex);
   return match ? match[1] : null;
 };
@@ -366,47 +366,47 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
 
         // Handle inline code
         return (
-          <code className="rounded bg-muted px-1.5 py-0.5 text-[0.9em] font-mono">
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em]">
             {children}
           </code>
         );
       },
       p: ({ children }: any) => (
-        <span className="text-[1.0625rem] leading-relaxed text-foreground/90 mb-3 last:mb-0 break-words block font-body">
+        <span className="mb-3 block break-words font-body text-[1.0625rem] text-foreground/90 leading-relaxed last:mb-0">
           {children}
         </span>
       ),
       h1: ({ children }: any) => (
-        <h1 className="mt-4 mb-2 text-xl font-bold tracking-tight font-display">
+        <h1 className="mt-4 mb-2 font-bold font-display text-xl tracking-tight">
           {children}
         </h1>
       ),
       h2: ({ children }: any) => (
-        <h2 className="mt-4 mb-2 text-lg font-bold tracking-tight font-display">
+        <h2 className="mt-4 mb-2 font-bold font-display text-lg tracking-tight">
           {children}
         </h2>
       ),
       h3: ({ children }: any) => (
-        <h3 className="mt-3 mb-1.5 text-base font-bold tracking-tight font-display">
+        <h3 className="mt-3 mb-1.5 font-bold font-display text-base tracking-tight">
           {children}
         </h3>
       ),
       ul: (props: any) => (
         <ul
-          className="my-3 pl-5 list-disc text-[1.0625rem] [&>li]:mt-1.5 [&_span]:!m-0 [&_span]:!inline"
+          className="[&_span]:!m-0 [&_span]:!inline my-3 list-disc pl-5 text-[1.0625rem] [&>li]:mt-1.5"
           {...props}
         />
       ),
       ol: (props: any) => (
         <ol
-          className="my-3 pl-5 list-decimal text-[1.0625rem] [&>li]:mt-1.5 [&_span]:!m-0 [&_span]:!inline"
+          className="[&_span]:!m-0 [&_span]:!inline my-3 list-decimal pl-5 text-[1.0625rem] [&>li]:mt-1.5"
           {...props}
         />
       ),
-      li: (props: any) => <li className="leading-relaxed pl-1" {...props} />,
+      li: (props: any) => <li className="pl-1 leading-relaxed" {...props} />,
       blockquote: (props: any) => (
         <blockquote
-          className="mt-3 border-l-2 border-primary/30 pl-3 italic text-sm text-foreground/80 font-accent"
+          className="mt-3 border-primary/30 border-l-2 pl-3 font-accent text-foreground/80 text-sm italic"
           {...props}
         />
       ),
@@ -416,16 +416,20 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
 
         const downloadCSV = () => {
           try {
-            if (!tableRef.current) return;
+            if (!tableRef.current) {
+              return;
+            }
 
             const rows = Array.from(tableRef.current.querySelectorAll("tr"));
             const tableData = rows.map((row) =>
               Array.from(row.querySelectorAll("th, td")).map((cell) =>
-                (cell.textContent || "").trim().replace(/"/g, '""'),
-              ),
+                (cell.textContent || "").trim().replace(/"/g, '""')
+              )
             );
 
-            if (tableData.length === 0) return;
+            if (tableData.length === 0) {
+              return;
+            }
 
             const csvContent = tableData
               .map((row) => row.map((cell) => `"${cell}"`).join(","))
@@ -457,8 +461,8 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
             <div className="relative">
               {showDownload && (
                 <button
+                  className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-md bg-primary px-2 py-1 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
                   onClick={downloadCSV}
-                  className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-md bg-primary px-2 py-1 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
                   title="Download as CSV"
                 >
                   <FiDownload size={12} />
@@ -466,7 +470,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
                 </button>
               )}
               <div className="overflow-x-auto">
-                <table ref={tableRef} className="w-full text-base" {...props}>
+                <table className="w-full text-base" ref={tableRef} {...props}>
                   {children}
                 </table>
               </div>
@@ -476,7 +480,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
       },
       thead: (props: any) => <thead className="bg-muted" {...props} />,
       tr: (props: any) => (
-        <tr className="m-0 p-0 even:bg-muted/60 odd:bg-muted/30 " {...props} />
+        <tr className="m-0 p-0 odd:bg-muted/30 even:bg-muted/60" {...props} />
       ),
       th: (props: any) => (
         <th className="px-4 py-2 text-left font-bold" {...props} />
@@ -490,13 +494,13 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
           return (
             <div className="my-4 aspect-video overflow-hidden rounded-lg border border-border bg-black">
               <iframe
-                src={`https://www.youtube.com/embed/${videoId}`}
-                title="YouTube video player"
-                frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 className="h-full w-full"
-              ></iframe>
+                frameBorder="0"
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title="YouTube video player"
+              />
             </div>
           );
         }
@@ -514,36 +518,36 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
           return (
             <div className="my-2 aspect-video overflow-hidden rounded-lg border border-border bg-black">
               <iframe
-                src={`https://www.youtube.com/embed/${videoId}`}
-                title="YouTube video player"
-                frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 className="h-full w-full"
-              ></iframe>
+                frameBorder="0"
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title="YouTube video player"
+              />
             </div>
           );
         }
 
         return (
           <ZoomableImageWithLoader
-            src={src}
             alt={alt}
-            // Add sizing and margin classes for the thumbnail display and align center
             className="my-2 aspect-video w-full max-w-xl rounded-lg"
+            // Add sizing and margin classes for the thumbnail display and align center
+            src={src}
             {...props}
           />
         );
       },
     }),
-    [],
+    []
   ); // Empty dependency array means this object is created only once
 
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex]}
       components={components}
+      rehypePlugins={[rehypeKatex]}
+      remarkPlugins={[remarkGfm, remarkMath]}
     >
       {text}
     </ReactMarkdown>

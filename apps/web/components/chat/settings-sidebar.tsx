@@ -1,14 +1,14 @@
 "use client";
 
-import { X } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
-import { Label } from "@workspace/ui/components/label";
+import { GradientButton } from "@workspace/ui/components/gradient-button";
 import { GradientSlider } from "@workspace/ui/components/gradient-slider";
 import { Input } from "@workspace/ui/components/input";
+import { Label } from "@workspace/ui/components/label";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
-import { useState } from "react";
 import { cn } from "@workspace/ui/lib/utils";
-import { GradientButton } from "@workspace/ui/components/gradient-button";
+import { X } from "lucide-react";
+import { useState } from "react";
 
 interface SettingsSidebarProps {
   isOpen: boolean;
@@ -25,18 +25,18 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
   return (
     <div
       className={cn(
-        "fixed right-0 top-0 h-screen w-80 glass-strong border-l border-border z-20 transform transition-all duration-300 ease-out",
-        isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0",
+        "glass-strong fixed top-0 right-0 z-20 h-screen w-80 transform border-border border-l transition-all duration-300 ease-out",
+        isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
       )}
     >
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="font-semibold font-display">Model Settings</h2>
+      <div className="flex h-full flex-col">
+        <div className="flex items-center justify-between border-border border-b p-4">
+          <h2 className="font-display font-semibold">Model Settings</h2>
           <Button
-            variant="ghost"
-            size="icon-sm"
+            className="transition-transform duration-200 hover:scale-110"
             onClick={onClose}
-            className="hover:scale-110 transition-transform duration-200"
+            size="icon-sm"
+            variant="ghost"
           >
             <X className="size-4" />
           </Button>
@@ -44,140 +44,140 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
 
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-6">
-            <div className="space-y-2 stagger-item">
-              <Label htmlFor="temperature" className="font-display">
+            <div className="stagger-item space-y-2">
+              <Label className="font-display" htmlFor="temperature">
                 Temperature: {temperature[0]}
               </Label>
               <GradientSlider
                 id="temperature"
-                min={0}
                 max={2}
-                step={0.1}
-                value={temperature}
+                min={0}
                 onValueChange={setTemperature}
-                trackClassName="h-2.5"
+                step={0.1}
                 thumbClassName="w-5 h-5"
+                trackClassName="h-2.5"
+                value={temperature}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Controls randomness. Lower values make the output more focused
                 and deterministic.
               </p>
             </div>
 
             <div
-              className="space-y-2 stagger-item"
+              className="stagger-item space-y-2"
               style={{ animationDelay: "0.05s" }}
             >
-              <Label htmlFor="max-tokens" className="font-display">
+              <Label className="font-display" htmlFor="max-tokens">
                 Max Tokens: {maxTokens[0]}
               </Label>
               <GradientSlider
                 id="max-tokens"
-                min={256}
                 max={8192}
-                step={256}
-                value={maxTokens}
+                min={256}
                 onValueChange={setMaxTokens}
-                trackClassName="h-2.5"
+                step={256}
                 thumbClassName="w-5 h-5"
+                trackClassName="h-2.5"
+                value={maxTokens}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Maximum length of the generated response.
               </p>
             </div>
 
             <div
-              className="space-y-2 stagger-item"
+              className="stagger-item space-y-2"
               style={{ animationDelay: "0.1s" }}
             >
-              <Label htmlFor="top-p" className="font-display">
+              <Label className="font-display" htmlFor="top-p">
                 Top P: {topP[0]}
               </Label>
               <GradientSlider
                 id="top-p"
-                min={0}
                 max={1}
-                step={0.05}
-                value={topP}
+                min={0}
                 onValueChange={setTopP}
-                trackClassName="h-2.5"
+                step={0.05}
                 thumbClassName="w-5 h-5"
+                trackClassName="h-2.5"
+                value={topP}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Controls diversity via nucleus sampling.
               </p>
             </div>
 
             <div
-              className="space-y-2 stagger-item"
+              className="stagger-item space-y-2"
               style={{ animationDelay: "0.15s" }}
             >
-              <Label htmlFor="frequency-penalty" className="font-display">
+              <Label className="font-display" htmlFor="frequency-penalty">
                 Frequency Penalty: {frequencyPenalty[0]}
               </Label>
               <GradientSlider
                 id="frequency-penalty"
-                min={-2}
                 max={2}
-                step={0.1}
-                value={frequencyPenalty}
+                min={-2}
                 onValueChange={setFrequencyPenalty}
-                trackClassName="h-2.5"
+                step={0.1}
                 thumbClassName="w-5 h-5"
+                trackClassName="h-2.5"
+                value={frequencyPenalty}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Reduces repetition of tokens based on their frequency.
               </p>
             </div>
 
             <div
-              className="space-y-2 stagger-item"
+              className="stagger-item space-y-2"
               style={{ animationDelay: "0.2s" }}
             >
-              <Label htmlFor="presence-penalty" className="font-display">
+              <Label className="font-display" htmlFor="presence-penalty">
                 Presence Penalty: {presencePenalty[0]}
               </Label>
               <GradientSlider
                 id="presence-penalty"
-                min={-2}
                 max={2}
-                step={0.1}
-                value={presencePenalty}
+                min={-2}
                 onValueChange={setPresencePenalty}
-                trackClassName="h-2.5"
+                step={0.1}
                 thumbClassName="w-5 h-5"
+                trackClassName="h-2.5"
+                value={presencePenalty}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Reduces repetition of topics and ideas.
               </p>
             </div>
 
             <div
-              className="space-y-2 stagger-item"
+              className="stagger-item space-y-2"
               style={{ animationDelay: "0.25s" }}
             >
-              <Label htmlFor="system-prompt" className="font-display">
+              <Label className="font-display" htmlFor="system-prompt">
                 System Prompt
               </Label>
               <Input
+                className="glass transition-all duration-200 focus:border-primary/50"
                 id="system-prompt"
                 placeholder="You are a helpful assistant..."
-                className="glass transition-all duration-200 focus:border-primary/50"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Sets the behavior and personality of the AI.
               </p>
             </div>
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t border-border">
+        <div className="border-border border-t p-4">
           <GradientButton
-            width="full"
-            height={10}
-            useThemeGradient
             glowIntensity="medium"
+            height={10}
             onClick={onClose}
+            useThemeGradient
+            width="full"
           >
             Apply Settings
           </GradientButton>

@@ -1,11 +1,11 @@
-import { EditorView } from "@codemirror/view";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
-import { tags as t } from "@lezer/highlight";
 import type { Extension } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { tags as t } from "@lezer/highlight";
 
 export function createCodeMirrorTheme(
   isDark: boolean,
-  isEditable: boolean = true,
+  _isEditable = true
 ): Extension {
   const editorTheme = EditorView.theme(
     {
@@ -74,7 +74,7 @@ export function createCodeMirrorTheme(
         color: "var(--cm-gutter-fg)",
       },
     },
-    { dark: isDark },
+    { dark: isDark }
   );
 
   const highlightStyle = HighlightStyle.define([

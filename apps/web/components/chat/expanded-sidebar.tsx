@@ -1,11 +1,11 @@
 "use client";
 
-import { X } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
+import { X } from "lucide-react";
 import { AssistantsView } from "@/components/assistants/assistants-view";
+import { CollectionsPanel } from "./collections-panel";
 import { ConversationsPanel } from "./conversations-panel";
 import { MyItemsPanel } from "./my-items-panel";
-import { CollectionsPanel } from "./collections-panel";
 
 interface ExpandedSidebarProps {
   section: "conversations" | "my-items" | "collections" | "assistants";
@@ -49,10 +49,10 @@ export function ExpandedSidebar({ section, onClose }: ExpandedSidebarProps) {
   };
 
   return (
-    <div className="w-80 h-screen glass-strong border-l border-border flex flex-col animate-slide-in-right">
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <h2 className="font-semibold font-display">{getSectionTitle()}</h2>
-        <Button variant="ghost" size="icon-sm" onClick={onClose}>
+    <div className="glass-strong flex h-screen w-80 animate-slide-in-right flex-col border-border border-l">
+      <div className="flex items-center justify-between border-border border-b p-4">
+        <h2 className="font-display font-semibold">{getSectionTitle()}</h2>
+        <Button onClick={onClose} size="icon-sm" variant="ghost">
           <X className="size-4" />
         </Button>
       </div>

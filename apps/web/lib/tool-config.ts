@@ -7,15 +7,16 @@
  * - Display settings
  */
 
-import { LucideIcon } from "lucide-react";
 import {
-  Terminal,
-  Search,
-  Globe,
-  FileText,
-  Database,
+  Cloud,
   Code,
+  Database,
+  FileText,
+  Globe,
+  type LucideIcon,
+  Search,
   Settings,
+  Terminal,
   Wrench,
 } from "lucide-react";
 
@@ -158,6 +159,32 @@ export const toolUIRegistry: Record<string, ToolUIConfig> = {
       maxResultHeight: "350px",
     },
   },
+
+  weather: {
+    toolName: "weather",
+    displayName: "Weather",
+    description: "Get weather information for a location",
+    namespace: "special",
+    icon: {
+      name: "Cloud",
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/10",
+    },
+    component: {
+      name: "WeatherTool",
+      useCustom: true,
+    },
+    statusColors: {
+      pending: "text-amber-400",
+      executing: "text-blue-400",
+      completed: "text-blue-400",
+      failed: "text-red-400",
+    },
+    metadata: {
+      showArgs: true,
+      collapseResult: false,
+    },
+  },
 };
 
 /**
@@ -220,6 +247,7 @@ export function getToolIcon(toolName: string): LucideIcon {
     Code,
     Settings,
     Wrench,
+    Cloud,
   };
   return iconMap[config.icon.name] || Wrench;
 }

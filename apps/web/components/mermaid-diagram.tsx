@@ -1,38 +1,28 @@
 "use client";
 
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  useRef,
-  useCallback,
-} from "react";
-import mermaid from "mermaid";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { useTheme } from "next-themes";
-import { EditorView, lineNumbers } from "@codemirror/view";
 import {
-  syntaxHighlighting,
   defaultHighlightStyle,
+  syntaxHighlighting,
 } from "@codemirror/language";
-import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import {
-  mermaid as mermaidLanguage,
-  mindmapTags,
-} from "codemirror-lang-mermaid";
-import dynamic from "next/dynamic";
+import { EditorView, lineNumbers } from "@codemirror/view";
 import { tokyoNight } from "@uiw/codemirror-themes-all";
+import { mermaid as mermaidLanguage } from "codemirror-lang-mermaid";
 import {
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Download,
-  RefreshCw,
-  Copy,
   Check,
   Code2,
+  Copy,
+  Download,
   EyeOff,
+  RefreshCw,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
+import mermaid from "mermaid";
+import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
   ssr: false,
@@ -58,7 +48,7 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
-  const [retryId, setRetryId] = useState(0);
+  const [_retryId, setRetryId] = useState(0);
 
   const codeMirrorExtensions = useCodeMirrorExtensions();
 
@@ -101,7 +91,7 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
     };
 
     renderDiagram();
-  }, [code, theme, retryId]);
+  }, [code, theme]);
 
   const handleCopyCode = useCallback(() => {
     navigator.clipboard.writeText(code);
@@ -131,7 +121,7 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
 
   return (
     <div className="mermaid-container my-4 rounded-lg border bg-muted/30">
-      <style jsx global>{`
+      <style global jsx>{`
         .mermaid-svg-container svg {
           max-width: 100%; /* Ensure SVG respects parent width */
           height: auto;
@@ -145,72 +135,71 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
         }
       `}</style>
 
-      <div className="relative w-full flex justify-center p-4">
+      <div className="relative flex w-full justify-center p-4">
         <TransformWrapper>
           {({ zoomIn, zoomOut, resetTransform }) => (
             <>
               {/* Controls Toolbar (unchanged) */}
               <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-lg border bg-background/80 p-1.5 shadow-md">
                 <button
+                  className="rounded-md p-1.5 hover:bg-muted"
                   onClick={() => zoomIn()}
                   title="Zoom In"
-                  className="p-1.5 rounded-md hover:bg-muted"
                 >
                   <ZoomIn size={16} />
                 </button>
                 <button
+                  className="rounded-md p-1.5 hover:bg-muted"
                   onClick={() => zoomOut()}
                   title="Zoom Out"
-                  className="p-1.5 rounded-md hover:bg-muted"
                 >
                   <ZoomOut size={16} />
                 </button>
                 <button
+                  className="rounded-md p-1.5 hover:bg-muted"
                   onClick={() => resetTransform()}
                   title="Reset Zoom"
-                  className="p-1.5 rounded-md hover:bg-muted"
                 >
                   <RotateCcw size={16} />
                 </button>
                 <button
+                  className="rounded-md p-1.5 hover:bg-muted"
+                  disabled={!svg}
                   onClick={handleDownloadSVG}
                   title="Download as SVG"
-                  className="p-1.5 rounded-md hover:bg-muted"
-                  disabled={!svg}
                 >
                   <Download size={16} />
                 </button>
-                <div className="h-5 w-px bg-border mx-1"></div>
+                <div className="mx-1 h-5 w-px bg-border" />
                 <button
+                  className="rounded-md p-1.5 hover:bg-muted"
+                  disabled={isRendering}
                   onClick={handleReRender}
                   title="Re-render Diagram"
-                  className="p-1.5 rounded-md hover:bg-muted"
-                  disabled={isRendering}
                 >
                   <RefreshCw
-                    size={16}
                     className={isRendering ? "animate-spin" : ""}
+                    size={16}
                   />
                 </button>
-                <div className="h-5 w-px bg-border mx-1"></div>
+                <div className="mx-1 h-5 w-px bg-border" />
                 <button
+                  className="rounded-md p-1.5 hover:bg-muted"
                   onClick={handleCopyCode}
                   title="Copy Mermaid Code"
-                  className="p-1.5 rounded-md hover:bg-muted"
                 >
                   {isCopied ? <Check size={16} /> : <Copy size={16} />}
                 </button>
                 <button
+                  className="rounded-md p-1.5 hover:bg-muted"
                   onClick={() => setShowCode(!showCode)}
                   title={showCode ? "Hide Code" : "Show Code"}
-                  className="p-1.5 rounded-md hover:bg-muted"
                 >
                   {showCode ? <EyeOff size={16} /> : <Code2 size={16} />}
                 </button>
               </div>
 
               <TransformComponent
-                wrapperStyle={{ width: "100%", height: "100%", minHeight: 150 }}
                 contentStyle={{
                   display: "flex",
                   alignItems: "center",
@@ -218,6 +207,7 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
                   width: "100%",
                   height: "100%",
                 }}
+                wrapperStyle={{ width: "100%", height: "100%", minHeight: 150 }}
               >
                 <div className="flex flex-col items-center justify-center p-4">
                   {isRendering && (
@@ -226,33 +216,33 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
                     </div>
                   )}
                   {renderError && !isRendering && (
-                    <div className="text-red-500 p-4 text-center">
-                      <div className="font-semibold mb-2">Rendering Error</div>
-                      <div className="text-sm font-mono mermaid-error-message">
+                    <div className="p-4 text-center text-red-500">
+                      <div className="mb-2 font-semibold">Rendering Error</div>
+                      <div className="mermaid-error-message font-mono text-sm">
                         {renderError}
                       </div>{" "}
                       {/* Added mermaid-error-message class */}
                       <button
+                        className="mt-2 rounded bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600"
                         onClick={handleReRender}
-                        className="mt-2 px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
                       >
                         Try Again
                       </button>
                     </div>
                   )}
-                  {!isRendering && !renderError && svg && (
+                  {!(isRendering || renderError) && svg && (
                     <div
                       className="mermaid-svg-container"
                       dangerouslySetInnerHTML={{ __html: svg }}
                     />
                   )}
-                  {!isRendering && !renderError && !svg && hasContent && (
+                  {!(isRendering || renderError || svg) && hasContent && (
                     <div className="text-muted-foreground">
                       Preparing diagram...
                     </div>
                   )}
                   {!hasContent && (
-                    <div className="text-sm text-muted-foreground/70">
+                    <div className="text-muted-foreground/70 text-sm">
                       No diagram code provided.
                     </div>
                   )}
@@ -266,10 +256,9 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
       {showCode && (
         <div className="border-t">
           <CodeMirror
-            value={code.replace(/\n$/, "")}
-            height="auto"
-            extensions={codeMirrorExtensions}
             editable={false}
+            extensions={codeMirrorExtensions}
+            height="auto"
             theme={[
               tokyoNight,
               EditorView.theme(
@@ -292,6 +281,7 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
                 { dark: theme === "dark" }
               ),
             ]}
+            value={code.replace(/\n$/, "")}
           />
         </div>
       )}

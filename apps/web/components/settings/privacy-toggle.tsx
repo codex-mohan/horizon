@@ -1,20 +1,20 @@
 "use client";
 
+import { Button } from "@workspace/ui/components/button";
+import { Label } from "@workspace/ui/components/label";
+import { Slider } from "@workspace/ui/components/slider";
+import { Switch } from "@workspace/ui/components/switch";
+import { cn } from "@workspace/ui/lib/utils";
 import { motion } from "framer-motion";
 import {
-  Shield,
+  AlertTriangle,
+  Clock,
   Eye,
   EyeOff,
+  Shield,
   Trash2,
-  Clock,
-  AlertTriangle,
 } from "lucide-react";
-import { Switch } from "@workspace/ui/components/switch";
-import { Button } from "@workspace/ui/components/button";
-import { Slider } from "@workspace/ui/components/slider";
-import { Label } from "@workspace/ui/components/label";
-import { cn } from "@workspace/ui/lib/utils";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface PrivacySettings {
   enabled: boolean;
@@ -92,18 +92,18 @@ export function PrivacyToggle({
         className={cn(
           "rounded-lg border p-4 transition-colors",
           settings.enabled
-            ? "bg-destructive/10 border-destructive/30"
-            : "bg-muted/50",
+            ? "border-destructive/30 bg-destructive/10"
+            : "bg-muted/50"
         )}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                "p-2 rounded-lg transition-colors",
+                "rounded-lg p-2 transition-colors",
                 settings.enabled
                   ? "bg-destructive/20 text-destructive"
-                  : "bg-primary/10 text-primary",
+                  : "bg-primary/10 text-primary"
               )}
             >
               {settings.enabled ? (
@@ -116,7 +116,7 @@ export function PrivacyToggle({
               <h3 className="font-medium text-sm">
                 {settings.enabled ? "Privacy Mode ON" : "Privacy Mode OFF"}
               </h3>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {settings.enabled
                   ? "Your conversations are not being stored"
                   : "Your conversations are being stored for personalization"}
@@ -132,13 +132,13 @@ export function PrivacyToggle({
         {/* Warning when enabled */}
         {settings.enabled && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
+            className="mt-4 flex items-start gap-2 rounded-md bg-destructive/10 p-3"
             exit={{ opacity: 0, height: 0 }}
-            className="mt-4 p-3 bg-destructive/10 rounded-md flex items-start gap-2"
+            initial={{ opacity: 0, height: 0 }}
           >
-            <AlertTriangle className="size-4 text-destructive shrink-0 mt-0.5" />
-            <p className="text-xs text-destructive">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+            <p className="text-destructive text-xs">
               When Privacy Mode is enabled, the AI won't remember your
               preferences or previous conversations. This gives you maximum
               privacy but reduces personalization.
@@ -150,11 +150,11 @@ export function PrivacyToggle({
       {/* Additional Settings (only shown when privacy is OFF) */}
       {!settings.enabled && (
         <motion.div
-          initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="space-y-4"
+          initial={{ opacity: 0 }}
         >
-          <h4 className="font-medium text-sm flex items-center gap-2">
+          <h4 className="flex items-center gap-2 font-medium text-sm">
             <Shield className="size-4" />
             Memory Settings
           </h4>
@@ -163,7 +163,7 @@ export function PrivacyToggle({
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-sm">Auto-detect sensitive info</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Automatically exclude passwords, API keys, etc.
               </p>
             </div>
@@ -179,7 +179,7 @@ export function PrivacyToggle({
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-sm">Learn preferences</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Allow AI to learn your style and preferences
               </p>
             </div>
@@ -194,68 +194,68 @@ export function PrivacyToggle({
           {/* Retention period */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-sm flex items-center gap-2">
+              <Label className="flex items-center gap-2 text-sm">
                 <Clock className="size-4" />
                 Retention period
               </Label>
-              <span className="text-sm font-medium">
+              <span className="font-medium text-sm">
                 {settings.retentionDays} days
               </span>
             </div>
             <Slider
-              value={[settings.retentionDays]}
+              max={365}
+              min={7}
               onValueChange={([value]) =>
                 saveSettings({ ...settings, retentionDays: value })
               }
-              min={7}
-              max={365}
               step={7}
+              value={[settings.retentionDays]}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Memories older than {settings.retentionDays} days will be
               automatically deleted
             </p>
           </div>
 
           {/* Delete all memories */}
-          <div className="pt-4 border-t">
-            {!showDeleteConfirm ? (
-              <Button
-                variant="outline"
-                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                <Trash2 className="size-4 mr-2" />
-                Delete All My Memories
-              </Button>
-            ) : (
+          <div className="border-t pt-4">
+            {showDeleteConfirm ? (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-3"
+                initial={{ opacity: 0, y: -10 }}
               >
-                <p className="text-sm text-center text-muted-foreground">
+                <p className="text-center text-muted-foreground text-sm">
                   Are you sure? This will permanently delete all stored
                   memories.
                 </p>
                 <div className="flex gap-2">
                   <Button
-                    variant="outline"
                     className="flex-1"
                     onClick={() => setShowDeleteConfirm(false)}
+                    variant="outline"
                   >
                     Cancel
                   </Button>
                   <Button
-                    variant="destructive"
                     className="flex-1"
-                    onClick={handleDeleteAllMemories}
                     disabled={isLoading}
+                    onClick={handleDeleteAllMemories}
+                    variant="destructive"
                   >
                     {isLoading ? "Deleting..." : "Yes, Delete All"}
                   </Button>
                 </div>
               </motion.div>
+            ) : (
+              <Button
+                className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+                variant="outline"
+              >
+                <Trash2 className="mr-2 size-4" />
+                Delete All My Memories
+              </Button>
             )}
           </div>
         </motion.div>

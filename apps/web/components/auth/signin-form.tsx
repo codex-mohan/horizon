@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import { cn } from "@workspace/ui/lib/utils";
+import { Checkbox } from "@workspace/ui/components/checkbox";
 import { GradientButton } from "@workspace/ui/components/gradient-button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
-import { Checkbox } from "@workspace/ui/components/checkbox";
-import { useAuthStore } from "@/lib/stores/auth";
-import { toast } from "sonner";
+import { cn } from "@workspace/ui/lib/utils";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, Loader2, Lock, LogIn, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { User, Lock, Eye, EyeOff, Loader2, LogIn } from "lucide-react";
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
+import { useAuthStore } from "@/lib/stores/auth";
 
 interface SigninFormProps {
   onSwitchToSignup?: () => void;
@@ -56,7 +56,7 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
             description: result.error || "Invalid username or password.",
           });
         }
-      } catch (error) {
+      } catch (_error) {
         toast.error("Something went wrong", {
           description: "Please try again later.",
         });
@@ -64,47 +64,47 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
         setIsSubmitting(false);
       }
     },
-    [username, password, rememberMe, login, router],
+    [username, password, rememberMe, login, router]
   );
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      className={cn("mx-auto w-full max-w-md", className)}
+      initial={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.4 }}
-      className={cn("w-full max-w-md mx-auto", className)}
     >
-      <div className="glass-strong rounded-2xl p-8 space-y-8">
+      <div className="glass-strong space-y-8 rounded-2xl p-8">
         {/* Header */}
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <motion.div
-            initial={{ scale: 0 }}
             animate={{ scale: 1 }}
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/30"
+            initial={{ scale: 0 }}
             transition={{
               type: "spring",
               stiffness: 300,
               damping: 20,
               delay: 0.1,
             }}
-            className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/30"
           >
             <LogIn className="size-8 text-white" />
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            className="font-bold font-display text-3xl tracking-tight"
+            initial={{ opacity: 0, y: 10 }}
             transition={{ delay: 0.2 }}
-            className="text-3xl font-bold font-display tracking-tight"
           >
             Welcome Back
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            className="font-body text-muted-foreground"
+            initial={{ opacity: 0, y: 10 }}
             transition={{ delay: 0.3 }}
-            className="text-muted-foreground font-body"
           >
             Sign in to continue to Horizon
           </motion.p>
@@ -112,56 +112,56 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
 
         {/* Form */}
         <motion.form
-          initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          onSubmit={handleSubmit}
           className="space-y-6"
+          initial={{ opacity: 0 }}
+          onSubmit={handleSubmit}
+          transition={{ delay: 0.4 }}
         >
           <div className="space-y-2">
             <Label
-              htmlFor="signin-username"
               className="flex items-center gap-2"
+              htmlFor="signin-username"
             >
               <User className="size-4" />
               Username
             </Label>
             <Input
+              autoComplete="username"
+              className="h-12 text-base"
+              disabled={isSubmitting}
               id="signin-username"
-              type="text"
-              value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
-              className="h-12 text-base"
-              autoComplete="username"
-              disabled={isSubmitting}
+              type="text"
+              value={username}
             />
           </div>
 
           <div className="space-y-2">
             <Label
-              htmlFor="signin-password"
               className="flex items-center gap-2"
+              htmlFor="signin-password"
             >
               <Lock className="size-4" />
               Password
             </Label>
             <div className="relative">
               <Input
+                autoComplete="current-password"
+                className="h-12 pr-10 text-base"
+                disabled={isSubmitting}
                 id="signin-password"
-                type={showPassword ? "text" : "password"}
-                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
-                className="h-12 text-base pr-10"
-                autoComplete="current-password"
-                disabled={isSubmitting}
+                type={showPassword ? "text" : "password"}
+                value={password}
               />
               <button
-                type="button"
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 tabIndex={-1}
+                type="button"
               >
                 {showPassword ? (
                   <EyeOff className="size-5" />
@@ -175,14 +175,14 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="remember-me"
                 checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked === true)}
                 disabled={isSubmitting}
+                id="remember-me"
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
               />
               <Label
+                className="cursor-pointer font-normal text-sm"
                 htmlFor="remember-me"
-                className="text-sm font-normal cursor-pointer"
               >
                 Remember me for 30 days
               </Label>
@@ -190,21 +190,21 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
           </div>
 
           <GradientButton
-            type="submit"
-            width="full"
-            useThemeGradient
-            glowIntensity="medium"
             className="h-12 text-base"
             disabled={isSubmitting}
+            glowIntensity="medium"
+            type="submit"
+            useThemeGradient
+            width="full"
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="size-5 mr-2 animate-spin" />
+                <Loader2 className="mr-2 size-5 animate-spin" />
                 Signing in...
               </>
             ) : (
               <>
-                <LogIn className="size-5 mr-2" />
+                <LogIn className="mr-2 size-5" />
                 Sign In
               </>
             )}
@@ -213,16 +213,16 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
 
         {/* Footer */}
         <motion.div
-          initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          className="text-center text-muted-foreground text-sm"
+          initial={{ opacity: 0 }}
           transition={{ delay: 0.5 }}
-          className="text-center text-sm text-muted-foreground"
         >
           Don't have an account?{" "}
           <button
-            type="button"
+            className="font-medium text-primary hover:underline"
             onClick={onSwitchToSignup}
-            className="text-primary hover:underline font-medium"
+            type="button"
           >
             Create one
           </button>

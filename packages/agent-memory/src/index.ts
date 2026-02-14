@@ -9,16 +9,16 @@
  */
 
 export { MemoryClient } from "./client.js";
-export { QdrantStore } from "./qdrant-store.js";
 export { PreferenceExtractor } from "./preference-extractor.js";
+export { QdrantStore } from "./qdrant-store.js";
 
 // Types
 export type {
+  MemoryConfig,
   MemoryEntry,
   MemoryQuery,
   MemorySearchResult,
-  UserPreferences,
   Preference,
-  MemoryConfig,
   PrivacySettings,
+  UserPreferences,
 } from "./types.js";

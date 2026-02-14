@@ -7,10 +7,10 @@
  * into the existing ChatArea component.
  */
 
-import { useChat } from "@/lib/chat";
-import { ToolApprovalDialog } from "@/components/chat/tool-approval-dialog";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { ToolApprovalDialog } from "@/components/chat/tool-approval-dialog";
+import { useChat } from "@/lib/chat";
 
 // Example: Enhanced ChatArea integration
 export function EnhancedChatAreaExample() {
@@ -64,7 +64,7 @@ export function EnhancedChatAreaExample() {
 
       {/* Messages Display */}
       <div className="flex-1 overflow-y-auto">
-        {messages.map((msg, idx) => (
+        {messages.map((_msg, idx) => (
           <div key={idx}>{/* Render your messages */}</div>
         ))}
       </div>
@@ -72,8 +72,6 @@ export function EnhancedChatAreaExample() {
       {/* Input Area */}
       <div className="border-t p-4">
         <input
-          type="text"
-          placeholder="Type a message..."
           disabled={isLoading || isWaitingForInterrupt}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !isWaitingForInterrupt) {
@@ -81,17 +79,19 @@ export function EnhancedChatAreaExample() {
               e.currentTarget.value = "";
             }
           }}
+          placeholder="Type a message..."
+          type="text"
         />
 
         {/* Show status when waiting for interrupt */}
         {isWaitingForInterrupt && (
-          <div className="mt-2 text-sm text-amber-500">
+          <div className="mt-2 text-amber-500 text-sm">
             Waiting for tool approval...
           </div>
         )}
 
         {isLoading && !isWaitingForInterrupt && (
-          <div className="mt-2 text-sm text-muted-foreground">
+          <div className="mt-2 text-muted-foreground text-sm">
             Agent is thinking...
           </div>
         )}
@@ -99,8 +99,8 @@ export function EnhancedChatAreaExample() {
 
       {/* Tool Approval Dialog */}
       <ToolApprovalDialog
-        isOpen={isWaitingForInterrupt}
         data={interrupt as any}
+        isOpen={isWaitingForInterrupt}
         onApprove={() => {
           approveInterrupt();
           toast.success("Tool approved");
@@ -147,7 +147,7 @@ export function ConfigurationExample() {
           // Set limits
           max_model_calls: 10,
         },
-      },
+      }
     );
   };
 
@@ -197,8 +197,8 @@ export function CustomInterruptHandlingExample() {
 
   return (
     <ToolApprovalDialog
-      isOpen={isWaitingForInterrupt}
       data={interrupt as any}
+      isOpen={isWaitingForInterrupt}
       onApprove={customApprove}
       onReject={customReject}
     />

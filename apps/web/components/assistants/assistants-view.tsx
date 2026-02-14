@@ -1,20 +1,11 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
 import {
-  Plus,
-  Grid3X3,
-  List,
-  Star,
-  MoreHorizontal,
-  MessageSquare,
-  Settings,
-  Trash2,
-  Copy,
-  Brain,
-  Loader2,
-} from "lucide-react";
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
+import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
   DropdownMenu,
@@ -23,15 +14,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
-import { Badge } from "@workspace/ui/components/badge";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { cn } from "@workspace/ui/lib/utils";
-import { useAssistantsStore, type Assistant } from "@/lib/stores/assistants";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Brain,
+  Copy,
+  Grid3X3,
+  List,
+  Loader2,
+  MessageSquare,
+  MoreHorizontal,
+  Plus,
+  Settings,
+  Star,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { type Assistant, useAssistantsStore } from "@/lib/stores/assistants";
 import { useAuthStore } from "@/lib/stores/auth";
 
 interface AssistantsViewProps {
@@ -84,7 +84,9 @@ export function AssistantsView({
   });
 
   const handleDelete = async (id: string) => {
-    if (!user) return;
+    if (!user) {
+      return;
+    }
     setDeletingId(id);
     try {
       await deleteAssistant(apiUrl, user.id, id);
@@ -94,7 +96,9 @@ export function AssistantsView({
   };
 
   const handleSetDefault = async (id: string) => {
-    if (!user) return;
+    if (!user) {
+      return;
+    }
     await setDefaultAssistant(apiUrl, user.id, id);
   };
 
@@ -104,11 +108,11 @@ export function AssistantsView({
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="p-4 pb-2 shrink-0 space-y-3">
+      <div className="shrink-0 space-y-3 p-4 pb-2">
         <Button
-          className="w-full justify-center gap-2 bg-gradient-to-r from-[var(--gradient-from)] via-[var(--gradient-via)] to-[var(--gradient-to)] text-white hover:opacity-90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 border-0"
+          className="w-full justify-center gap-2 border-0 bg-gradient-to-r from-[var(--gradient-from)] via-[var(--gradient-via)] to-[var(--gradient-to)] text-white transition-all duration-300 hover:opacity-90 hover:shadow-lg hover:shadow-primary/25"
           onClick={() => {
             /* Open create dialog */
           }}
@@ -119,50 +123,50 @@ export function AssistantsView({
 
         {/* View Toggle */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
+          <div className="flex items-center gap-2 rounded-lg bg-muted p-1">
             <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setViewMode("grid")}
               className={cn(
-                "relative p-2 rounded-md transition-colors",
+                "relative rounded-md p-2 transition-colors",
                 viewMode === "grid"
                   ? "text-foreground"
-                  : "text-muted-foreground",
+                  : "text-muted-foreground"
               )}
+              onClick={() => setViewMode("grid")}
+              whileTap={{ scale: 0.95 }}
             >
               {viewMode === "grid" && (
                 <motion.div
+                  className="absolute inset-0 rounded-md bg-background shadow-sm"
                   layoutId="viewMode"
-                  className="absolute inset-0 bg-background rounded-md shadow-sm"
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />
               )}
-              <Grid3X3 className="size-4 relative z-10" />
+              <Grid3X3 className="relative z-10 size-4" />
             </motion.button>
             <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setViewMode("list")}
               className={cn(
-                "relative p-2 rounded-md transition-colors",
+                "relative rounded-md p-2 transition-colors",
                 viewMode === "list"
                   ? "text-foreground"
-                  : "text-muted-foreground",
+                  : "text-muted-foreground"
               )}
+              onClick={() => setViewMode("list")}
+              whileTap={{ scale: 0.95 }}
             >
               {viewMode === "list" && (
                 <motion.div
+                  className="absolute inset-0 rounded-md bg-background shadow-sm"
                   layoutId="viewMode"
-                  className="absolute inset-0 bg-background rounded-md shadow-sm"
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />
               )}
-              <List className="size-4 relative z-10" />
+              <List className="relative z-10 size-4" />
             </motion.button>
           </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
+              <Button size="sm" variant="ghost">
                 Sort by {sortBy}
               </Button>
             </DropdownMenuTrigger>
@@ -188,7 +192,7 @@ export function AssistantsView({
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : assistants.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="py-8 text-center text-muted-foreground">
             No assistants yet. Create your first one!
           </div>
         ) : (
@@ -196,18 +200,18 @@ export function AssistantsView({
             {viewMode === "grid" ? (
               <GridView
                 assistants={sortedAssistants}
-                onSelect={handleSelect}
-                onDelete={handleDelete}
-                onSetDefault={handleSetDefault}
                 deletingId={deletingId}
+                onDelete={handleDelete}
+                onSelect={handleSelect}
+                onSetDefault={handleSetDefault}
               />
             ) : (
               <ListView
                 assistants={sortedAssistants}
-                onSelect={handleSelect}
-                onDelete={handleDelete}
-                onSetDefault={handleSetDefault}
                 deletingId={deletingId}
+                onDelete={handleDelete}
+                onSelect={handleSelect}
+                onSetDefault={handleSetDefault}
               />
             )}
           </AnimatePresence>
@@ -232,15 +236,17 @@ function GridView({
   deletingId: string | null;
 }) {
   return (
-    <motion.div layout className="grid grid-cols-2 gap-3">
+    <motion.div className="grid grid-cols-2 gap-3" layout>
       <AnimatePresence mode="popLayout">
         {assistants.map((assistant, index) => (
           <motion.div
+            animate={{ opacity: 1, scale: 1 }}
+            className="group glass relative aspect-square cursor-pointer overflow-hidden rounded-xl"
+            exit={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             key={assistant.id}
             layout
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
+            onClick={() => onSelect(assistant)}
             transition={{
               type: "spring",
               stiffness: 300,
@@ -248,30 +254,28 @@ function GridView({
               delay: index * 0.05,
             }}
             whileHover={{ scale: 1.03, y: -4 }}
-            className="group relative aspect-square glass rounded-xl overflow-hidden cursor-pointer"
-            onClick={() => onSelect(assistant)}
           >
             {/* Background Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
             {/* Avatar */}
             <div className="absolute inset-0 flex items-center justify-center">
               <motion.div
-                whileHover={{ scale: 1.1, rotate: 2 }}
                 transition={{ type: "spring", stiffness: 200 }}
+                whileHover={{ scale: 1.1, rotate: 2 }}
               >
-                <Avatar className="size-20 ring-4 ring-background/50 group-hover:ring-primary/30 transition-all duration-500">
+                <Avatar className="size-20 ring-4 ring-background/50 transition-all duration-500 group-hover:ring-primary/30">
                   <AvatarImage src={assistant.avatar_url} />
-                  <AvatarFallback className="text-3xl bg-gradient-to-br from-primary to-accent text-primary-foreground">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-3xl text-primary-foreground">
                     {assistant.name[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
 
                 {assistant.is_default && (
                   <motion.div
-                    initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1.5 shadow-lg"
+                    className="absolute -top-2 -right-2 rounded-full bg-primary p-1.5 text-primary-foreground shadow-lg"
+                    initial={{ scale: 0 }}
                   >
                     <Star className="size-3 fill-current" />
                   </motion.div>
@@ -281,37 +285,37 @@ function GridView({
 
             {/* Info Overlay */}
             <motion.div
+              className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/95 via-background/80 to-transparent p-3"
               initial={{ opacity: 0, y: 20 }}
               whileHover={{ opacity: 1, y: 0 }}
-              className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-background/95 via-background/80 to-transparent"
             >
-              <h3 className="font-semibold text-sm truncate">
+              <h3 className="truncate font-semibold text-sm">
                 {assistant.name}
               </h3>
-              <p className="text-xs text-muted-foreground line-clamp-1">
+              <p className="line-clamp-1 text-muted-foreground text-xs">
                 {assistant.description || "No description"}
               </p>
 
               {/* Quick Actions */}
-              <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="mt-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
-                  size="sm"
-                  className="flex-1 h-7 text-xs"
+                  className="h-7 flex-1 text-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelect(assistant);
                   }}
+                  size="sm"
                 >
-                  <MessageSquare className="size-3 mr-1" />
+                  <MessageSquare className="mr-1 size-3" />
                   Chat
                 </Button>
               </div>
             </motion.div>
 
             {/* Top Right Actions */}
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
               {assistant.memory_enabled && (
-                <div className="p-1.5 bg-background/80 rounded-md backdrop-blur-sm">
+                <div className="rounded-md bg-background/80 p-1.5 backdrop-blur-sm">
                   <Brain className="size-3 text-primary" />
                 </div>
               )}
@@ -322,9 +326,9 @@ function GridView({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Button
-                    variant="ghost"
-                    size="icon"
                     className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                    size="icon"
+                    variant="ghost"
                   >
                     <MoreHorizontal className="size-3" />
                   </Button>
@@ -336,30 +340,30 @@ function GridView({
                       onSetDefault(assistant.id);
                     }}
                   >
-                    <Star className="size-4 mr-2" />
+                    <Star className="mr-2 size-4" />
                     Set as Default
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                    <Settings className="size-4 mr-2" />
+                    <Settings className="mr-2 size-4" />
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                    <Copy className="size-4 mr-2" />
+                    <Copy className="mr-2 size-4" />
                     Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
+                    disabled={deletingId === assistant.id}
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(assistant.id);
                     }}
-                    disabled={deletingId === assistant.id}
                   >
                     {deletingId === assistant.id ? (
-                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 size-4 animate-spin" />
                     ) : (
-                      <Trash2 className="size-4 mr-2" />
+                      <Trash2 className="mr-2 size-4" />
                     )}
                     Delete
                   </DropdownMenuItem>
@@ -388,40 +392,40 @@ function ListView({
   deletingId: string | null;
 }) {
   return (
-    <motion.div layout className="space-y-2">
+    <motion.div className="space-y-2" layout>
       <AnimatePresence mode="popLayout">
         {assistants.map((assistant, index) => (
           <motion.div
+            animate={{ opacity: 1, x: 0 }}
+            className={cn(
+              "glass group flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-all duration-300 hover:bg-primary/10"
+            )}
+            exit={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: -20 }}
             key={assistant.id}
             layout
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ delay: index * 0.05 }}
-            className={cn(
-              "flex items-center gap-3 p-3 rounded-lg glass hover:bg-primary/10 transition-all duration-300 group cursor-pointer",
-            )}
             onClick={() => onSelect(assistant)}
+            transition={{ delay: index * 0.05 }}
           >
             {/* Avatar */}
             <div className="relative shrink-0">
-              <Avatar className="size-10 ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all">
+              <Avatar className="size-10 ring-2 ring-primary/20 transition-all group-hover:ring-primary/50">
                 <AvatarImage src={assistant.avatar_url} />
                 <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground">
                   {assistant.name[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               {assistant.is_default && (
-                <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5">
+                <div className="absolute -top-1 -right-1 rounded-full bg-primary p-0.5 text-primary-foreground">
                   <Star className="size-2.5 fill-current" />
                 </div>
               )}
             </div>
 
             {/* Info */}
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="font-medium text-sm truncate">
+                <h3 className="truncate font-medium text-sm">
                   {assistant.name}
                 </h3>
                 {assistant.memory_enabled && (
@@ -429,17 +433,17 @@ function ListView({
                 )}
                 {assistant.is_public && (
                   <Badge
+                    className="h-4 px-1.5 py-0 text-[10px]"
                     variant="secondary"
-                    className="text-[10px] px-1.5 py-0 h-4"
                   >
                     Public
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="truncate text-muted-foreground text-xs">
                 {assistant.description || "No description"}
               </p>
-              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
                 <span>{assistant.model_name}</span>
                 <span>•</span>
                 <span>{assistant.tools.length} tools</span>
@@ -447,14 +451,14 @@ function ListView({
             </div>
 
             {/* Actions */}
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
               <Button
-                variant="ghost"
-                size="icon-sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelect(assistant);
                 }}
+                size="icon-sm"
+                variant="ghost"
               >
                 <MessageSquare className="size-4" />
               </Button>
@@ -464,7 +468,7 @@ function ListView({
                   asChild
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Button variant="ghost" size="icon-sm">
+                  <Button size="icon-sm" variant="ghost">
                     <MoreHorizontal className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -475,30 +479,30 @@ function ListView({
                       onSetDefault(assistant.id);
                     }}
                   >
-                    <Star className="size-4 mr-2" />
+                    <Star className="mr-2 size-4" />
                     Set as Default
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                    <Settings className="size-4 mr-2" />
+                    <Settings className="mr-2 size-4" />
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                    <Copy className="size-4 mr-2" />
+                    <Copy className="mr-2 size-4" />
                     Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
+                    disabled={deletingId === assistant.id}
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(assistant.id);
                     }}
-                    disabled={deletingId === assistant.id}
                   >
                     {deletingId === assistant.id ? (
-                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 size-4 animate-spin" />
                     ) : (
-                      <Trash2 className="size-4 mr-2" />
+                      <Trash2 className="mr-2 size-4" />
                     )}
                     Delete
                   </DropdownMenuItem>

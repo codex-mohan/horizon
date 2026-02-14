@@ -1,4 +1,4 @@
-import { BaseMessage } from "@langchain/core/messages";
+import type { BaseMessage } from "@langchain/core/messages";
 import { Annotation, messagesStateReducer } from "@langchain/langgraph";
 
 /**
@@ -23,7 +23,7 @@ export interface UIMessage {
  */
 function uiMessageReducer(
   existing: UIMessage[],
-  updates: UIMessage | UIMessage[],
+  updates: UIMessage | UIMessage[]
 ): UIMessage[] {
   const updatesArray = Array.isArray(updates) ? updates : [updates];
   const existingMap = new Map(existing.map((msg) => [msg.id, msg]));

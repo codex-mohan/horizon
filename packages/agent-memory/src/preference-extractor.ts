@@ -1,6 +1,6 @@
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
-import { SystemMessage, HumanMessage } from "@langchain/core/messages";
-import type { Preference, UserPreferences } from "./types.js";
+import type { Preference } from "./types.js";
 
 /**
  * Preference Extractor
@@ -9,7 +9,7 @@ import type { Preference, UserPreferences } from "./types.js";
  * Identifies patterns in user behavior and feedback.
  */
 export class PreferenceExtractor {
-  private llm: ChatOpenAI;
+  private readonly llm: ChatOpenAI;
 
   constructor(apiKey?: string) {
     this.llm = new ChatOpenAI({
@@ -23,8 +23,8 @@ export class PreferenceExtractor {
    * Extract preferences from a conversation thread
    */
   async extractPreferences(
-    userId: string,
-    messages: Array<{ role: string; content: string }>,
+    _userId: string,
+    messages: Array<{ role: string; content: string }>
   ): Promise<Preference[]> {
     const conversationText = messages
       .map((m) => `${m.role}: ${m.content}`)
@@ -56,11 +56,11 @@ Return ONLY a JSON array in this format:
   }
 ]
 
-If no clear preferences are found, return an empty array [].`,
+If no clear preferences are found, return an empty array [].`
     );
 
     const userPrompt = new HumanMessage(
-      `Extract user preferences from this conversation:\n\n${conversationText}`,
+      `Extract user preferences from this conversation:\n\n${conversationText}`
     );
 
     try {
@@ -69,7 +69,9 @@ If no clear preferences are found, return an empty array [].`,
 
       // Extract JSON from response
       const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) return [];
+      if (!jsonMatch) {
+        return [];
+      }
 
       const preferences: Omit<
         Preference,
@@ -84,7 +86,7 @@ If no clear preferences are found, return an empty array [].`,
     } catch (error) {
       console.error(
         "[PreferenceExtractor] Failed to extract preferences:",
-        error,
+        error
       );
       return [];
     }
@@ -103,11 +105,11 @@ If no clear preferences are found, return an empty array [].`,
       .join("\n");
 
     const systemPrompt = new SystemMessage(
-      `Create a brief, natural language summary of the user's preferences based on the extracted data.`,
+      `Create a brief, natural language summary of the user's preferences based on the extracted data.`
     );
 
     const userPrompt = new HumanMessage(
-      `Summarize these user preferences:\n\n${preferencesText}`,
+      `Summarize these user preferences:\n\n${preferencesText}`
     );
 
     try {
@@ -124,7 +126,7 @@ If no clear preferences are found, return an empty array [].`,
    */
   async isPreferenceStatement(content: string): Promise<boolean> {
     const systemPrompt = new SystemMessage(
-      `Determine if this message contains a clear preference, opinion, or instruction that should be remembered for future interactions. Answer with just "yes" or "no".`,
+      `Determine if this message contains a clear preference, opinion, or instruction that should be remembered for future interactions. Answer with just "yes" or "no".`
     );
 
     const userPrompt = new HumanMessage(`Message: "${content}"`);
@@ -133,7 +135,7 @@ If no clear preferences are found, return an empty array [].`,
       const response = await this.llm.invoke([systemPrompt, userPrompt]);
       const answer = (response.content as string).toLowerCase().trim();
       return answer.includes("yes");
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

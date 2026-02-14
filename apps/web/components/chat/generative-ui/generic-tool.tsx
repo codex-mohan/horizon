@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { cn } from "@workspace/ui/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, Copy, Check, Code } from "lucide-react";
-import { ToolStatusBadge, ModernSpinner, ShimmerText } from "./loading-effects";
-import { getToolUIConfig, getToolIcon } from "@/lib/tool-config";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, ChevronDown, ChevronUp, Code, Copy } from "lucide-react";
+import { useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
+import { getToolIcon, getToolUIConfig } from "@/lib/tool-config";
+import { ModernSpinner, ShimmerText, ToolStatusBadge } from "./loading-effects";
 
 interface GenericToolProps {
   toolName: string;
@@ -58,31 +58,31 @@ export function GenericTool({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "rounded-xl overflow-hidden border shadow-lg",
+        "overflow-hidden rounded-xl border shadow-lg",
         isLight
-          ? "bg-card/95 border-border"
-          : "bg-slate-900/60 border-slate-700/50",
+          ? "border-border bg-card/95"
+          : "border-slate-700/50 bg-slate-900/60"
       )}
+      initial={{ opacity: 0, y: 10 }}
     >
       {/* Header */}
       <div
         className={cn(
-          "flex items-center justify-between px-4 py-3 border-b",
-          isLight ? "border-border" : "border-slate-700/50",
+          "flex items-center justify-between border-b px-4 py-3",
+          isLight ? "border-border" : "border-slate-700/50"
         )}
       >
         <div className="flex items-center gap-3">
-          <div className={cn("p-2 rounded-xl", config.icon.bgColor)}>
-            <Icon className={cn("w-5 h-5", config.icon.color)} />
+          <div className={cn("rounded-xl p-2", config.icon.bgColor)}>
+            <Icon className={cn("h-5 w-5", config.icon.color)} />
           </div>
           <div>
             <span
               className={cn(
-                "text-sm font-semibold",
-                isLight ? "text-foreground" : "text-slate-200",
+                "font-semibold text-sm",
+                isLight ? "text-foreground" : "text-slate-200"
               )}
             >
               {config.displayName}
@@ -91,7 +91,7 @@ export function GenericTool({
               <p
                 className={cn(
                   "text-xs",
-                  isLight ? "text-muted-foreground" : "text-slate-500",
+                  isLight ? "text-muted-foreground" : "text-slate-500"
                 )}
               >
                 {executionTime}s
@@ -106,64 +106,64 @@ export function GenericTool({
       <div
         className={cn(
           "border-b",
-          isLight ? "border-border/50" : "border-slate-700/30",
+          isLight ? "border-border/50" : "border-slate-700/30"
         )}
       >
         <button
-          onClick={() => setShowArgs(!showArgs)}
           className={cn(
-            "w-full flex items-center justify-between px-4 py-2.5 text-xs transition-colors",
+            "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
             isLight
               ? "text-muted-foreground hover:text-foreground"
-              : "text-slate-400 hover:text-slate-300",
+              : "text-slate-400 hover:text-slate-300"
           )}
+          onClick={() => setShowArgs(!showArgs)}
         >
           <div className="flex items-center gap-2">
-            <Code className="w-3.5 h-3.5" />
+            <Code className="h-3.5 w-3.5" />
             <span className="font-medium uppercase tracking-wider">
               Arguments
             </span>
           </div>
           {showArgs ? (
-            <ChevronUp className="w-3.5 h-3.5" />
+            <ChevronUp className="h-3.5 w-3.5" />
           ) : (
-            <ChevronDown className="w-3.5 h-3.5" />
+            <ChevronDown className="h-3.5 w-3.5" />
           )}
         </button>
 
         <AnimatePresence>
           {showArgs && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
+              exit={{ height: 0, opacity: 0 }}
+              initial={{ height: 0, opacity: 0 }}
             >
               <div className="px-4 pb-3">
-                <div className="relative group">
+                <div className="group relative">
                   <pre
                     className={cn(
-                      "p-3 rounded-lg text-xs font-mono border overflow-auto max-h-40",
+                      "max-h-40 overflow-auto rounded-lg border p-3 font-mono text-xs",
                       isLight
-                        ? "bg-muted/50 text-foreground border-border"
-                        : "bg-slate-950/50 text-slate-300 border-slate-800/50",
+                        ? "border-border bg-muted/50 text-foreground"
+                        : "border-slate-800/50 bg-slate-950/50 text-slate-300"
                     )}
                   >
                     <code>{formatJSON(args)}</code>
                   </pre>
                   <button
-                    onClick={() => handleCopy(formatJSON(args))}
                     className={cn(
-                      "absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity",
+                      "absolute top-2 right-2 rounded-md p-1.5 opacity-0 transition-opacity group-hover:opacity-100",
                       isLight
                         ? "bg-muted text-muted-foreground hover:text-foreground"
-                        : "bg-slate-800/50 text-slate-400 hover:text-slate-200",
+                        : "bg-slate-800/50 text-slate-400 hover:text-slate-200"
                     )}
+                    onClick={() => handleCopy(formatJSON(args))}
                   >
                     {copied ? (
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="h-3.5 w-3.5" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="h-3.5 w-3.5" />
                     )}
                   </button>
                 </div>
@@ -177,75 +177,75 @@ export function GenericTool({
       {(result || error || isLoading) && (
         <div>
           <button
-            onClick={() => setShowResult(!showResult)}
             className={cn(
-              "w-full flex items-center justify-between px-4 py-2.5 text-xs transition-colors",
+              "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
               isLight
                 ? "text-muted-foreground hover:text-foreground"
-                : "text-slate-400 hover:text-slate-300",
+                : "text-slate-400 hover:text-slate-300"
             )}
+            onClick={() => setShowResult(!showResult)}
           >
             <span className="font-medium uppercase tracking-wider">
               {error ? "Error" : "Result"}
             </span>
             {showResult ? (
-              <ChevronUp className="w-3.5 h-3.5" />
+              <ChevronUp className="h-3.5 w-3.5" />
             ) : (
-              <ChevronDown className="w-3.5 h-3.5" />
+              <ChevronDown className="h-3.5 w-3.5" />
             )}
           </button>
 
           <AnimatePresence>
             {showResult && (
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
+                exit={{ height: 0, opacity: 0 }}
+                initial={{ height: 0, opacity: 0 }}
               >
                 <div className="px-4 pb-4">
                   {isLoading && !result && !error ? (
                     <div className="flex items-center gap-3 p-4">
                       <ModernSpinner size="sm" />
                       <ShimmerText
-                        text="Processing..."
                         className={cn(
                           "text-sm",
-                          isLight ? "text-muted-foreground" : "text-slate-400",
+                          isLight ? "text-muted-foreground" : "text-slate-400"
                         )}
+                        text="Processing..."
                       />
                     </div>
                   ) : error ? (
-                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                      <code className="text-xs font-mono text-destructive whitespace-pre-wrap">
+                    <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+                      <code className="whitespace-pre-wrap font-mono text-destructive text-xs">
                         {error}
                       </code>
                     </div>
                   ) : (
-                    <div className="relative group">
+                    <div className="group relative">
                       <pre
                         className={cn(
-                          "p-3 rounded-lg text-xs font-mono border overflow-auto max-h-64",
+                          "max-h-64 overflow-auto rounded-lg border p-3 font-mono text-xs",
                           isLight
-                            ? "bg-muted/50 text-foreground border-border"
-                            : "bg-slate-950/50 text-slate-300 border-slate-800/50",
+                            ? "border-border bg-muted/50 text-foreground"
+                            : "border-slate-800/50 bg-slate-950/50 text-slate-300"
                         )}
                       >
                         <code className="whitespace-pre-wrap">{result}</code>
                       </pre>
                       <button
-                        onClick={() => result && handleCopy(result)}
                         className={cn(
-                          "absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity",
+                          "absolute top-2 right-2 rounded-md p-1.5 opacity-0 transition-opacity group-hover:opacity-100",
                           isLight
                             ? "bg-muted text-muted-foreground hover:text-foreground"
-                            : "bg-slate-800/50 text-slate-400 hover:text-slate-200",
+                            : "bg-slate-800/50 text-slate-400 hover:text-slate-200"
                         )}
+                        onClick={() => result && handleCopy(result)}
                       >
                         {copied ? (
-                          <Check className="w-3.5 h-3.5" />
+                          <Check className="h-3.5 w-3.5" />
                         ) : (
-                          <Copy className="w-3.5 h-3.5" />
+                          <Copy className="h-3.5 w-3.5" />
                         )}
                       </button>
                     </div>

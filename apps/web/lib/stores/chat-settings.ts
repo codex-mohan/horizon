@@ -52,6 +52,6 @@ export const useChatSettings = create<ChatSettingsState>()(
     }),
     {
       name: "horizon-chat-settings",
-    },
-  ),
+    }
+  )
 );

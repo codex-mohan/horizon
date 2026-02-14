@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { cn } from "@workspace/ui/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Search,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
   Globe,
+  Search,
 } from "lucide-react";
-import { ToolStatusBadge, ModernSpinner, ShimmerText } from "./loading-effects";
-import { getToolUIConfig } from "@/lib/tool-config";
+import { useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
+import { getToolUIConfig } from "@/lib/tool-config";
+import { ModernSpinner, ShimmerText, ToolStatusBadge } from "./loading-effects";
 
 interface SearchResult {
   title: string;
@@ -48,7 +48,7 @@ export function WebSearchTool({
 }: WebSearchToolProps) {
   const [showArgs, setShowArgs] = useState(true);
   const [expandedResults, setExpandedResults] = useState<Set<number>>(
-    new Set(),
+    new Set()
   );
   const config = getToolUIConfig(toolName);
   const { themeMode } = useTheme();
@@ -56,12 +56,18 @@ export function WebSearchTool({
 
   // Parse search results from the result string
   const searchResults: SearchResult[] = (() => {
-    if (!result) return [];
+    if (!result) {
+      return [];
+    }
     try {
       // Try to parse as JSON first
       const parsed = JSON.parse(result);
-      if (Array.isArray(parsed)) return parsed;
-      if (parsed.results) return parsed.results;
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+      if (parsed.results) {
+        return parsed.results;
+      }
       return [];
     } catch {
       // Fallback: parse text format
@@ -86,31 +92,31 @@ export function WebSearchTool({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "rounded-xl overflow-hidden border shadow-xl",
+        "overflow-hidden rounded-xl border shadow-xl",
         isLight
-          ? "bg-gradient-to-br from-primary/5 to-accent/5 border-border"
-          : "bg-gradient-to-br from-violet-950/30 to-purple-950/30 border-violet-500/20",
+          ? "border-border bg-gradient-to-br from-primary/5 to-accent/5"
+          : "border-violet-500/20 bg-gradient-to-br from-violet-950/30 to-purple-950/30"
       )}
+      initial={{ opacity: 0, y: 10 }}
     >
       {/* Header */}
       <div
         className={cn(
-          "flex items-center justify-between px-4 py-3 border-b",
-          isLight ? "border-border" : "border-violet-500/20",
+          "flex items-center justify-between border-b px-4 py-3",
+          isLight ? "border-border" : "border-violet-500/20"
         )}
       >
         <div className="flex items-center gap-3">
-          <div className={cn("p-2 rounded-xl", config.icon.bgColor)}>
-            <Search className={cn("w-5 h-5", config.icon.color)} />
+          <div className={cn("rounded-xl p-2", config.icon.bgColor)}>
+            <Search className={cn("h-5 w-5", config.icon.color)} />
           </div>
           <div>
             <span
               className={cn(
-                "text-sm font-semibold",
-                isLight ? "text-foreground" : "text-slate-200",
+                "font-semibold text-sm",
+                isLight ? "text-foreground" : "text-slate-200"
               )}
             >
               {config.displayName}
@@ -118,7 +124,7 @@ export function WebSearchTool({
             <p
               className={cn(
                 "text-xs",
-                isLight ? "text-muted-foreground" : "text-slate-500",
+                isLight ? "text-muted-foreground" : "text-slate-500"
               )}
             >
               Web search results
@@ -132,53 +138,53 @@ export function WebSearchTool({
       <div
         className={cn(
           "border-b",
-          isLight ? "border-border/50" : "border-violet-500/10",
+          isLight ? "border-border/50" : "border-violet-500/10"
         )}
       >
         <button
-          onClick={() => setShowArgs(!showArgs)}
           className={cn(
-            "w-full flex items-center justify-between px-4 py-2.5 text-xs transition-colors",
+            "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
             isLight
               ? "text-muted-foreground hover:text-foreground"
-              : "text-slate-400 hover:text-slate-300",
+              : "text-slate-400 hover:text-slate-300"
           )}
+          onClick={() => setShowArgs(!showArgs)}
         >
           <span className="font-medium uppercase tracking-wider">Query</span>
           {showArgs ? (
-            <ChevronUp className="w-3.5 h-3.5" />
+            <ChevronUp className="h-3.5 w-3.5" />
           ) : (
-            <ChevronDown className="w-3.5 h-3.5" />
+            <ChevronDown className="h-3.5 w-3.5" />
           )}
         </button>
 
         <AnimatePresence>
           {showArgs && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
+              exit={{ height: 0, opacity: 0 }}
+              initial={{ height: 0, opacity: 0 }}
             >
               <div className="px-4 pb-3">
                 <div
                   className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border",
+                    "flex items-center gap-2 rounded-lg border p-3",
                     isLight
-                      ? "bg-primary/5 border-primary/20"
-                      : "bg-violet-950/20 border-violet-500/20",
+                      ? "border-primary/20 bg-primary/5"
+                      : "border-violet-500/20 bg-violet-950/20"
                   )}
                 >
                   <Search
                     className={cn(
-                      "w-4 h-4",
-                      isLight ? "text-primary" : "text-violet-400",
+                      "h-4 w-4",
+                      isLight ? "text-primary" : "text-violet-400"
                     )}
                   />
                   <span
                     className={cn(
                       "text-sm",
-                      isLight ? "text-foreground" : "text-slate-300",
+                      isLight ? "text-foreground" : "text-slate-300"
                     )}
                   >
                     {args.query ||
@@ -196,17 +202,17 @@ export function WebSearchTool({
       {/* Results Section */}
       <div className="p-4">
         {isLoading && !result && !error ? (
-          <div className="flex flex-col items-center justify-center py-8 gap-4">
+          <div className="flex flex-col items-center justify-center gap-4 py-8">
             <ModernSpinner size="md" />
             <div className="text-center">
               <ShimmerText
-                text="Searching the web..."
                 className={cn("text-sm", isLight ? "text-foreground" : "")}
+                text="Searching the web..."
               />
               <p
                 className={cn(
-                  "text-xs mt-1",
-                  isLight ? "text-muted-foreground" : "text-slate-500",
+                  "mt-1 text-xs",
+                  isLight ? "text-muted-foreground" : "text-slate-500"
                 )}
               >
                 Query:{" "}
@@ -215,86 +221,84 @@ export function WebSearchTool({
             </div>
           </div>
         ) : error ? (
-          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-            <p className="text-sm text-destructive">{error}</p>
+          <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+            <p className="text-destructive text-sm">{error}</p>
           </div>
         ) : searchResults.length > 0 ? (
           <div className="space-y-3">
             <p
               className={cn(
-                "text-xs uppercase tracking-wider font-medium",
-                isLight ? "text-muted-foreground" : "text-slate-500",
+                "font-medium text-xs uppercase tracking-wider",
+                isLight ? "text-muted-foreground" : "text-slate-500"
               )}
             >
               {searchResults.length} results found
             </p>
             {searchResults.map((result, index) => (
               <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
                 className={cn(
-                  "group p-3 rounded-lg border transition-all cursor-pointer",
+                  "group cursor-pointer rounded-lg border p-3 transition-all",
                   isLight
-                    ? "bg-muted/30 border-border hover:border-primary/30 hover:bg-muted/50"
-                    : "bg-slate-900/30 border-slate-700/30 hover:border-violet-500/30 hover:bg-slate-900/50",
+                    ? "border-border bg-muted/30 hover:border-primary/30 hover:bg-muted/50"
+                    : "border-slate-700/30 bg-slate-900/30 hover:border-violet-500/30 hover:bg-slate-900/50"
                 )}
+                initial={{ opacity: 0, x: -10 }}
+                key={index}
                 onClick={() => toggleResult(index)}
+                transition={{ delay: index * 0.1 }}
               >
                 <div className="flex items-start gap-3">
                   <div
                     className={cn(
-                      "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
-                      isLight ? "bg-primary/10" : "bg-violet-500/10",
+                      "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg",
+                      isLight ? "bg-primary/10" : "bg-violet-500/10"
                     )}
                   >
                     <Globe
                       className={cn(
-                        "w-4 h-4",
-                        isLight ? "text-primary" : "text-violet-400",
+                        "h-4 w-4",
+                        isLight ? "text-primary" : "text-violet-400"
                       )}
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h4
                       className={cn(
-                        "text-sm font-medium transition-colors line-clamp-1",
+                        "line-clamp-1 font-medium text-sm transition-colors",
                         isLight
                           ? "text-foreground group-hover:text-primary"
-                          : "text-slate-200 group-hover:text-violet-300",
+                          : "text-slate-200 group-hover:text-violet-300"
                       )}
                     >
                       {result.title}
                     </h4>
                     <a
-                      href={result.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className={cn(
-                        "text-xs flex items-center gap-1 mt-0.5",
+                        "mt-0.5 flex items-center gap-1 text-xs",
                         isLight
                           ? "text-primary/70 hover:text-primary"
-                          : "text-violet-400/70 hover:text-violet-400",
+                          : "text-violet-400/70 hover:text-violet-400"
                       )}
+                      href={result.url}
                       onClick={(e) => e.stopPropagation()}
+                      rel="noopener noreferrer"
+                      target="_blank"
                     >
                       {result.url.replace(/^https?:\/\//, "").substring(0, 40)}
                       {result.url.length > 40 && "..."}
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="h-3 w-3" />
                     </a>
                     <AnimatePresence>
                       {(expandedResults.has(index) || index === 0) && (
                         <motion.p
-                          initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
                           className={cn(
-                            "text-xs mt-2 line-clamp-3",
-                            isLight
-                              ? "text-muted-foreground"
-                              : "text-slate-400",
+                            "mt-2 line-clamp-3 text-xs",
+                            isLight ? "text-muted-foreground" : "text-slate-400"
                           )}
+                          exit={{ height: 0, opacity: 0 }}
+                          initial={{ height: 0, opacity: 0 }}
                         >
                           {result.snippet}
                         </motion.p>
@@ -303,9 +307,9 @@ export function WebSearchTool({
                   </div>
                   <ChevronDown
                     className={cn(
-                      "w-4 h-4 transition-transform",
+                      "h-4 w-4 transition-transform",
                       isLight ? "text-muted-foreground" : "text-slate-500",
-                      expandedResults.has(index) && "rotate-180",
+                      expandedResults.has(index) && "rotate-180"
                     )}
                   />
                 </div>
@@ -315,16 +319,16 @@ export function WebSearchTool({
         ) : result ? (
           <div
             className={cn(
-              "p-3 rounded-lg border",
+              "rounded-lg border p-3",
               isLight
-                ? "bg-muted/30 border-border"
-                : "bg-slate-900/30 border-slate-700/30",
+                ? "border-border bg-muted/30"
+                : "border-slate-700/30 bg-slate-900/30"
             )}
           >
             <pre
               className={cn(
-                "text-xs whitespace-pre-wrap",
-                isLight ? "text-muted-foreground" : "text-slate-400",
+                "whitespace-pre-wrap text-xs",
+                isLight ? "text-muted-foreground" : "text-slate-400"
               )}
             >
               {result}

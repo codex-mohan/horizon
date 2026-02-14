@@ -15,14 +15,14 @@
  * - Command queuing and execution
  */
 
-import {
-  ShellExecutor,
-  type ShellConfig,
-  type ExecutionResult,
-} from "./executor.js";
-import { CommandHistory } from "./history.js";
-import { getPlatformInfo, type PlatformInfo } from "./platform.js";
 import pc from "picocolors";
+import {
+  type ExecutionResult,
+  type ShellConfig,
+  ShellExecutor,
+} from "./executor.js";
+import type { CommandHistory } from "./history.js";
+import { getPlatformInfo, type PlatformInfo } from "./platform.js";
 
 /**
  * Session state for interactive shell
@@ -96,16 +96,16 @@ interface QueuedCommand {
  * Interactive Shell - Stateful command execution with session management
  */
 export class InteractiveShell {
-  private executor: ShellExecutor;
-  private config: InteractiveConfig & {
+  private readonly executor: ShellExecutor;
+  private readonly config: InteractiveConfig & {
     sessionId: string;
     showPrompts: boolean;
     promptFormat: string;
     autoSave: boolean;
     sessionTimeout: number;
   };
-  private state: SessionState;
-  private platform: PlatformInfo;
+  private readonly state: SessionState;
+  private readonly platform: PlatformInfo;
   private commandQueue: QueuedCommand[] = [];
   private isProcessing = false;
 
@@ -179,7 +179,7 @@ export class InteractiveShell {
         ? pc.yellow(`⚠️  Dangerous command detected (${patterns}):\n`) +
           pc.white(`   ${command}\n`) +
           pc.gray("   Approve? [y/N]: ")
-        : pc.cyan(`Execute command:\n`) +
+        : pc.cyan("Execute command:\n") +
           pc.white(`   ${command}\n`) +
           pc.gray("   Approve? [Y/n]: ");
 
@@ -188,9 +188,8 @@ export class InteractiveShell {
 
       if (context.isDangerous) {
         return normalized === "y" || normalized === "yes";
-      } else {
-        return normalized !== "n" && normalized !== "no";
       }
+      return normalized !== "n" && normalized !== "no";
     };
   }
 
@@ -205,7 +204,9 @@ export class InteractiveShell {
    * Get the formatted prompt
    */
   getPrompt(): string {
-    if (!this.config.showPrompts) return "";
+    if (!this.config.showPrompts) {
+      return "";
+    }
 
     return this.config.promptFormat
       .replace("$cwd", this.state.cwd)
@@ -219,33 +220,30 @@ export class InteractiveShell {
    */
   async exec(
     command: string,
-    options?: Parameters<ShellExecutor["execute"]>[1],
+    options?: Parameters<ShellExecutor["execute"]>[1]
   ): Promise<ExecutionResult> {
     this.updateActivity();
 
     // Handle built-in commands
     const builtinResult = await this.handleBuiltins(command);
-    if (builtinResult) return builtinResult;
-
-    try {
-      const result = await this.executor.execute(command, {
-        cwd: this.state.cwd,
-        env: this.state.env,
-        ...options,
-      });
-
-      this.state.commandCount++;
-
-      // Update cwd if command changed directory
-      if (command.trim().startsWith("cd ")) {
-        await this.updateCwd();
-      }
-
-      this.config.onSessionChange?.(this.state);
-      return result;
-    } catch (error) {
-      throw error;
+    if (builtinResult) {
+      return builtinResult;
     }
+    const result = await this.executor.execute(command, {
+      cwd: this.state.cwd,
+      env: this.state.env,
+      ...options,
+    });
+
+    this.state.commandCount++;
+
+    // Update cwd if command changed directory
+    if (command.trim().startsWith("cd ")) {
+      await this.updateCwd();
+    }
+
+    this.config.onSessionChange?.(this.state);
+    return result;
   }
 
   /**
@@ -253,7 +251,7 @@ export class InteractiveShell {
    */
   enqueue(
     command: string,
-    options?: Parameters<ShellExecutor["execute"]>[1],
+    options?: Parameters<ShellExecutor["execute"]>[1]
   ): Promise<ExecutionResult> {
     return new Promise((resolve, reject) => {
       this.commandQueue.push({ command, resolve, reject, options });
@@ -265,7 +263,9 @@ export class InteractiveShell {
    * Process queued commands
    */
   private async processQueue(): Promise<void> {
-    if (this.isProcessing || this.commandQueue.length === 0) return;
+    if (this.isProcessing || this.commandQueue.length === 0) {
+      return;
+    }
 
     this.isProcessing = true;
 
@@ -287,7 +287,7 @@ export class InteractiveShell {
    * Handle built-in shell commands
    */
   private async handleBuiltins(
-    command: string,
+    command: string
   ): Promise<ExecutionResult | null> {
     const trimmed = command.trim();
     const parts = trimmed.split(/\s+/);
@@ -314,7 +314,7 @@ export class InteractiveShell {
       }
 
       case "pwd": {
-        return createResult(this.state.cwd + "\n");
+        return createResult(`${this.state.cwd}\n`);
       }
 
       case "export": {
@@ -322,7 +322,7 @@ export class InteractiveShell {
           const envStr = Object.entries(this.state.env)
             .map(([k, v]) => `${k}=${v}`)
             .join("\n");
-          return createResult(envStr + "\n");
+          return createResult(`${envStr}\n`);
         }
 
         for (const arg of args) {
@@ -342,12 +342,12 @@ export class InteractiveShell {
       }
 
       case "history": {
-        const count = parseInt(args[0] ?? "") || 20;
+        const count = Number.parseInt(args[0] ?? "", 10) || 20;
         const entries = this.executor.getHistory().getLast(count);
         const output = entries
           .map((e, i) => `${i + 1}  ${e.command}`)
           .join("\n");
-        return createResult(output + "\n");
+        return createResult(`${output}\n`);
       }
 
       case "clear":
@@ -457,7 +457,7 @@ export class InteractiveShell {
    */
   async execMany(
     commands: string[],
-    options?: { stopOnError?: boolean },
+    options?: { stopOnError?: boolean }
   ): Promise<ExecutionResult[]> {
     const results: ExecutionResult[] = [];
     const stopOnError = options?.stopOnError ?? true;
@@ -467,7 +467,9 @@ export class InteractiveShell {
         const result = await this.exec(command);
         results.push(result);
       } catch (error) {
-        if (stopOnError) throw error;
+        if (stopOnError) {
+          throw error;
+        }
         results.push({
           id: `error-${Date.now()}`,
           command,
@@ -525,7 +527,9 @@ export class InteractiveShell {
    * Check if session is still active
    */
   isActive(): boolean {
-    if (!this.state.active) return false;
+    if (!this.state.active) {
+      return false;
+    }
 
     if (this.config.sessionTimeout > 0) {
       const elapsed = Date.now() - this.state.lastActivity.getTime();
@@ -562,7 +566,7 @@ export class InteractiveShell {
    */
   static fromJSON(
     json: string,
-    config: InteractiveConfig = {},
+    config: InteractiveConfig = {}
   ): InteractiveShell {
     const { state, history } = JSON.parse(json);
 

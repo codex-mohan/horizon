@@ -16,20 +16,20 @@
  */
 
 export {
-  ShellExecutor,
-  type ShellConfig,
-  type ExecutionResult,
-} from "./executor.js";
-export {
-  InteractiveShell,
-  type InteractiveConfig,
-  type SessionState,
-} from "./interactive.js";
-export { CommandHistory, type HistoryEntry } from "./history.js";
-export {
+  type ErrorContext,
+  PermissionError,
   ShellError,
   TimeoutError,
-  PermissionError,
-  type ErrorContext,
 } from "./errors.js";
+export {
+  type ExecutionResult,
+  type ShellConfig,
+  ShellExecutor,
+} from "./executor.js";
+export { CommandHistory, type HistoryEntry } from "./history.js";
+export {
+  type InteractiveConfig,
+  InteractiveShell,
+  type SessionState,
+} from "./interactive.js";
 export { detectOS, getPlatformInfo, type PlatformInfo } from "./platform.js";

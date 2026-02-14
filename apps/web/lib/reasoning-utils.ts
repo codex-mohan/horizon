@@ -6,7 +6,7 @@ interface ThinkingBlock {
   [key: string]: unknown;
 }
 
-function isThinkingBlock(content: unknown): content is ThinkingBlock {
+function _isThinkingBlock(content: unknown): content is ThinkingBlock {
   return (
     typeof content === "object" &&
     content !== null &&
@@ -17,7 +17,7 @@ function isThinkingBlock(content: unknown): content is ThinkingBlock {
 }
 
 export function getReasoningFromMessage(
-  message: AIMessage,
+  message: AIMessage
 ): string | undefined {
   type MessageWithExtras = AIMessage & {
     additional_kwargs?: {
@@ -35,7 +35,9 @@ export function getReasoningFromMessage(
       .filter((item) => item.type === "summary_text")
       .map((item) => item.text)
       .join("");
-    if (content.trim()) return content;
+    if (content.trim()) {
+      return content;
+    }
   }
 
   if (msg.contentBlocks?.length) {
@@ -43,7 +45,9 @@ export function getReasoningFromMessage(
       .filter((b) => b.type === "thinking" && b.thinking)
       .map((b) => b.thinking)
       .join("\n");
-    if (thinking) return thinking;
+    if (thinking) {
+      return thinking;
+    }
   }
 
   if (Array.isArray(msg.content)) {
@@ -53,17 +57,21 @@ export function getReasoningFromMessage(
         b !== null &&
         "type" in b &&
         (b as any).type === "thinking" &&
-        "thinking" in b,
+        "thinking" in b
     ) as unknown as ThinkingBlock[];
     const thinking = thinkingBlocks.map((b) => b.thinking).join("\n");
-    if (thinking) return thinking;
+    if (thinking) {
+      return thinking;
+    }
   }
 
   return undefined;
 }
 
 export function getTextContent(message: AIMessage): string {
-  if (typeof message.content === "string") return message.content;
+  if (typeof message.content === "string") {
+    return message.content;
+  }
   if (Array.isArray(message.content)) {
     return message.content
       .filter(
@@ -72,7 +80,7 @@ export function getTextContent(message: AIMessage): string {
           c !== null &&
           "type" in c &&
           (c as any).type === "text" &&
-          "text" in c,
+          "text" in c
       )
       .map((c) => (c as { text: string }).text)
       .join("");

@@ -3,8 +3,8 @@
  * Mirrors the frontend db structure
  */
 
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 
 export interface Assistant {
   id: string;
@@ -69,7 +69,7 @@ export const assistantsDb = {
   findDefault: (userId: string): Assistant | undefined => {
     const database = loadDb();
     return database.assistants.find(
-      (a) => a.user_id === userId && a.is_default,
+      (a) => a.user_id === userId && a.is_default
     );
   },
 
@@ -88,7 +88,9 @@ export const assistantsDb = {
   update: (id: string, updates: Partial<Assistant>): Assistant | undefined => {
     const database = loadDb();
     const index = database.assistants.findIndex((a) => a.id === id);
-    if (index === -1) return undefined;
+    if (index === -1) {
+      return undefined;
+    }
     const updated = { ...database.assistants[index], ...updates } as Assistant;
     database.assistants[index] = updated;
     saveDb(database);
@@ -98,7 +100,9 @@ export const assistantsDb = {
   delete: (id: string): boolean => {
     const database = loadDb();
     const index = database.assistants.findIndex((a) => a.id === id);
-    if (index === -1) return false;
+    if (index === -1) {
+      return false;
+    }
     database.assistants.splice(index, 1);
     saveDb(database);
     return true;

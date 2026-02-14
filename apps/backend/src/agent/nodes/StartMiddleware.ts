@@ -1,6 +1,6 @@
-import { AgentState } from "../state.js";
-import { RunnableConfig } from "@langchain/core/runnables";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { agentConfig } from "../../lib/config.js";
+import type { AgentState } from "../state.js";
 
 /**
  * StartMiddleware Node
@@ -11,7 +11,7 @@ import { agentConfig } from "../../lib/config.js";
  */
 export async function StartMiddleware(
   state: AgentState,
-  config: RunnableConfig,
+  _config: RunnableConfig
 ): Promise<Partial<AgentState>> {
   const updates: Partial<AgentState> = {};
 
@@ -22,7 +22,7 @@ export async function StartMiddleware(
 
   // PII Detection
   if (agentConfig.ENABLE_PII_DETECTION) {
-    const lastMessage = state.messages[state.messages.length - 1];
+    const lastMessage = state.messages.at(-1);
     if (lastMessage?.content) {
       const content =
         typeof lastMessage.content === "string"

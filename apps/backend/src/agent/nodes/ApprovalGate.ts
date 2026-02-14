@@ -1,12 +1,12 @@
-import { AgentState } from "../state.js";
-import { RunnableConfig } from "@langchain/core/runnables";
-import { AIMessage } from "@langchain/core/messages";
+import type { AIMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
+import type { AgentState } from "../state.js";
 
 export async function ApprovalGate(
   state: AgentState,
-  config: RunnableConfig,
+  _config: RunnableConfig
 ): Promise<Partial<AgentState>> {
-  const lastMessage = state.messages[state.messages.length - 1];
+  const lastMessage = state.messages.at(-1);
 
   if (!lastMessage || lastMessage._getType() !== "ai") {
     return {};
@@ -15,13 +15,15 @@ export async function ApprovalGate(
   const aiMessage = lastMessage as AIMessage;
   const toolCalls = aiMessage.tool_calls || [];
 
-  if (toolCalls.length === 0) return {};
+  if (toolCalls.length === 0) {
+    return {};
+  }
 
   console.log(`[ApprovalGate] Processing ${toolCalls.length} tool call(s)`);
 
   const DANGEROUS_TOOLS = ["shell_execute", "file_write", "file_delete"];
   const pendingApprovals = toolCalls.filter((tc) =>
-    DANGEROUS_TOOLS.includes(tc.name),
+    DANGEROUS_TOOLS.includes(tc.name)
   );
 
   if (pendingApprovals.length > 0) {

@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { cn } from "@workspace/ui/lib/utils";
-import { Loader2, ChevronDown, CheckCircle2, XCircle } from "lucide-react";
-import { useTheme } from "@/components/theme/theme-provider";
-import dynamic from "next/dynamic";
-import { EditorView, lineNumbers } from "@codemirror/view";
 import { json } from "@codemirror/lang-json";
+import { EditorView, lineNumbers } from "@codemirror/view";
+import { cn } from "@workspace/ui/lib/utils";
+import { CheckCircle2, ChevronDown, Loader2, XCircle } from "lucide-react";
+import dynamic from "next/dynamic";
+import React, { useMemo } from "react";
+import { useTheme } from "@/components/theme/theme-provider";
 import { createCodeMirrorTheme } from "@/lib/codemirror-theme";
-import { getToolUIConfig, getToolIcon } from "@/lib/tool-config";
+import { getToolIcon, getToolUIConfig } from "@/lib/tool-config";
 
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
   ssr: false,
-  loading: () => <div className="h-16 animate-pulse bg-muted/50 rounded" />,
+  loading: () => <div className="h-16 animate-pulse rounded bg-muted/50" />,
 });
 
 export interface ToolCall {
@@ -38,7 +38,7 @@ const JsonViewer: React.FC<{ data: unknown; maxHeight?: string }> = React.memo(
     const { themeMode } = useTheme();
     const cmTheme = useMemo(
       () => createCodeMirrorTheme(themeMode === "dark"),
-      [themeMode],
+      [themeMode]
     );
 
     const extensions = useMemo(
@@ -48,7 +48,7 @@ const JsonViewer: React.FC<{ data: unknown; maxHeight?: string }> = React.memo(
         EditorView.editable.of(false),
         EditorView.lineWrapping,
       ],
-      [],
+      []
     );
 
     const formattedJson = useMemo(() => {
@@ -69,21 +69,21 @@ const JsonViewer: React.FC<{ data: unknown; maxHeight?: string }> = React.memo(
         style={{ maxHeight }}
       >
         <CodeMirror
-          value={formattedJson}
-          height="auto"
-          maxHeight={maxHeight}
-          extensions={extensions}
-          editable={false}
           basicSetup={{
             foldGutter: true,
             syntaxHighlighting: false,
             lineNumbers: false,
           }}
+          editable={false}
+          extensions={extensions}
+          height="auto"
+          maxHeight={maxHeight}
           theme={cmTheme}
+          value={formattedJson}
         />
       </div>
     );
-  },
+  }
 );
 JsonViewer.displayName = "JsonViewer";
 
@@ -136,7 +136,9 @@ export function ToolCallMessage({
     }
   };
 
-  if (toolCalls.length === 0 && !isLoading) return null;
+  if (toolCalls.length === 0 && !isLoading) {
+    return null;
+  }
 
   const firstToolConfig =
     toolCalls.length > 0 ? getToolUIConfig(toolCalls[0].name) : null;
@@ -146,26 +148,26 @@ export function ToolCallMessage({
   return (
     <div
       className={cn(
-        "rounded-xl overflow-hidden transition-all duration-500 ease-out",
+        "overflow-hidden rounded-xl transition-all duration-500 ease-out",
         isLightTheme
-          ? "bg-white/40 backdrop-blur-xl border border-white/50 shadow-lg"
+          ? "border border-white/50 bg-white/40 shadow-lg backdrop-blur-xl"
           : "glass-strong border border-primary/20 shadow-xl",
-        className,
+        className
       )}
     >
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
-          "w-full px-4 py-3 flex items-center justify-between",
+          "flex w-full items-center justify-between px-4 py-3",
           "transition-colors duration-300",
-          isLightTheme ? "hover:bg-black/5" : "hover:bg-white/5",
+          isLightTheme ? "hover:bg-black/5" : "hover:bg-white/5"
         )}
+        onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-2 flex-1">
+        <div className="flex flex-1 items-center gap-2">
           <span
             className={cn(
-              "text-[1.05rem] font-medium flex items-center gap-2",
-              isLightTheme ? "text-slate-700" : "text-foreground",
+              "flex items-center gap-2 font-medium text-[1.05rem]",
+              isLightTheme ? "text-slate-700" : "text-foreground"
             )}
           >
             {FirstToolIcon && (
@@ -176,7 +178,7 @@ export function ToolCallMessage({
                     ? "animate-pulse text-primary"
                     : isLightTheme
                       ? "text-slate-500"
-                      : "text-muted-foreground",
+                      : "text-muted-foreground"
                 )}
               />
             )}
@@ -188,10 +190,10 @@ export function ToolCallMessage({
             {toolCalls.length > 1 && (
               <span
                 className={cn(
-                  "text-[0.95rem] px-2 py-0.5 rounded-full",
+                  "rounded-full px-2 py-0.5 text-[0.95rem]",
                   isLightTheme
                     ? "bg-slate-200 text-slate-700"
-                    : "bg-primary/20 text-primary",
+                    : "bg-primary/20 text-primary"
                 )}
               >
                 {toolCalls.length}
@@ -200,8 +202,8 @@ export function ToolCallMessage({
             {isLoading && (
               <span
                 className={cn(
-                  "text-[0.95rem] flex items-center gap-1",
-                  isLightTheme ? "text-amber-600" : "text-amber-400",
+                  "flex items-center gap-1 text-[0.95rem]",
+                  isLightTheme ? "text-amber-600" : "text-amber-400"
                 )}
               >
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -213,9 +215,9 @@ export function ToolCallMessage({
 
         <ChevronDown
           className={cn(
-            "h-4 w-4 transition-transform duration-300 ml-2",
+            "ml-2 h-4 w-4 transition-transform duration-300",
             isLightTheme ? "text-slate-500" : "text-muted-foreground",
-            isExpanded && "rotate-180",
+            isExpanded && "rotate-180"
           )}
         />
       </button>
@@ -224,13 +226,13 @@ export function ToolCallMessage({
         <div
           className={cn(
             "overflow-hidden transition-all duration-500 ease-out",
-            "animate-slide-down",
+            "animate-slide-down"
           )}
         >
           <div
             className={cn(
-              "max-h-96 overflow-y-auto custom-scrollbar p-3 space-y-2",
-              isLightTheme ? "scrollbar-light" : "",
+              "custom-scrollbar max-h-96 space-y-2 overflow-y-auto p-3",
+              isLightTheme ? "scrollbar-light" : ""
             )}
           >
             {toolCalls.length > 0 ? (
@@ -242,31 +244,31 @@ export function ToolCallMessage({
 
                 return (
                   <div
-                    key={toolCall.id || index}
                     className={cn(
-                      "relative pl-7 pb-3 animate-slide-up stagger-item",
-                      "transition-all duration-500 ease-out",
+                      "stagger-item relative animate-slide-up pb-3 pl-7",
+                      "transition-all duration-500 ease-out"
                     )}
+                    key={toolCall.id || index}
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     {showConnector && (
                       <div
                         className={cn(
-                          "absolute left-[11px] top-8 h-[calc(100%-2rem)] w-px",
+                          "absolute top-8 left-[11px] h-[calc(100%-2rem)] w-px",
                           isLightTheme
                             ? "bg-gradient-to-b from-transparent via-slate-300 to-transparent"
-                            : "bg-gradient-to-b from-transparent via-primary/20 to-transparent",
+                            : "bg-gradient-to-b from-transparent via-primary/20 to-transparent"
                         )}
                       />
                     )}
 
                     <div
                       className={cn(
-                        "absolute left-0 top-1 h-6 w-6 rounded-full",
+                        "absolute top-1 left-0 h-6 w-6 rounded-full",
                         "flex items-center justify-center",
                         `bg-gradient-to-br ${getStatusBgColor(toolCall.status)}`,
                         "shadow-lg ring-4 ring-background/50",
-                        "transition-transform duration-300 hover:scale-110",
+                        "transition-transform duration-300 hover:scale-110"
                       )}
                     >
                       <span className="text-white">
@@ -275,19 +277,19 @@ export function ToolCallMessage({
                     </div>
 
                     <div className="pt-0.5">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="mb-1 flex items-center gap-2">
                         {ToolIcon && (
                           <ToolIcon
                             className={cn(
                               "h-3.5 w-3.5",
-                              getStatusColor(toolCall.status),
+                              getStatusColor(toolCall.status)
                             )}
                           />
                         )}
                         <span
                           className={cn(
                             "font-medium text-sm",
-                            isLightTheme ? "text-slate-700" : "text-foreground",
+                            isLightTheme ? "text-slate-700" : "text-foreground"
                           )}
                         >
                           {toolConfig.displayName}
@@ -305,7 +307,7 @@ export function ToolCallMessage({
                         )}
 
                       {toolCall.result && (
-                        <div className="ml-5 mt-2">
+                        <div className="mt-2 ml-5">
                           <JsonViewer
                             data={toolCall.result}
                             maxHeight="150px"
@@ -316,10 +318,10 @@ export function ToolCallMessage({
                       {toolCall.error && (
                         <div
                           className={cn(
-                            "ml-5 mt-2 p-2 rounded text-xs",
+                            "mt-2 ml-5 rounded p-2 text-xs",
                             isLightTheme
                               ? "bg-red-50 text-red-600"
-                              : "bg-red-950/30 text-red-400",
+                              : "bg-red-950/30 text-red-400"
                           )}
                         >
                           Error: {toolCall.error}
@@ -332,8 +334,8 @@ export function ToolCallMessage({
             ) : (
               <div
                 className={cn(
-                  "text-center py-4 text-sm",
-                  isLightTheme ? "text-slate-500" : "text-muted-foreground",
+                  "py-4 text-center text-sm",
+                  isLightTheme ? "text-slate-500" : "text-muted-foreground"
                 )}
               >
                 No tool calls

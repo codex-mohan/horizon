@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, GitBranch } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
+import { ChevronLeft, ChevronRight, GitBranch } from "lucide-react";
 
 interface BranchSwitcherProps {
   branch?: string;
@@ -80,54 +80,54 @@ export function BranchSwitcher({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1 px-2 py-1 rounded-full",
-        "bg-muted/50 border border-border/50",
+        "inline-flex items-center gap-1 rounded-full px-2 py-1",
+        "border border-border/50 bg-muted/50",
         "transition-all duration-200",
-        className,
+        className
       )}
     >
-      <GitBranch className="size-3 text-primary/70 mr-1" />
+      <GitBranch className="mr-1 size-3 text-primary/70" />
 
       <Button
-        variant="ghost"
-        size="icon-sm"
+        aria-label="Previous branch"
         className={cn(
           sizeClasses[size],
           "p-0 hover:bg-primary/10",
-          "disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent",
-          "transition-all duration-150",
+          "disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent",
+          "transition-all duration-150"
         )}
+        disabled={!hasPrev}
         onClick={() => {
           if (hasPrev) {
             onSelect(branchOptions[index - 1]);
           }
         }}
-        disabled={!hasPrev}
-        aria-label="Previous branch"
+        size="icon-sm"
+        variant="ghost"
       >
         <ChevronLeft className={cn(iconSizes[size], "text-muted-foreground")} />
       </Button>
 
-      <span className="text-xs text-muted-foreground font-medium min-w-[3ch] text-center tabular-nums">
+      <span className="min-w-[3ch] text-center font-medium text-muted-foreground text-xs tabular-nums">
         {index + 1}/{branchOptions.length}
       </span>
 
       <Button
-        variant="ghost"
-        size="icon-sm"
+        aria-label="Next branch"
         className={cn(
           sizeClasses[size],
           "p-0 hover:bg-primary/10",
-          "disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent",
-          "transition-all duration-150",
+          "disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent",
+          "transition-all duration-150"
         )}
+        disabled={!hasNext}
         onClick={() => {
           if (hasNext) {
             onSelect(branchOptions[index + 1]);
           }
         }}
-        disabled={!hasNext}
-        aria-label="Next branch"
+        size="icon-sm"
+        variant="ghost"
       >
         <ChevronRight
           className={cn(iconSizes[size], "text-muted-foreground")}
@@ -158,13 +158,13 @@ export function BranchIndicator({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-1 rounded-full",
-        "bg-muted/30 border border-border/30",
-        className,
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-1",
+        "border border-border/30 bg-muted/30",
+        className
       )}
     >
       <GitBranch className="size-3 text-primary/50" />
-      <span className="text-xs text-muted-foreground">
+      <span className="text-muted-foreground text-xs">
         Branch {displayIndex + 1} of {branchOptions.length}
       </span>
     </div>

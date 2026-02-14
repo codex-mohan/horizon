@@ -1,9 +1,14 @@
-import type React from "react";
-import type { Metadata } from "next";
-import { Space_Grotesk, Source_Sans_3, Source_Code_Pro, Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
-import { ThemeProvider } from "@/components/theme/theme-provider";
+import type { Metadata } from "next";
+import {
+  Playfair_Display,
+  Source_Code_Pro,
+  Source_Sans_3,
+  Space_Grotesk,
+} from "next/font/google";
+import type React from "react";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 import "highlight.js/styles/github-dark.css";
 import "@workspace/ui/styles/globals.css";
 
@@ -103,10 +108,10 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
           <Toaster
-            position="top-right"
-            expand={false}
-            richColors
             closeButton
+            expand={false}
+            position="top-right"
+            richColors
             toastOptions={{
               classNames: {
                 toast: "glass-strong",

@@ -1,8 +1,8 @@
 // Simple JSON-based local storage for user authentication only
 // Conversations are handled by LangGraph's checkpointer
 
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 
 interface User {
   id: string; // UUID - used as user_id in LangGraph thread metadata
@@ -108,7 +108,9 @@ export const db = {
     update: (id: string, updates: Partial<User>): User | undefined => {
       const database = loadDb();
       const index = database.users.findIndex((u) => u.id === id);
-      if (index === -1) return undefined;
+      if (index === -1) {
+        return undefined;
+      }
       database.users[index] = { ...database.users[index], ...updates };
       saveDb(database);
       return database.users[index];
@@ -134,7 +136,9 @@ export const db = {
     delete: (token: string): boolean => {
       const database = loadDb();
       const index = database.sessions.findIndex((s) => s.token === token);
-      if (index === -1) return false;
+      if (index === -1) {
+        return false;
+      }
       database.sessions.splice(index, 1);
       saveDb(database);
       return true;
@@ -151,10 +155,10 @@ export const db = {
       const database = loadDb();
       const now = new Date();
       const expired = database.sessions.filter(
-        (s) => new Date(s.expiresAt) < now,
+        (s) => new Date(s.expiresAt) < now
       );
       database.sessions = database.sessions.filter(
-        (s) => new Date(s.expiresAt) >= now,
+        (s) => new Date(s.expiresAt) >= now
       );
       saveDb(database);
       return expired.length;
@@ -174,7 +178,7 @@ export const db = {
     findDefault: (userId: string): Assistant | undefined => {
       const database = loadDb();
       return database.assistants.find(
-        (a) => a.user_id === userId && a.is_default,
+        (a) => a.user_id === userId && a.is_default
       );
     },
     findPublic: (): Assistant[] => {
@@ -189,11 +193,13 @@ export const db = {
     },
     update: (
       id: string,
-      updates: Partial<Assistant>,
+      updates: Partial<Assistant>
     ): Assistant | undefined => {
       const database = loadDb();
       const index = database.assistants.findIndex((a) => a.id === id);
-      if (index === -1) return undefined;
+      if (index === -1) {
+        return undefined;
+      }
       database.assistants[index] = {
         ...database.assistants[index],
         ...updates,
@@ -205,7 +211,9 @@ export const db = {
     delete: (id: string): boolean => {
       const database = loadDb();
       const index = database.assistants.findIndex((a) => a.id === id);
-      if (index === -1) return false;
+      if (index === -1) {
+        return false;
+      }
       database.assistants.splice(index, 1);
       saveDb(database);
       return true;

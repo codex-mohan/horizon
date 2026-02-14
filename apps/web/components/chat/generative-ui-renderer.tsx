@@ -1,23 +1,15 @@
 "use client";
 
-import { getToolUIConfig, hasCustomUI } from "@/lib/tool-config";
-import { ToolCall } from "./tool-call-message";
-import {
-  ShellTool,
-  WebSearchTool,
-  FetchUrlTool,
-  GenericTool,
-} from "./generative-ui";
+import { hasCustomUI } from "@/lib/tool-config";
+import { FetchUrlTool, GenericTool, ShellTool, WeatherTool, WebSearchTool } from "./generative-ui";
+import type { ToolCall } from "./tool-call-message";
 
 interface GenerativeUIRendererProps {
   toolCalls: ToolCall[];
   isLoading?: boolean;
 }
 
-function renderGenerativeUI(
-  toolCall: ToolCall,
-  isLoading: boolean,
-): React.ReactNode {
+function renderGenerativeUI(toolCall: ToolCall, isLoading: boolean): React.ReactNode {
   const toolName = toolCall.name;
 
   const uiStatus: "pending" | "executing" | "completed" | "failed" =
@@ -32,7 +24,7 @@ function renderGenerativeUI(
   const commonProps = {
     toolName,
     status: uiStatus,
-    args: (toolCall.arguments || {}) as Record<string, any>,
+    args: (toolCall.arguments || {}) as Record<string, unknown>,
     result: toolCall.result,
     startedAt: toolCall.startedAt,
     completedAt: toolCall.completedAt,
@@ -50,18 +42,20 @@ function renderGenerativeUI(
     case "fetch_url_content":
       return <FetchUrlTool {...commonProps} />;
 
+    case "weather":
+      return <WeatherTool {...commonProps} />;
+
     default:
       return <GenericTool {...commonProps} />;
   }
 }
 
-export function GenerativeUIRenderer({
-  toolCalls,
-  isLoading = false,
-}: GenerativeUIRendererProps) {
+export function GenerativeUIRenderer({ toolCalls, isLoading = false }: GenerativeUIRendererProps) {
   const specialTools = toolCalls.filter((tc) => hasCustomUI(tc.name));
 
-  if (specialTools.length === 0) return null;
+  if (specialTools.length === 0) {
+    return null;
+  }
 
   return (
     <div className="space-y-3">

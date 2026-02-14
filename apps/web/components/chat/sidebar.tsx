@@ -1,12 +1,11 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { MessageSquare, FolderOpen, Layers, Bot, HelpCircle, LogOut, Settings, User, Image } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@workspace/ui/components/tooltip"
-import { Button } from "@workspace/ui/components/button"
-import { Separator } from "@workspace/ui/components/separator"
-import { cn } from "@workspace/ui/lib/utils"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
+import { Button } from "@workspace/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,49 +13,84 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
-import { ExpandedSidebar } from "./expanded-sidebar"
-import { ChangeAvatarDialog } from "./change-avatar-dialog"
-import { ThemeSwitcher } from "@/components/theme/theme-switcher"
-import { useAuthStore } from "@/lib/stores/auth"
-import { UserSettingsDialog } from "./user-settings-dialog"
+} from "@workspace/ui/components/dropdown-menu";
+import { Separator } from "@workspace/ui/components/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip";
+import { cn } from "@workspace/ui/lib/utils";
+import {
+  Bot,
+  FolderOpen,
+  HelpCircle,
+  Image,
+  Layers,
+  LogOut,
+  MessageSquare,
+  Settings,
+} from "lucide-react";
+import { useState } from "react";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
+import { useAuthStore } from "@/lib/stores/auth";
+import { ChangeAvatarDialog } from "./change-avatar-dialog";
+import { ExpandedSidebar } from "./expanded-sidebar";
+import { UserSettingsDialog } from "./user-settings-dialog";
 
 interface SidebarProps {
-  isExpanded: boolean
-  activeSection: "conversations" | "my-items" | "collections" | "assistants" | null
-  onSectionChange: (section: "conversations" | "my-items" | "collections" | "assistants") => void
-  onCollapse: () => void
+  isExpanded: boolean;
+  activeSection:
+    | "conversations"
+    | "my-items"
+    | "collections"
+    | "assistants"
+    | null;
+  onSectionChange: (
+    section: "conversations" | "my-items" | "collections" | "assistants"
+  ) => void;
+  onCollapse: () => void;
 }
 
-export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse }: SidebarProps) {
-  const { user, logout } = useAuthStore()
-  const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false)
-  const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false)
+export function Sidebar({
+  isExpanded,
+  activeSection,
+  onSectionChange,
+  onCollapse,
+}: SidebarProps) {
+  const { user, logout } = useAuthStore();
+  const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false);
+  const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false);
   const topSections = [
     { id: "conversations", icon: MessageSquare, label: "Conversations" },
     { id: "my-items", icon: FolderOpen, label: "My Items" },
     { id: "collections", icon: Layers, label: "Collections" },
     { id: "assistants", icon: Bot, label: "Assistants" },
-  ] as const
+  ] as const;
 
   return (
     <>
       <div className="relative z-10 flex">
         {/* Main Sidebar */}
-        <div className="w-16 h-screen glass-strong flex flex-col items-center py-4 gap-2">
+        <div className="glass-strong flex h-screen w-16 flex-col items-center gap-2 py-4">
           {/* Logo Section */}
           <div className="flex items-center justify-center p-1">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    className="flex size-12 items-center justify-center p-2 transition-all duration-200 hover:scale-110 hover:bg-primary/40"
                     variant="ghost"
-                    className="size-12 transition-all duration-200 hover:scale-110 hover:bg-primary/40 flex items-center justify-center p-2"
                   >
-                    <img src="/horizon-icon.png" alt="Horizon Logo" className="size-full max-w-[48px] max-h-[48px] object-contain" />
+                    <img
+                      alt="Horizon Logo"
+                      className="size-full max-h-[48px] max-w-[48px] object-contain"
+                      src="/horizon-icon.png"
+                    />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="animate-scale-in">
+                <TooltipContent className="animate-scale-in" side="right">
                   <p>Horizon</p>
                 </TooltipContent>
               </Tooltip>
@@ -64,28 +98,29 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
           </div>
 
           {/* Separator */}
-          <Separator className="w-8 h-0.5 mb-1" />
+          <Separator className="mb-1 h-0.5 w-8" />
 
-          <div className="flex-1 flex flex-col items-center gap-2">
+          <div className="flex flex-1 flex-col items-center gap-2">
             <TooltipProvider>
               {topSections.map((section, index) => (
                 <Tooltip key={section.id}>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="ghost"
-                      size="icon-lg"
                       className={cn(
-                        "transition-all duration-200 hover:scale-110 hover:bg-primary/40 flex items-center justify-center",
-                        activeSection === section.id && "bg-primary/30 text-primary-foreground scale-105 hover-glow",
-                        "stagger-item",
+                        "flex items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-primary/40",
+                        activeSection === section.id &&
+                          "hover-glow scale-105 bg-primary/30 text-primary-foreground",
+                        "stagger-item"
                       )}
-                      style={{ animationDelay: `${index * 0.05}s` }}
                       onClick={() => onSectionChange(section.id)}
+                      size="icon-lg"
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                      variant="ghost"
                     >
                       <section.icon className="size-5 transition-transform duration-200" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right" className="animate-scale-in">
+                  <TooltipContent className="animate-scale-in" side="right">
                     <p>{section.label}</p>
                   </TooltipContent>
                 </Tooltip>
@@ -98,14 +133,14 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="ghost"
+                    className="flex items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-primary/40"
                     size="icon-lg"
-                    className="hover:bg-primary/40 transition-all duration-200 hover:scale-110 flex items-center justify-center"
+                    variant="ghost"
                   >
                     <HelpCircle className="size-5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="animate-scale-in">
+                <TooltipContent className="animate-scale-in" side="right">
                   <p>Help</p>
                 </TooltipContent>
               </Tooltip>
@@ -116,7 +151,7 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
                     <ThemeSwitcher />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="animate-scale-in">
+                <TooltipContent className="animate-scale-in" side="right">
                   <p>Theme</p>
                 </TooltipContent>
               </Tooltip>
@@ -124,23 +159,36 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="ghost"
+                    className="hover-glow flex size-10 items-center justify-center rounded-full p-0 transition-all duration-200 hover:scale-110"
                     size="icon"
-                    className="size-10 p-0 transition-all duration-200 hover:scale-110 hover-glow flex items-center justify-center rounded-full"
+                    variant="ghost"
                   >
                     <Avatar className="size-10 transition-transform duration-200">
-                      <AvatarImage src={user?.avatarUrl || "/horizon-icon.png"} />
+                      <AvatarImage
+                        src={user?.avatarUrl || "/horizon-icon.png"}
+                      />
                       <AvatarFallback className="bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-[var(--foreground)]">
-                        {user?.displayName ? user.displayName.substring(0, 2).toUpperCase() : "U"}
+                        {user?.displayName
+                          ? user.displayName.substring(0, 2).toUpperCase()
+                          : "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="right" align="end" className="w-56" sideOffset={10}>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56"
+                  side="right"
+                  sideOffset={10}
+                >
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user?.displayName || "User"}</p>
-                      <p className="text-xs leading-none text-muted-foreground">@{user?.username || "username"}</p>
+                      <p className="font-medium text-sm leading-none">
+                        {user?.displayName || "User"}
+                      </p>
+                      <p className="text-muted-foreground text-xs leading-none">
+                        @{user?.username || "username"}
+                      </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -153,7 +201,10 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
                     <span>Account Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <DropdownMenuItem
+                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                    onClick={() => logout()}
+                  >
                     <LogOut className="mr-2 size-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
@@ -166,7 +217,7 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
         {/* Expanded Sidebar */}
         {isExpanded && activeSection && (
           <div className="animate-slide-in-right">
-            <ExpandedSidebar section={activeSection} onClose={onCollapse} />
+            <ExpandedSidebar onClose={onCollapse} section={activeSection} />
           </div>
         )}
       </div>
@@ -182,5 +233,5 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
         onClose={() => setIsChangeAvatarOpen(false)}
       />
     </>
-  )
+  );
 }

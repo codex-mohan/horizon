@@ -1,9 +1,8 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as SliderPrimitive from "@radix-ui/react-slider"
-
-import { cn } from "@workspace/ui/lib/utils"
+import * as SliderPrimitive from "@radix-ui/react-slider";
+import { cn } from "@workspace/ui/lib/utils";
+import * as React from "react";
 
 function Slider({
   className,
@@ -21,43 +20,41 @@ function Slider({
           ? defaultValue
           : [min, max],
     [value, defaultValue, min, max]
-  )
+  );
 
   return (
     <SliderPrimitive.Root
-      data-slot="slider"
-      defaultValue={defaultValue}
-      value={value}
-      min={min}
-      max={max}
       className={cn(
         "relative flex w-full touch-none select-none items-center data-[disabled]:opacity-50",
         className
       )}
+      data-slot="slider"
+      defaultValue={defaultValue}
+      max={max}
+      min={min}
+      value={value}
       {...props}
     >
       <SliderPrimitive.Track
-        data-slot="slider-track"
         className={cn(
-          "bg-muted relative w-full grow overflow-hidden rounded-full"
+          "relative w-full grow overflow-hidden rounded-full bg-muted"
         )}
+        data-slot="slider-track"
       >
         <SliderPrimitive.Range
+          className={cn("absolute h-full bg-primary")}
           data-slot="slider-range"
-          className={cn(
-            "bg-primary absolute h-full"
-          )}
         />
       </SliderPrimitive.Track>
       {Array.from({ length: _values.length }, (_, index) => (
         <SliderPrimitive.Thumb
+          className="block size-5 shrink-0 rounded-full border-2 border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:outline-hidden focus-visible:ring-4 disabled:pointer-events-none disabled:opacity-50"
           data-slot="slider-thumb"
           key={index}
-          className="border-primary ring-ring/50 block size-5 shrink-0 rounded-full border-2 bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
         />
       ))}
     </SliderPrimitive.Root>
-  )
+  );
 }
 
-export { Slider }
+export { Slider };

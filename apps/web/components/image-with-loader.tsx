@@ -2,12 +2,11 @@
 
 import { cn } from "@workspace/ui/lib/utils";
 import {
-  Download,
-  X,
   AlertTriangle,
-  Image as ImageIcon,
-  Loader,
+  Download,
   Link as LinkIcon,
+  Loader,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -42,7 +41,7 @@ const ZoomableImageWithLoader = ({
 
   const openModal = () => {
     // Only open the modal if the image has loaded successfully
-    if (!isLoading && !isError) {
+    if (!(isLoading || isError)) {
       setIsModalOpen(true);
     }
   };
@@ -68,17 +67,17 @@ const ZoomableImageWithLoader = ({
   };
 
   return (
-    <div className="relative group flex justify-center items-center">
+    <div className="group relative flex items-center justify-center">
       {/* The clickable thumbnail area */}
       <button
-        onClick={openModal}
-        disabled={isLoading || isError}
         className={cn(
           "relative overflow-hidden border border-zinc-700 transition",
-          "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-purple-500",
+          "focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-zinc-900",
           "bg-zinc-800", // Set a background for loading/error states
           className // For sizing and aspect ratio
         )}
+        disabled={isLoading || isError}
+        onClick={openModal}
       >
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -96,15 +95,15 @@ const ZoomableImageWithLoader = ({
         )}
 
         {/* Standard <img> tag for the thumbnail */}
-        {!isLoading && !isError && (
+        {!(isLoading || isError) && (
           <img
-            src={src}
             alt={alt}
             className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
+            src={src}
           />
         )}
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <p className="text-white text-xs p-2 truncate">{src}</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+          <p className="truncate p-2 text-white text-xs">{src}</p>
         </div>
       </button>
 
@@ -120,32 +119,32 @@ const ZoomableImageWithLoader = ({
           >
             <div className="absolute top-2 right-2 z-10 space-x-2">
               <button
+                className="rounded-full bg-black/50 p-2 text-zinc-300 transition hover:bg-black/75 hover:text-white"
                 onClick={copyUrl}
                 title="Copy image URL"
-                className="rounded-full bg-black/50 p-2 text-zinc-300 transition hover:bg-black/75 hover:text-white"
               >
                 <LinkIcon className="h-5 w-5" />
               </button>
               <button
+                className="rounded-full bg-black/50 p-2 text-zinc-300 transition hover:bg-black/75 hover:text-white"
                 onClick={downloadImage}
                 title="Download image"
-                className="rounded-full bg-black/50 p-2 text-zinc-300 transition hover:bg-black/75 hover:text-white"
               >
                 <Download className="h-5 w-5" />
               </button>
               <button
+                className="rounded-full bg-black/50 p-2 text-zinc-300 transition hover:bg-black/75 hover:text-white"
                 onClick={closeModal}
                 title="Close"
-                className="rounded-full bg-black/50 p-2 text-zinc-300 transition hover:bg-black/75 hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             {/* Standard <img> tag for the modal image */}
             <img
-              src={src}
               alt={alt}
-              className="rounded-lg max-h-[90vh] max-w-[90vw]"
+              className="max-h-[90vh] max-w-[90vw] rounded-lg"
+              src={src}
             />
           </div>
         </div>

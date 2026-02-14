@@ -1,24 +1,23 @@
 "use client";
 
-import React from "react";
-import { FileBadge } from "./file-badge";
 import {
-    ChatInput,
-    type AttachedFile as ChatInputAttachedFile,
+  ChatInput,
+  type AttachedFile as ChatInputAttachedFile,
 } from "./chat-input";
 import type { AttachedFile } from "./chat-interface";
+import { FileBadge } from "./file-badge";
 
 interface ChatInputAreaProps {
-    attachedFiles: AttachedFile[];
-    onSubmit: (text: string, files: ChatInputAttachedFile[]) => void;
-    onStop: () => void;
-    isLoading: boolean;
-    onSettingsOpen: () => void;
-    showToolCalls: boolean;
-    onToggleToolCalls: () => void;
-    isLightTheme: boolean;
-    onAttachedFilesChange: (files: AttachedFile[]) => void;
-    onRemoveFile: (fileId: string) => void;
+  attachedFiles: AttachedFile[];
+  onSubmit: (text: string, files: ChatInputAttachedFile[]) => void;
+  onStop: () => void;
+  isLoading: boolean;
+  onSettingsOpen: () => void;
+  showToolCalls: boolean;
+  onToggleToolCalls: () => void;
+  isLightTheme: boolean;
+  onAttachedFilesChange: (files: AttachedFile[]) => void;
+  onRemoveFile: (fileId: string) => void;
 }
 
 /**
@@ -30,47 +29,47 @@ interface ChatInputAreaProps {
  * - Used at the bottom of the chat when messages exist
  */
 export function ChatInputArea({
-    attachedFiles,
-    onSubmit,
-    onStop,
-    isLoading,
-    onSettingsOpen,
-    showToolCalls,
-    onToggleToolCalls,
-    isLightTheme,
-    onAttachedFilesChange,
-    onRemoveFile,
+  attachedFiles,
+  onSubmit,
+  onStop,
+  isLoading,
+  onSettingsOpen,
+  showToolCalls,
+  onToggleToolCalls,
+  isLightTheme,
+  onAttachedFilesChange,
+  onRemoveFile,
 }: ChatInputAreaProps) {
-    return (
-        <div className="border-t border-border p-4">
-            <div className="max-w-4xl mx-auto glass-strong rounded-xl p-4">
-                {attachedFiles.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-3">
-                        {attachedFiles.map((file) => (
-                            <FileBadge
-                                key={file.id}
-                                name={file.name}
-                                size={file.size}
-                                type={file.type}
-                                url={file.url}
-                                onRemove={() => onRemoveFile(file.id)}
-                            />
-                        ))}
-                    </div>
-                )}
+  return (
+    <div className="border-border border-t p-4">
+      <div className="glass-strong mx-auto max-w-4xl rounded-xl p-4">
+        {attachedFiles.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {attachedFiles.map((file) => (
+              <FileBadge
+                key={file.id}
+                name={file.name}
+                onRemove={() => onRemoveFile(file.id)}
+                size={file.size}
+                type={file.type}
+                url={file.url}
+              />
+            ))}
+          </div>
+        )}
 
-                <ChatInput
-                    onSubmit={onSubmit}
-                    onStop={onStop}
-                    isLoading={isLoading}
-                    onSettingsOpen={onSettingsOpen}
-                    showToolCalls={showToolCalls}
-                    onToggleToolCalls={onToggleToolCalls}
-                    isLightTheme={isLightTheme}
-                    attachedFiles={attachedFiles}
-                    onAttachedFilesChange={onAttachedFilesChange}
-                />
-            </div>
-        </div>
-    );
+        <ChatInput
+          attachedFiles={attachedFiles}
+          isLightTheme={isLightTheme}
+          isLoading={isLoading}
+          onAttachedFilesChange={onAttachedFilesChange}
+          onSettingsOpen={onSettingsOpen}
+          onStop={onStop}
+          onSubmit={onSubmit}
+          onToggleToolCalls={onToggleToolCalls}
+          showToolCalls={showToolCalls}
+        />
+      </div>
+    </div>
+  );
 }

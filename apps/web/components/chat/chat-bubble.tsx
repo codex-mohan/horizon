@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
-import { Copy, Pencil, Bot, User, RefreshCw } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
+import { Textarea } from "@workspace/ui/components/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -10,12 +9,13 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
+import { Bot, Copy, Pencil, RefreshCw, User } from "lucide-react";
+import React, { useCallback, useState } from "react";
 import MarkdownView from "@/components/markdown-view";
-import type { Message } from "./chat-interface";
 import { useTheme } from "@/components/theme/theme-provider";
-import { FileBadge } from "./file-badge";
-import { Textarea } from "@workspace/ui/components/textarea";
 import { BranchSwitcher } from "./branch-switcher";
+import type { Message } from "./chat-interface";
+import { FileBadge } from "./file-badge";
 
 interface ChatBubbleProps {
   message: Message;
@@ -97,7 +97,7 @@ export const ChatBubble = React.memo(
           onBranchChange(newBranch);
         }
       },
-      [onBranchChange, branch],
+      [onBranchChange, branch]
     );
 
     // Show branch switcher only if multiple branches exist
@@ -106,20 +106,20 @@ export const ChatBubble = React.memo(
     return (
       <div
         className={cn(
-          "flex gap-4 group animate-slide-up",
+          "group flex animate-slide-up gap-4",
           isUser ? "flex-row-reverse" : "flex-row",
-          isEditing && "w-full",
+          isEditing && "w-full"
         )}
       >
         {/* Avatar */}
         <div
           className={cn(
-            "size-10 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-200 hover:scale-110 self-start",
+            "flex size-10 shrink-0 items-center justify-center self-start rounded-lg transition-transform duration-200 hover:scale-110",
             isUser
               ? "bg-gradient-to-br from-[var(--primary)] to-[var(--accent)]"
               : "glass border border-border",
-            !showAvatar && !isUser && "invisible",
-            isEditing && "mt-2",
+            !(showAvatar || isUser) && "invisible",
+            isEditing && "mt-2"
           )}
         >
           {isUser ? (
@@ -134,7 +134,7 @@ export const ChatBubble = React.memo(
           className={cn(
             "flex flex-col gap-2",
             isUser ? "items-end" : "items-start",
-            isEditing ? "w-full max-w-full" : "max-w-[85%]",
+            isEditing ? "w-full max-w-full" : "max-w-[85%]"
           )}
         >
           {/* File Attachments */}
@@ -143,8 +143,8 @@ export const ChatBubble = React.memo(
             !isEditing && (
               <div
                 className={cn(
-                  "flex flex-wrap gap-2 mb-1",
-                  isUser ? "justify-end" : "justify-start",
+                  "mb-1 flex flex-wrap gap-2",
+                  isUser ? "justify-end" : "justify-start"
                 )}
               >
                 {message.attachments.map((file) => (
@@ -163,36 +163,36 @@ export const ChatBubble = React.memo(
           {isEditing ? (
             <div
               className={cn(
-                "w-full rounded-xl p-4 space-y-3 border",
+                "w-full space-y-3 rounded-xl border p-4",
                 isLightTheme
-                  ? "bg-white border-slate-200"
-                  : "bg-muted/30 border-border",
+                  ? "border-slate-200 bg-white"
+                  : "border-border bg-muted/30"
               )}
             >
               <Textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="min-h-[100px] resize-y bg-transparent border-0 focus-visible:ring-0 p-0 text-base leading-relaxed"
-                placeholder="Enter your message..."
                 autoFocus
+                className="min-h-[100px] resize-y border-0 bg-transparent p-0 text-base leading-relaxed focus-visible:ring-0"
+                onChange={(e) => setEditContent(e.target.value)}
+                placeholder="Enter your message..."
+                value={editContent}
               />
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/50">
+              <div className="flex items-center justify-end gap-2 border-border/50 border-t pt-2">
                 <Button
+                  className="h-8"
+                  onClick={handleCancelEdit}
                   size="sm"
                   variant="ghost"
-                  onClick={handleCancelEdit}
-                  className="h-8"
                 >
                   Cancel
                 </Button>
                 <Button
-                  size="sm"
-                  onClick={handleSaveEdit}
                   className="h-8"
                   disabled={
                     !editContent.trim() ||
                     editContent.trim() === message.content
                   }
+                  onClick={handleSaveEdit}
+                  size="sm"
                 >
                   Save & Branch
                 </Button>
@@ -203,25 +203,25 @@ export const ChatBubble = React.memo(
             <>
               <div
                 className={cn(
-                  "rounded-xl p-4 relative wrap-break-word font-body leading-relaxed",
+                  "wrap-break-word relative rounded-xl p-4 font-body leading-relaxed",
                   isUser
                     ? cn(
                         isLightTheme
                           ? "glass-user-bubble-light"
                           : "glass-user-bubble",
-                        "text-foreground",
+                        "text-foreground"
                       )
-                    : "w-full text-foreground",
+                    : "w-full text-foreground"
                 )}
               >
                 {/* Reasoning Block */}
                 {message.reasoning && (
                   <div className="mb-4">
-                    <div className="text-xs font-medium text-amber-400/80 mb-2">
+                    <div className="mb-2 font-medium text-amber-400/80 text-xs">
                       Reasoning
                     </div>
-                    <div className="bg-amber-950/50 border border-amber-500/20 rounded-2xl px-4 py-3">
-                      <div className="text-sm text-amber-100/90 whitespace-pre-wrap">
+                    <div className="rounded-2xl border border-amber-500/20 bg-amber-950/50 px-4 py-3">
+                      <div className="whitespace-pre-wrap text-amber-100/90 text-sm">
                         {message.reasoning}
                       </div>
                     </div>
@@ -238,7 +238,7 @@ export const ChatBubble = React.memo(
                   className={cn(
                     "flex items-center gap-1 transition-opacity duration-200",
                     "opacity-0 group-hover:opacity-100",
-                    isUser ? "flex-row-reverse" : "flex-row",
+                    isUser ? "flex-row-reverse" : "flex-row"
                   )}
                 >
                   {/* Branch Switcher - Only on absolute last message */}
@@ -267,11 +267,11 @@ export const ChatBubble = React.memo(
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={handleEditClick}
+                            className="size-8 bg-background/50 transition-all duration-200 hover:scale-110 hover:bg-background/80"
                             disabled={isLoading}
-                            className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                            onClick={handleEditClick}
+                            size="icon-sm"
+                            variant="ghost"
                           >
                             <Pencil className="size-4" />
                           </Button>
@@ -293,16 +293,16 @@ export const ChatBubble = React.memo(
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={handleRegenerateClick}
+                            className="size-8 bg-background/50 transition-all duration-200 hover:scale-110 hover:bg-background/80"
                             disabled={isLoading}
-                            className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                            onClick={handleRegenerateClick}
+                            size="icon-sm"
+                            variant="ghost"
                           >
                             <RefreshCw
                               className={cn(
                                 "size-4",
-                                isLoading && "animate-spin",
+                                isLoading && "animate-spin"
                               )}
                             />
                           </Button>
@@ -323,10 +323,10 @@ export const ChatBubble = React.memo(
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="ghost"
-                          size="icon-sm"
+                          className="size-8 bg-background/50 transition-all duration-200 hover:scale-110 hover:bg-background/80"
                           onClick={handleCopy}
-                          className="size-8 bg-background/50 hover:bg-background/80 transition-all duration-200 hover:scale-110"
+                          size="icon-sm"
+                          variant="ghost"
                         >
                           <Copy className="size-4" />
                         </Button>
@@ -343,7 +343,7 @@ export const ChatBubble = React.memo(
         </div>
       </div>
     );
-  },
+  }
 );
 
 ChatBubble.displayName = "ChatBubble";

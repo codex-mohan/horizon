@@ -1,19 +1,19 @@
 import { serve } from "@hono/node-server";
+import { Command } from "@langchain/langgraph";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
+import { v4 as uuidv4 } from "uuid";
 // Import graph
 import { graph } from "./agent/graph.js";
-import { agentConfig } from "./lib/config.js";
-import { v4 as uuidv4 } from "uuid";
-import { Command } from "@langchain/langgraph";
+import { assistantsDb } from "./assistants/db.js";
 // Import assistants
 import assistantsRouter from "./assistants/router.js";
-import { assistantsDb } from "./assistants/db.js";
 import type { Assistant } from "./assistants/types.js";
+import { agentConfig } from "./lib/config.js";
 
 // Define app types
-type Variables = {
+interface Variables {
   db: {
     assistants: {
       findById: (id: string) => Assistant | undefined;
@@ -23,13 +23,13 @@ type Variables = {
       create: (assistant: Assistant) => Assistant;
       update: (
         id: string,
-        updates: Partial<Assistant>,
+        updates: Partial<Assistant>
       ) => Assistant | undefined;
       delete: (id: string) => boolean;
       setDefault: (userId: string, assistantId: string) => boolean;
     };
   };
-};
+}
 
 const app = new Hono<{ Variables: Variables }>();
 
@@ -44,7 +44,7 @@ app.use(
     allowHeaders: ["Content-Type", "Authorization", "x-api-key"],
     exposeHeaders: ["Content-Length"],
     credentials: true,
-  }),
+  })
 );
 
 // Health Check
@@ -62,7 +62,7 @@ app.get("/health", (c) =>
       pii_detection: agentConfig.ENABLE_PII_DETECTION,
       tool_retry: agentConfig.ENABLE_TOOL_RETRY,
     },
-  }),
+  })
 );
 
 /**
@@ -86,7 +86,7 @@ app.get("/threads/:threadId/state", async (c) => {
       configurable: { thread_id: threadId },
     });
     return c.json(state);
-  } catch (e) {
+  } catch (_e) {
     return c.json({ values: {}, next: [], tasks: [] });
   }
 });
@@ -105,7 +105,7 @@ app.get("/threads/:threadId/history", async (c) => {
       history.push(state);
     }
     return c.json(history);
-  } catch (e) {
+  } catch (_e) {
     return c.json([]);
   }
 });
@@ -130,16 +130,20 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
 
   // Recursive helper to find checkpoint_id anywhere in the object
   const findCheckpointId = (obj: any): string | undefined => {
-    if (!obj || typeof obj !== "object") return undefined;
+    if (!obj || typeof obj !== "object") {
+      return undefined;
+    }
 
     if (obj.checkpoint_id && typeof obj.checkpoint_id === "string") {
       return obj.checkpoint_id;
     }
 
     for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (Object.hasOwn(obj, key)) {
         const result = findCheckpointId(obj[key]);
-        if (result) return result;
+        if (result) {
+          return result;
+        }
       }
     }
     return undefined;
@@ -150,7 +154,7 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
 
   console.log(`[POST /runs/stream] Thread: ${threadId}`);
   console.log(
-    `[POST /runs/stream] Extracted Checkpoint ID (Recursive): ${checkpointId}`,
+    `[POST /runs/stream] Extracted Checkpoint ID (Recursive): ${checkpointId}`
   );
   console.log(`[POST /runs/stream] Has Command: ${!!command}`);
 
@@ -158,7 +162,7 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
   // Include "custom" stream mode to receive UI events during tool execution
   const streamMode = body.stream_mode || ["updates", "messages", "custom"];
 
-  console.log(`[POST /runs/stream] Stream Mode:`, streamMode);
+  console.log("[POST /runs/stream] Stream Mode:", streamMode);
 
   const runConfig = {
     configurable: {
@@ -177,12 +181,12 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
         agentConfig.ENABLE_TOOL_APPROVAL,
       ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
     },
-    streamMode: streamMode,
+    streamMode,
   };
 
   console.log(
-    `[POST /runs/stream] Final Run Config:`,
-    JSON.stringify(runConfig, null, 2),
+    "[POST /runs/stream] Final Run Config:",
+    JSON.stringify(runConfig, null, 2)
   );
 
   try {
@@ -190,7 +194,7 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
 
     // If we have a command (e.g., resume after interrupt), use it
     if (command) {
-      console.log(`[POST /runs/stream] Resuming with command:`, command);
+      console.log("[POST /runs/stream] Resuming with command:", command);
       const resumeCommand = new Command(command);
       stream = await graph.stream(resumeCommand, runConfig);
     } else {
@@ -210,7 +214,7 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
               eventType === "__interrupt__" ||
               (eventData as any)?.__interrupt__
             ) {
-              console.log(`[POST /runs/stream] Interrupt event detected`);
+              console.log("[POST /runs/stream] Interrupt event detected");
             }
 
             await streamWriter.writeSSE({
@@ -275,7 +279,7 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
   const checkpointId = body.checkpoint_id;
 
   console.log(
-    `[POST /runs/resume] Thread: ${threadId}, Resume: ${resumeValue}`,
+    `[POST /runs/resume] Thread: ${threadId}, Resume: ${resumeValue}`
   );
 
   const runConfig = {
@@ -320,11 +324,10 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
           });
         }
       });
-    } else {
-      // Non-streaming response
-      const result = await graph.invoke(resumeCommand, runConfig);
-      return c.json(result);
     }
+    // Non-streaming response
+    const result = await graph.invoke(resumeCommand, runConfig);
+    return c.json(result);
   } catch (error: any) {
     console.error("Resume error:", error);
     return c.json({ error: error.message }, 500);
@@ -412,26 +415,26 @@ app.use("/assistants/*", async (c, next) => {
 app.route("/assistants", assistantsRouter);
 
 console.log(`Server running on port ${agentConfig.PORT}`);
-console.log(`Assistants API: /assistants`);
-console.log(`Enhanced Agent Features:`);
-console.log(`  - ReAct Pattern: Enabled`);
+console.log("Assistants API: /assistants");
+console.log("Enhanced Agent Features:");
+console.log("  - ReAct Pattern: Enabled");
 console.log(
-  `  - Human-in-the-Loop: ${agentConfig.ENABLE_TOOL_APPROVAL ? "Enabled" : "Disabled"}`,
+  `  - Human-in-the-Loop: ${agentConfig.ENABLE_TOOL_APPROVAL ? "Enabled" : "Disabled"}`
 );
 console.log(
-  `  - Tool Approval: ${agentConfig.ENABLE_TOOL_APPROVAL ? "Enabled" : "Disabled"}`,
+  `  - Tool Approval: ${agentConfig.ENABLE_TOOL_APPROVAL ? "Enabled" : "Disabled"}`
 );
 console.log(
-  `  - Rate Limiting: ${agentConfig.ENABLE_RATE_LIMITING ? "Enabled" : "Disabled"}`,
+  `  - Rate Limiting: ${agentConfig.ENABLE_RATE_LIMITING ? "Enabled" : "Disabled"}`
 );
 console.log(
-  `  - Token Tracking: ${agentConfig.ENABLE_TOKEN_TRACKING ? "Enabled" : "Disabled"}`,
+  `  - Token Tracking: ${agentConfig.ENABLE_TOKEN_TRACKING ? "Enabled" : "Disabled"}`
 );
 console.log(
-  `  - PII Detection: ${agentConfig.ENABLE_PII_DETECTION ? "Enabled" : "Disabled"}`,
+  `  - PII Detection: ${agentConfig.ENABLE_PII_DETECTION ? "Enabled" : "Disabled"}`
 );
 console.log(
-  `  - Tool Retry: ${agentConfig.ENABLE_TOOL_RETRY ? "Enabled" : "Disabled"}`,
+  `  - Tool Retry: ${agentConfig.ENABLE_TOOL_RETRY ? "Enabled" : "Disabled"}`
 );
 
 serve({

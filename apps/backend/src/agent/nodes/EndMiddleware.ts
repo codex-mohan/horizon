@@ -1,9 +1,9 @@
-import { AgentState } from "../state.js";
-import { RunnableConfig } from "@langchain/core/runnables";
+import type { RunnableConfig } from "@langchain/core/runnables";
+import type { AgentState } from "../state.js";
 
 export async function EndMiddleware(
   state: AgentState,
-  config: RunnableConfig,
+  _config: RunnableConfig
 ): Promise<Partial<AgentState>> {
   const updates: Partial<AgentState> = {};
 
@@ -23,7 +23,7 @@ export async function EndMiddleware(
   console.log(`  - Time: ${executionTimeMs}ms`);
   console.log(`  - Model Calls: ${state.model_calls}`);
   console.log(`  - Tools: ${state.executed_tool_calls?.length || 0}`);
-  console.log(`  - PII: ${state.middleware_metrics?.pii_detected || false}`);
+  console.log(`  - PII: ${state.middleware_metrics?.pii_detected}`);
 
   return updates;
 }

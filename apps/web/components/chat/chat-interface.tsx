@@ -1,13 +1,13 @@
 "use client";
 
-import { Sidebar } from "./sidebar";
-import { ChatArea } from "./chat-area";
-import { SettingsSidebar } from "./settings-sidebar";
-import { AnimatedBackground } from "./animated-background";
-import { useConversationStore } from "@/lib/stores/conversation";
-import { DragDropOverlay } from "./drag-drop-overlay";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useConversationStore } from "@/lib/stores/conversation";
+import { AnimatedBackground } from "./animated-background";
+import { ChatArea } from "./chat-area";
+import { DragDropOverlay } from "./drag-drop-overlay";
+import { SettingsSidebar } from "./settings-sidebar";
+import { Sidebar } from "./sidebar";
 
 export interface Message {
   id: string;
@@ -82,7 +82,9 @@ export function ChatInterface() {
       const files = e.dataTransfer?.files
         ? Array.from(e.dataTransfer.files)
         : [];
-      if (!files || files.length === 0) return;
+      if (!files || files.length === 0) {
+        return;
+      }
 
       const MAX_SIZE = 100 * 1024 * 1024; // 100MB
       const validFiles: File[] = [];
@@ -106,17 +108,17 @@ export function ChatInterface() {
         }));
         setAttachedFiles((prev) => [...prev, ...newAttachedFiles]);
         toast.success(
-          `Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`,
+          `Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`
         );
       }
     },
-    [],
+    []
   );
 
   const { currentThreadId, setCurrentThreadId } = useConversationStore();
 
   return (
-    <div className="flex h-screen w-full overflow-hidden relative bg-background">
+    <div className="relative flex h-screen w-full overflow-hidden bg-background">
       <DragDropOverlay
         isDragging={isDragging}
         onDragLeave={handleOverlayDragLeave}
@@ -125,8 +127,9 @@ export function ChatInterface() {
       <AnimatedBackground />
 
       <Sidebar
-        isExpanded={isSidebarExpanded}
         activeSection={sidebarSection}
+        isExpanded={isSidebarExpanded}
+        onCollapse={() => setIsSidebarExpanded(false)}
         onSectionChange={(section) => {
           if (section === sidebarSection) {
             setIsSidebarExpanded(!isSidebarExpanded);
@@ -135,17 +138,16 @@ export function ChatInterface() {
             setIsSidebarExpanded(true);
           }
         }}
-        onCollapse={() => setIsSidebarExpanded(false)}
       />
 
       <ChatArea
-        messages={messages}
         attachedFiles={attachedFiles}
-        onMessagesChange={setMessages}
+        messages={messages}
         onAttachedFilesChange={setAttachedFiles}
+        onMessagesChange={setMessages}
         onSettingsOpen={() => setIsSettingsOpen(true)}
-        threadId={currentThreadId}
         onThreadChange={setCurrentThreadId}
+        threadId={currentThreadId}
       />
 
       <SettingsSidebar

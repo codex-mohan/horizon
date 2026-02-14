@@ -1,13 +1,15 @@
-import { AgentState } from "../state.js";
-import { RunnableConfig } from "@langchain/core/runnables";
-import { HumanMessage } from "@langchain/core/messages";
 import { MemoryClient } from "@horizon/agent-memory";
+import type { HumanMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
+import type { AgentState } from "../state.js";
 
 let memoryClient: MemoryClient | null = null;
 let memoryInitialized = false;
 
 export function initializeMemory(): MemoryClient | null {
-  if (memoryClient) return memoryClient;
+  if (memoryClient) {
+    return memoryClient;
+  }
 
   memoryClient = new MemoryClient({
     qdrant_url: process.env.QDRANT_URL || "http://localhost:6333",
@@ -37,20 +39,26 @@ export function isMemoryInitialized(): boolean {
 
 export async function MemoryRetrieval(
   state: AgentState,
-  config: RunnableConfig,
+  config: RunnableConfig
 ): Promise<Partial<AgentState>> {
   const updates: Partial<AgentState> = {};
 
-  if (!memoryInitialized || !memoryClient) return updates;
+  if (!(memoryInitialized && memoryClient)) {
+    return updates;
+  }
 
   const userId = config.configurable?.user_id as string | undefined;
-  if (!userId) return updates;
+  if (!userId) {
+    return updates;
+  }
 
   const lastUserMessage = [...state.messages]
     .reverse()
     .find((msg) => msg._getType() === "human") as HumanMessage | undefined;
 
-  if (!lastUserMessage) return updates;
+  if (!lastUserMessage) {
+    return updates;
+  }
 
   const content =
     typeof lastUserMessage.content === "string"

@@ -22,12 +22,16 @@ export const shellTool = tool(
       }
 
       if (result.stderr) {
-        if (output.length > 0) output.push("");
+        if (output.length > 0) {
+          output.push("");
+        }
         output.push(`[STDERR]: ${result.stderr}`);
       }
 
       if (result.exitCode !== 0) {
-        if (output.length > 0) output.push("");
+        if (output.length > 0) {
+          output.push("");
+        }
         output.push(`[Exit Code: ${result.exitCode}]`);
       }
 
@@ -44,7 +48,7 @@ export const shellTool = tool(
     schema: z.object({
       command: z.string().describe("The command to execute."),
     }),
-  },
+  }
 );
 
 // Aggregate all tools

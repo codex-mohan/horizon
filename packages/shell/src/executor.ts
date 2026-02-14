@@ -10,15 +10,14 @@
 
 // import { $ } from "bun"; // Removed for cross-runtime support
 import * as child_process from "node:child_process";
-import { CommandHistory, type HistoryEntry } from "./history.js";
-import { getPlatformInfo, type PlatformInfo } from "./platform.js";
 import {
+  ExitError,
+  PermissionError,
   ShellError,
   TimeoutError,
-  ExitError,
-  SignalError,
-  PermissionError,
 } from "./errors.js";
+import { CommandHistory } from "./history.js";
+import { getPlatformInfo, type PlatformInfo } from "./platform.js";
 
 /**
  * Execution approval modes
@@ -174,7 +173,7 @@ const DEFAULT_DANGEROUS_PATTERNS: RegExp[] = [
  * Shell Executor - Main class for command execution
  */
 export class ShellExecutor {
-  private config: Required<
+  private readonly config: Required<
     Omit<
       ShellConfig,
       "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete"
@@ -184,8 +183,8 @@ export class ShellExecutor {
       ShellConfig,
       "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete"
     >;
-  private history: CommandHistory;
-  private platform: PlatformInfo;
+  private readonly history: CommandHistory;
+  private readonly platform: PlatformInfo;
 
   constructor(config: ShellConfig = {}) {
     this.platform = getPlatformInfo();
@@ -193,7 +192,7 @@ export class ShellExecutor {
     this.config = {
       cwd: config.cwd ?? process.cwd(),
       env: { ...process.env, ...config.env } as Record<string, string>,
-      timeout: config.timeout ?? 30000,
+      timeout: config.timeout ?? 30_000,
       maxOutputSize: config.maxOutputSize ?? 1024 * 1024, // 1MB
       approvalMode: config.approvalMode ?? "dangerous",
       approvalFn: config.approvalFn,
@@ -238,7 +237,7 @@ export class ShellExecutor {
    */
   private async requestApproval(
     command: string,
-    context: ApprovalContext,
+    context: ApprovalContext
   ): Promise<boolean> {
     const { approvalMode, approvalFn } = this.config;
 
@@ -250,17 +249,19 @@ export class ShellExecutor {
         if (!approvalFn) {
           throw new PermissionError(
             command,
-            "Approval required but no approval function provided",
+            "Approval required but no approval function provided"
           );
         }
         return approvalFn(command, context);
 
       case "dangerous":
-        if (!context.isDangerous) return true;
+        if (!context.isDangerous) {
+          return true;
+        }
         if (!approvalFn) {
           throw new PermissionError(
             command,
-            `Dangerous command requires approval: ${context.matchedPatterns.join(", ")}`,
+            `Dangerous command requires approval: ${context.matchedPatterns.join(", ")}`
           );
         }
         return approvalFn(command, context);
@@ -269,7 +270,7 @@ export class ShellExecutor {
         if (!approvalFn) {
           throw new PermissionError(
             command,
-            "Custom approval mode requires approval function",
+            "Custom approval mode requires approval function"
           );
         }
         return approvalFn(command, context);
@@ -289,7 +290,7 @@ export class ShellExecutor {
       env?: Record<string, string>;
       timeout?: number;
       skipApproval?: boolean;
-    } = {},
+    } = {}
   ): Promise<ExecutionResult> {
     const cwd = options.cwd ?? this.config.cwd;
     const env = { ...this.config.env, ...options.env };
@@ -491,7 +492,7 @@ export class ShellExecutor {
       env?: Record<string, string>;
       timeout?: number;
       stopOnError?: boolean;
-    } = {},
+    } = {}
   ): Promise<ExecutionResult[]> {
     const results: ExecutionResult[] = [];
     const stopOnError = options.stopOnError ?? true;
@@ -530,7 +531,7 @@ export class ShellExecutor {
    */
   async run(
     command: string,
-    options?: Parameters<typeof this.execute>[1],
+    options?: Parameters<typeof this.execute>[1]
   ): Promise<string> {
     const result = await this.execute(command, options);
     return result.stdout.trim();

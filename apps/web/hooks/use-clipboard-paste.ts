@@ -48,7 +48,7 @@ function getTextContent(clipboardData: DataTransfer): string {
 function createAttachedFiles(
   files: File[],
   maxFileSize: number,
-  existingFiles: AttachedFile[],
+  _existingFiles: AttachedFile[]
 ): { validFiles: AttachedFile[]; errors: string[] } {
   const validFiles: AttachedFile[] = [];
   const errors: string[] = [];
@@ -101,10 +101,12 @@ export function useClipboardPaste(options: ClipboardPasteOptions) {
   const handlePaste = useCallback(
     (event: React.ClipboardEvent<HTMLElement>) => {
       const clipboardData = event.clipboardData;
-      if (!clipboardData) return;
+      if (!clipboardData) {
+        return;
+      }
 
       const pastedFiles = extractFilesFromClipboard(clipboardData);
-      const textContent = getTextContent(clipboardData);
+      const _textContent = getTextContent(clipboardData);
 
       // If there are files in the clipboard, handle them
       if (pastedFiles.length > 0) {
@@ -113,7 +115,7 @@ export function useClipboardPaste(options: ClipboardPasteOptions) {
         const { validFiles, errors } = createAttachedFiles(
           pastedFiles,
           maxFileSize,
-          existingFiles,
+          existingFiles
         );
 
         // Show error messages
@@ -128,7 +130,7 @@ export function useClipboardPaste(options: ClipboardPasteOptions) {
 
           const fileCount = validFiles.length;
           toast.success(
-            `Attached ${fileCount} file${fileCount > 1 ? "s" : ""} from clipboard`,
+            `Attached ${fileCount} file${fileCount > 1 ? "s" : ""} from clipboard`
           );
         }
 
@@ -138,7 +140,7 @@ export function useClipboardPaste(options: ClipboardPasteOptions) {
       // If no files but has text, let the default paste behavior handle it
       // This allows normal text pasting to work as expected
     },
-    [maxFileSize, onFilesPasted, existingFiles],
+    [maxFileSize, onFilesPasted, existingFiles]
   );
 
   return { handlePaste };
@@ -149,9 +151,11 @@ export function useClipboardPaste(options: ClipboardPasteOptions) {
  * Useful for showing UI indicators before paste
  */
 export function clipboardContainsFiles(
-  clipboardData: DataTransfer | null,
+  clipboardData: DataTransfer | null
 ): boolean {
-  if (!clipboardData) return false;
+  if (!clipboardData) {
+    return false;
+  }
 
   const items = clipboardData.items;
   for (let i = 0; i < items.length; i++) {
@@ -166,9 +170,11 @@ export function clipboardContainsFiles(
  * Gets file count from clipboard
  */
 export function getClipboardFileCount(
-  clipboardData: DataTransfer | null,
+  clipboardData: DataTransfer | null
 ): number {
-  if (!clipboardData) return 0;
+  if (!clipboardData) {
+    return 0;
+  }
 
   let count = 0;
   const items = clipboardData.items;

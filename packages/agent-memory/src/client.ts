@@ -2,10 +2,10 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { v4 as uuidv4 } from "uuid";
 import { QdrantStore } from "./qdrant-store.js";
 import type {
+  MemoryConfig,
   MemoryEntry,
   MemoryQuery,
   MemorySearchResult,
-  MemoryConfig,
   PrivacySettings,
 } from "./types.js";
 
@@ -22,11 +22,11 @@ interface EmbeddingsInterface {
  * Handles embedding generation and privacy controls.
  */
 export class MemoryClient {
-  private store: QdrantStore;
+  private readonly store: QdrantStore;
   private embeddings: EmbeddingsInterface | null = null;
-  private config: MemoryConfig;
-  private privacySettings: Map<string, PrivacySettings> = new Map();
-  private embeddingsAvailable: boolean = false;
+  private readonly config: MemoryConfig;
+  private readonly privacySettings: Map<string, PrivacySettings> = new Map();
+  private embeddingsAvailable = false;
 
   constructor(config: MemoryConfig) {
     this.config = config;
@@ -56,10 +56,10 @@ export class MemoryClient {
     } else {
       // No embeddings available - memory will store but not be searchable
       console.warn(
-        "[MemoryClient] No embedding provider available. Memory will store but not be searchable.",
+        "[MemoryClient] No embedding provider available. Memory will store but not be searchable."
       );
       console.warn(
-        "[MemoryClient] Set OPENAI_API_KEY or OLLAMA_BASE_URL to enable semantic search.",
+        "[MemoryClient] Set OPENAI_API_KEY or OLLAMA_BASE_URL to enable semantic search."
       );
       this.embeddingsAvailable = false;
     }
@@ -73,14 +73,14 @@ export class MemoryClient {
       const { OllamaEmbeddings } = await import("@langchain/ollama");
       this.embeddings = new OllamaEmbeddings({
         model: this.config.embedding_model || "nomic-embed-text",
-        baseUrl: baseUrl,
+        baseUrl,
       });
       this.embeddingsAvailable = true;
       console.log("[MemoryClient] Using Ollama embeddings");
     } catch (error) {
       console.error(
         "[MemoryClient] Failed to initialize Ollama embeddings:",
-        error,
+        error
       );
       this.embeddingsAvailable = false;
     }
@@ -147,14 +147,14 @@ export class MemoryClient {
     // Check if privacy mode is enabled
     if (settings.privacy_mode_enabled) {
       console.log(
-        `[MemoryClient] Privacy mode enabled for user ${user_id}, skipping storage`,
+        `[MemoryClient] Privacy mode enabled for user ${user_id}, skipping storage`
       );
       return null;
     }
 
     // Check if content should be excluded
     if (this.shouldExclude(content, settings)) {
-      console.log(`[MemoryClient] Content excluded based on privacy settings`);
+      console.log("[MemoryClient] Content excluded based on privacy settings");
       return null;
     }
 
@@ -162,7 +162,7 @@ export class MemoryClient {
     let embedding: number[] | undefined;
     if (this.hasEmbeddings()) {
       try {
-        embedding = await this.embeddings!.embedQuery(content);
+        embedding = await this.embeddings?.embedQuery(content);
       } catch (error) {
         console.warn("[MemoryClient] Failed to generate embedding:", error);
       }
@@ -212,7 +212,7 @@ export class MemoryClient {
     let embedding: number[] | undefined;
     if (this.hasEmbeddings()) {
       try {
-        embedding = await this.embeddings!.embedQuery(content);
+        embedding = await this.embeddings?.embedQuery(content);
       } catch (error) {
         console.warn("[MemoryClient] Failed to generate embedding:", error);
       }
@@ -251,13 +251,13 @@ export class MemoryClient {
     // If no embeddings available, return empty results
     if (!this.hasEmbeddings()) {
       console.warn(
-        "[MemoryClient] Cannot retrieve memories: no embedding provider available",
+        "[MemoryClient] Cannot retrieve memories: no embedding provider available"
       );
       return [];
     }
 
     // Generate query embedding
-    const queryVector = await this.embeddings!.embedQuery(query.query);
+    const queryVector = await this.embeddings?.embedQuery(query.query);
 
     // Get semantic search results
     let results = await this.store.search(queryVector, query);
@@ -273,10 +273,7 @@ export class MemoryClient {
   /**
    * Get recent memories for a user
    */
-  async getRecentMemories(
-    userId: string,
-    limit: number = 10,
-  ): Promise<MemoryEntry[]> {
+  async getRecentMemories(userId: string, limit = 10): Promise<MemoryEntry[]> {
     // Get all memories for user and sort by recency
     const query: MemoryQuery = {
       query: "recent", // Dummy query
@@ -290,8 +287,8 @@ export class MemoryClient {
       return [];
     }
 
-    const queryVector = await this.embeddings!.embedQuery(
-      "recent conversations",
+    const queryVector = await this.embeddings?.embedQuery(
+      "recent conversations"
     );
     const results = await this.store.search(queryVector, query);
 
@@ -300,7 +297,7 @@ export class MemoryClient {
       .sort(
         (a, b) =>
           new Date(b.metadata.timestamp).getTime() -
-          new Date(a.metadata.timestamp).getTime(),
+          new Date(a.metadata.timestamp).getTime()
       )
       .slice(0, limit);
   }
@@ -337,11 +334,13 @@ export class MemoryClient {
    * Check if content should be excluded based on privacy settings
    */
   private shouldExclude(content: string, settings: PrivacySettings): boolean {
-    if (settings.excluded_topics.length === 0) return false;
+    if (settings.excluded_topics.length === 0) {
+      return false;
+    }
 
     const lowerContent = content.toLowerCase();
     return settings.excluded_topics.some((topic) =>
-      lowerContent.includes(topic.toLowerCase()),
+      lowerContent.includes(topic.toLowerCase())
     );
   }
 
@@ -350,7 +349,7 @@ export class MemoryClient {
    */
   private applyRecencyWeighting(
     results: MemorySearchResult[],
-    weight: number,
+    weight: number
   ): MemorySearchResult[] {
     const now = Date.now();
     const maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days in ms

@@ -1,16 +1,14 @@
-import { StateGraph, START, END } from "@langchain/langgraph";
-import type { RunnableConfig } from "@langchain/core/runnables";
-import { AgentStateAnnotation, AgentState } from "./state.js";
-import { AIMessage } from "@langchain/core/messages";
+import type { AIMessage } from "@langchain/core/messages";
+import { END, START, StateGraph } from "@langchain/langgraph";
 import { FileSystemCheckpointer } from "./fs-checkpointer.js";
-
-// Import nodes
-import { StartMiddleware } from "./nodes/StartMiddleware.js";
-import { MemoryRetrieval, initializeMemory } from "./nodes/MemoryRetrieval.js";
 import { AgentNode } from "./nodes/Agent.js";
 import { ApprovalGate } from "./nodes/ApprovalGate.js";
-import { ToolExecution } from "./nodes/ToolExecution.js";
 import { EndMiddleware } from "./nodes/EndMiddleware.js";
+import { initializeMemory, MemoryRetrieval } from "./nodes/MemoryRetrieval.js";
+// Import nodes
+import { StartMiddleware } from "./nodes/StartMiddleware.js";
+import { ToolExecution } from "./nodes/ToolExecution.js";
+import { type AgentState, AgentStateAnnotation } from "./state.js";
 
 // Initialize memory on import
 initializeMemory();
@@ -19,9 +17,9 @@ initializeMemory();
  * Conditional: Does the agent want to use tools?
  */
 const shouldCheckApproval = (
-  state: AgentState,
+  state: AgentState
 ): "ApprovalGate" | "EndMiddleware" => {
-  const lastMessage = state.messages[state.messages.length - 1];
+  const lastMessage = state.messages.at(-1);
 
   if (!lastMessage || lastMessage._getType() !== "ai") {
     return "EndMiddleware";
@@ -41,10 +39,10 @@ const shouldCheckApproval = (
  * Conditional: Execute tools or finish?
  */
 const shouldExecuteTools = (
-  state: AgentState,
+  state: AgentState
 ): "ToolExecution" | "EndMiddleware" => {
   const approvedTools = state.pending_tool_calls?.filter(
-    (tc) => tc.status === "approved",
+    (tc) => tc.status === "approved"
   );
 
   if (approvedTools && approvedTools.length > 0) {
@@ -113,8 +111,8 @@ export const graph = new StateGraph(AgentStateAnnotation)
 
 console.log("[Graph] Multi-node graph compiled:");
 console.log(
-  "  Nodes: StartMiddleware → MemoryRetrieval → AgentNode → ApprovalGate → ToolExecution → EndMiddleware",
+  "  Nodes: StartMiddleware → MemoryRetrieval → AgentNode → ApprovalGate → ToolExecution → EndMiddleware"
 );
 console.log(
-  "  Flow: START → Start → Memory → Agent → [Approval → Tools → Agent loop] → End → END",
+  "  Flow: START → Start → Memory → Agent → [Approval → Tools → Agent loop] → End → END"
 );

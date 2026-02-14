@@ -1,21 +1,20 @@
 "use client";
 
-import React from "react";
 import { cn } from "@workspace/ui/lib/utils";
 import {
-  Loader2,
   Activity,
   Brain,
-  Wrench,
-  Hash,
-  Minimize2,
   Check,
+  ChevronDown,
+  Hash,
+  Loader2,
+  Minimize2,
   Rocket,
   Search,
-  ChevronDown,
-  ChevronUp,
   Sparkles,
+  Wrench,
 } from "lucide-react";
+import React from "react";
 import { useTheme } from "@/components/theme/theme-provider";
 
 export interface ProcessedEvent {
@@ -103,24 +102,24 @@ export function ActivityTimeline({
   return (
     <div
       className={cn(
-        "rounded-xl overflow-hidden transition-all duration-500 ease-out",
+        "overflow-hidden rounded-xl transition-all duration-500 ease-out",
         isLightTheme
-          ? "bg-white/40 backdrop-blur-xl border border-white/50 shadow-lg"
-          : "glass border border-primary/20 shadow-xl",
+          ? "border border-white/50 bg-white/40 shadow-lg backdrop-blur-xl"
+          : "glass border border-primary/20 shadow-xl"
       )}
     >
       <button
-        onClick={() => setIsTimelineCollapsed(!isTimelineCollapsed)}
         className={cn(
-          "w-full px-4 py-3 flex items-center justify-between",
+          "flex w-full items-center justify-between px-4 py-3",
           "transition-colors duration-300",
-          isLightTheme ? "hover:bg-black/5" : "hover:bg-white/5",
+          isLightTheme ? "hover:bg-black/5" : "hover:bg-white/5"
         )}
+        onClick={() => setIsTimelineCollapsed(!isTimelineCollapsed)}
       >
         <span
           className={cn(
-            "text-sm font-medium flex items-center gap-2",
-            isLightTheme ? "text-slate-700" : "text-foreground",
+            "flex items-center gap-2 font-medium text-sm",
+            isLightTheme ? "text-slate-700" : "text-foreground"
           )}
         >
           <Sparkles
@@ -130,7 +129,7 @@ export function ActivityTimeline({
                 ? "animate-pulse text-primary"
                 : isLightTheme
                   ? "text-slate-500"
-                  : "text-muted-foreground",
+                  : "text-muted-foreground"
             )}
           />
           Activity
@@ -139,7 +138,7 @@ export function ActivityTimeline({
           className={cn(
             "h-4 w-4 transition-transform duration-300",
             isLightTheme ? "text-slate-500" : "text-muted-foreground",
-            !isTimelineCollapsed && "rotate-180",
+            !isTimelineCollapsed && "rotate-180"
           )}
         />
       </button>
@@ -148,44 +147,44 @@ export function ActivityTimeline({
         <div
           className={cn(
             "overflow-hidden transition-all duration-500 ease-out",
-            "animate-slide-down",
+            "animate-slide-down"
           )}
         >
           <div
             className={cn(
-              "max-h-64 overflow-y-auto custom-scrollbar p-3 space-y-2",
-              isLightTheme ? "scrollbar-light" : "",
+              "custom-scrollbar max-h-64 space-y-2 overflow-y-auto p-3",
+              isLightTheme ? "scrollbar-light" : ""
             )}
           >
             {isLoading && processedEvents.length === 0 && (
               <div
                 className={cn(
-                  "relative pl-8 pb-3 animate-pulse",
-                  "before:absolute before:left-[11px] before:top-3 before:h-full before:w-px",
+                  "relative animate-pulse pb-3 pl-8",
+                  "before:absolute before:top-3 before:left-[11px] before:h-full before:w-px",
                   isLightTheme
                     ? "before:bg-gradient-to-b before:from-transparent before:to-slate-300"
-                    : "before:bg-gradient-to-b before:from-transparent before:to-primary/30",
+                    : "before:bg-gradient-to-b before:from-transparent before:to-primary/30"
                 )}
               >
                 <div
                   className={cn(
-                    "absolute left-0 top-1 h-6 w-6 rounded-full",
+                    "absolute top-1 left-0 h-6 w-6 rounded-full",
                     "flex items-center justify-center",
                     "bg-gradient-to-br from-primary/20 to-accent/20",
-                    "ring-4 ring-background/50",
+                    "ring-4 ring-background/50"
                   )}
                 >
                   <Loader2
                     className={cn(
                       "h-3 w-3 animate-spin",
-                      isLightTheme ? "text-slate-600" : "text-primary",
+                      isLightTheme ? "text-slate-600" : "text-primary"
                     )}
                   />
                 </div>
                 <p
                   className={cn(
-                    "text-sm font-medium",
-                    isLightTheme ? "text-slate-600" : "text-foreground",
+                    "font-medium text-sm",
+                    isLightTheme ? "text-slate-600" : "text-foreground"
                   )}
                 >
                   Starting...
@@ -202,33 +201,33 @@ export function ActivityTimeline({
 
                   return (
                     <div
-                      key={index}
                       className={cn(
-                        "relative pl-7 pb-2 animate-slide-up stagger-item",
-                        "transition-all duration-500 ease-out",
+                        "stagger-item relative animate-slide-up pb-2 pl-7",
+                        "transition-all duration-500 ease-out"
                       )}
+                      key={index}
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       {showConnector && (
                         <div
                           className={cn(
-                            "absolute left-[11px] top-6 h-[calc(100%-1.5rem)] w-px",
+                            "absolute top-6 left-[11px] h-[calc(100%-1.5rem)] w-px",
                             isLightTheme
                               ? "bg-gradient-to-b from-transparent via-slate-300 to-transparent"
-                              : "bg-gradient-to-b from-transparent via-primary/20 to-transparent",
+                              : "bg-gradient-to-b from-transparent via-primary/20 to-transparent"
                           )}
                         />
                       )}
 
                       <div
                         className={cn(
-                          "absolute left-0 top-1 h-6 w-6 rounded-full",
+                          "absolute top-1 left-0 h-6 w-6 rounded-full",
                           "flex items-center justify-center",
                           `bg-gradient-to-br ${style.color}`,
                           "shadow-lg",
                           style.glow,
                           "ring-4 ring-background/50",
-                          "transition-transform duration-300 hover:scale-110",
+                          "transition-transform duration-300 hover:scale-110"
                         )}
                       >
                         <span
@@ -236,7 +235,7 @@ export function ActivityTimeline({
                             "text-white",
                             isLoading &&
                               index === processedEvents.length - 1 &&
-                              "animate-pulse",
+                              "animate-pulse"
                           )}
                         >
                           {style.icon}
@@ -246,9 +245,9 @@ export function ActivityTimeline({
                       <div className="pt-0.5">
                         <p
                           className={cn(
-                            "text-sm font-medium transition-colors duration-300",
+                            "font-medium text-sm transition-colors duration-300",
                             isLightTheme ? "text-slate-700" : "text-foreground",
-                            "group-hover:text-primary",
+                            "group-hover:text-primary"
                           )}
                         >
                           {eventItem.title}
@@ -258,7 +257,7 @@ export function ActivityTimeline({
                             "text-xs leading-relaxed transition-colors duration-300",
                             isLightTheme
                               ? "text-slate-500"
-                              : "text-muted-foreground",
+                              : "text-muted-foreground"
                           )}
                         >
                           {eventItem.data}
@@ -269,27 +268,27 @@ export function ActivityTimeline({
                 })}
 
                 {isLoading && processedEvents.length > 0 && (
-                  <div className={cn("relative pl-7 pb-2 animate-pulse")}>
+                  <div className={cn("relative animate-pulse pb-2 pl-7")}>
                     <div
                       className={cn(
-                        "absolute left-0 top-1 h-6 w-6 rounded-full",
+                        "absolute top-1 left-0 h-6 w-6 rounded-full",
                         "flex items-center justify-center",
                         "bg-gradient-to-br from-primary/30 to-accent/30",
                         "ring-4 ring-background/50",
-                        "animate-pulse",
+                        "animate-pulse"
                       )}
                     >
                       <Loader2
                         className={cn(
                           "h-3 w-3 animate-spin",
-                          isLightTheme ? "text-slate-600" : "text-primary",
+                          isLightTheme ? "text-slate-600" : "text-primary"
                         )}
                       />
                     </div>
                     <p
                       className={cn(
-                        "text-sm font-medium",
-                        isLightTheme ? "text-slate-600" : "text-foreground",
+                        "font-medium text-sm",
+                        isLightTheme ? "text-slate-600" : "text-foreground"
                       )}
                     >
                       Processing...
@@ -297,31 +296,29 @@ export function ActivityTimeline({
                   </div>
                 )}
               </div>
-            ) : !isLoading ? (
+            ) : isLoading ? null : (
               <div
                 className={cn(
-                  "flex flex-col items-center justify-center h-20",
-                  "text-center",
+                  "flex h-20 flex-col items-center justify-center",
+                  "text-center"
                 )}
               >
                 <Activity
                   className={cn(
-                    "h-5 w-5 mb-2",
-                    isLightTheme
-                      ? "text-slate-400"
-                      : "text-muted-foreground/50",
+                    "mb-2 h-5 w-5",
+                    isLightTheme ? "text-slate-400" : "text-muted-foreground/50"
                   )}
                 />
                 <p
                   className={cn(
                     "text-xs",
-                    isLightTheme ? "text-slate-500" : "text-muted-foreground",
+                    isLightTheme ? "text-slate-500" : "text-muted-foreground"
                   )}
                 >
                   Timeline updates during processing
                 </p>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       )}

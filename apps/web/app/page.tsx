@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth";
-import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAuthStore } from "@/lib/stores/auth";
 
 export default function Home() {
   const { user, isInitialized, refreshUser } = useAuthStore();
@@ -25,21 +25,23 @@ export default function Home() {
   }, [isInitialized, user, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="flex flex-col items-center gap-4"
+        initial={{ opacity: 0, scale: 0.9 }}
       >
         <div className="relative">
           <Loader2 className="size-12 animate-spin text-primary" />
-          <div className="absolute inset-0 blur-xl bg-primary/30 rounded-full animate-pulse" />
+          <div className="absolute inset-0 animate-pulse rounded-full bg-primary/30 blur-xl" />
         </div>
         <div className="text-center">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent font-display tracking-tight">
+          <h1 className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text font-bold font-display text-2xl text-transparent tracking-tight">
             Horizon
           </h1>
-          <p className="text-muted-foreground text-sm font-accent italic">Loading...</p>
+          <p className="font-accent text-muted-foreground text-sm italic">
+            Loading...
+          </p>
         </div>
       </motion.div>
     </div>

@@ -1,26 +1,14 @@
 "use client";
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo,
-  memo,
-} from "react";
-import {
-  Plus,
-  Wrench,
-  SlidersHorizontal,
-  Paperclip,
-  LinkIcon,
-  Send,
-  Mic,
-  Loader2,
-  Terminal,
-} from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import { GradientButton } from "@workspace/ui/components/gradient-button";
 import { Textarea } from "@workspace/ui/components/textarea";
 import {
@@ -29,21 +17,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@workspace/ui/components/dropdown-menu";
 import { cn } from "@workspace/ui/lib/utils";
-import { useClipboardPaste } from "@/hooks/use-clipboard-paste";
 import {
-  processFiles,
-  formatFileSize,
-  type AttachedFile,
-} from "@/lib/file-processing";
+  LinkIcon,
+  Loader2,
+  Mic,
+  Paperclip,
+  Plus,
+  Send,
+  SlidersHorizontal,
+  Terminal,
+  Wrench,
+} from "lucide-react";
+import type React from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useClipboardPaste } from "@/hooks/use-clipboard-paste";
+import { type AttachedFile, processFiles } from "@/lib/file-processing";
 
 // Re-export for backward compatibility
 export type { AttachedFile };
@@ -116,11 +106,13 @@ export const ChatInput = memo(function ChatInput({
       const newHeight = Math.min(el.scrollHeight, 120);
       el.style.height = `${newHeight}px`;
     }
-  }, [text]);
+  }, []);
 
   const handleSubmit = useCallback(() => {
     const trimmed = text.trim();
-    if (!trimmed || disabled) return;
+    if (!trimmed || disabled) {
+      return;
+    }
     onSubmit(trimmed, attachedFiles);
     setText("");
     onAttachedFilesChange([]);
@@ -133,13 +125,15 @@ export const ChatInput = memo(function ChatInput({
         handleSubmit();
       }
     },
-    [handleSubmit],
+    [handleSubmit]
   );
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
-      if (!files) return;
+      if (!files) {
+        return;
+      }
 
       const { validFiles, errors } = processFiles(Array.from(files));
 
@@ -151,44 +145,44 @@ export const ChatInput = memo(function ChatInput({
       if (validFiles.length > 0) {
         onAttachedFilesChange([...attachedFiles, ...validFiles]);
         toast.success(
-          `Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`,
+          `Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`
         );
       }
 
       e.target.value = "";
     },
-    [attachedFiles, onAttachedFilesChange],
+    [attachedFiles, onAttachedFilesChange]
   );
 
-  const removeFile = useCallback(
+  const _removeFile = useCallback(
     (fileId: string) => {
       onAttachedFilesChange(attachedFiles.filter((f) => f.id !== fileId));
     },
-    [attachedFiles, onAttachedFilesChange],
+    [attachedFiles, onAttachedFilesChange]
   );
 
   const wordCount = useMemo(
     () => text.trim().split(/\s+/).filter(Boolean).length,
-    [text],
+    [text]
   );
 
   return (
     <div className="flex flex-col gap-3">
       {/* Textarea */}
       <Textarea
-        ref={textareaRef}
-        value={text}
+        className="max-h-[120px] min-h-[44px] resize-none overflow-y-auto overflow-x-hidden border-0 bg-transparent py-3 focus-visible:ring-0"
+        disabled={disabled}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         placeholder={placeholder}
-        disabled={disabled}
+        ref={textareaRef}
         rows={1}
-        className="min-h-[44px] max-h-[120px] py-3 resize-none bg-transparent border-0 focus-visible:ring-0 overflow-x-hidden overflow-y-auto"
+        value={text}
       />
 
       {/* Bottom Bar */}
-      <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/50">
+      <div className="flex items-center justify-between gap-3 border-border/50 border-t pt-2">
         {/* Left side - All Control Buttons */}
         <div className="flex items-center gap-1">
           <TooltipProvider>
@@ -198,9 +192,9 @@ export const ChatInput = memo(function ChatInput({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant="ghost"
+                      className="transition-transform duration-200 hover:scale-110"
                       size="icon-sm"
-                      className="hover:scale-110 transition-transform duration-200"
+                      variant="ghost"
                     >
                       <Plus className="size-4" />
                     </Button>
@@ -209,17 +203,17 @@ export const ChatInput = memo(function ChatInput({
                     <DropdownMenuItem
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <Paperclip className="size-4 mr-2" />
+                      <Paperclip className="mr-2 size-4" />
                       Upload File
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <LinkIcon className="size-4 mr-2" />
+                      <LinkIcon className="mr-2 size-4" />
                       Add URL
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TooltipTrigger>
-              <TooltipContent side="top" className="z-100 animate-scale-in">
+              <TooltipContent className="z-100 animate-scale-in" side="top">
                 <p>Attach files</p>
               </TooltipContent>
             </Tooltip>
@@ -228,14 +222,14 @@ export const ChatInput = memo(function ChatInput({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="ghost"
+                  className="transition-transform duration-200 hover:scale-110"
                   size="icon-sm"
-                  className="hover:scale-110 transition-transform duration-200"
+                  variant="ghost"
                 >
                   <Wrench className="size-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="z-100 animate-scale-in">
+              <TooltipContent className="z-100 animate-scale-in" side="top">
                 <p>Tools</p>
               </TooltipContent>
             </Tooltip>
@@ -244,10 +238,10 @@ export const ChatInput = memo(function ChatInput({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="hover:scale-110 transition-transform duration-200"
+                  className="transition-transform duration-200 hover:scale-110"
                   onClick={onToggleToolCalls}
+                  size="icon-sm"
+                  variant="ghost"
                 >
                   <Terminal
                     className={cn(
@@ -256,12 +250,12 @@ export const ChatInput = memo(function ChatInput({
                         ? "text-primary"
                         : isLightTheme
                           ? "text-slate-400"
-                          : "text-muted-foreground",
+                          : "text-muted-foreground"
                     )}
                   />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="z-100 animate-scale-in">
+              <TooltipContent className="z-100 animate-scale-in" side="top">
                 <p>Tool Calls {showToolCalls ? "On" : "Off"}</p>
               </TooltipContent>
             </Tooltip>
@@ -270,15 +264,15 @@ export const ChatInput = memo(function ChatInput({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="ghost"
-                  size="icon-sm"
+                  className="transition-transform duration-200 hover:scale-110"
                   onClick={onSettingsOpen}
-                  className="hover:scale-110 transition-transform duration-200"
+                  size="icon-sm"
+                  variant="ghost"
                 >
                   <SlidersHorizontal className="size-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="z-100 animate-scale-in">
+              <TooltipContent className="z-100 animate-scale-in" side="top">
                 <p>Settings</p>
               </TooltipContent>
             </Tooltip>
@@ -292,16 +286,16 @@ export const ChatInput = memo(function ChatInput({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="ghost"
+                  className="h-7 text-xs transition-transform duration-200 hover:scale-105"
                   size="sm"
-                  className="h-7 text-xs hover:scale-105 transition-transform duration-200"
+                  variant="ghost"
                 >
                   {selectedModel}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-48 z-100 animate-scale-in"
+                className="z-100 w-48 animate-scale-in"
               >
                 {Object.entries(modelGroups).map(([group, models]) => (
                   <div key={group}>
@@ -326,48 +320,48 @@ export const ChatInput = memo(function ChatInput({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="ghost"
+                  className="transition-transform duration-200 hover:scale-110"
                   size="icon-sm"
-                  className="hover:scale-110 transition-transform duration-200"
+                  variant="ghost"
                 >
                   <Mic className="size-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="z-100 animate-scale-in">
+              <TooltipContent className="z-100 animate-scale-in" side="top">
                 <p>Voice input</p>
               </TooltipContent>
             </Tooltip>
 
-            <div className="w-px h-5 bg-border/50" />
+            <div className="h-5 w-px bg-border/50" />
 
             {/* Word count */}
-            <span className="text-xs text-muted-foreground min-w-[60px] text-right">
+            <span className="min-w-[60px] text-right text-muted-foreground text-xs">
               {wordCount} words
             </span>
 
             {/* Send/Stop button */}
             {isLoading ? (
               <Button
-                variant="ghost"
-                size="sm"
+                className="h-9 bg-destructive/10 px-4 text-destructive hover:bg-destructive/20"
                 onClick={onStop}
-                className="h-9 px-4 bg-destructive/10 text-destructive hover:bg-destructive/20"
+                size="sm"
+                variant="ghost"
               >
-                <Loader2 className="size-4 mr-1 animate-spin" />
+                <Loader2 className="mr-1 size-4 animate-spin" />
                 Stop
               </Button>
             ) : (
               <GradientButton
-                height={9}
-                width={9}
-                useThemeGradient
-                onClick={handleSubmit}
+                className="p-0 text-white"
                 disabled={!text.trim()}
                 glowIntensity="high"
-                radius="full"
-                iconOnly
-                className="p-0 text-white"
+                height={9}
                 icon={<Send className="size-4" />}
+                iconOnly
+                onClick={handleSubmit}
+                radius="full"
+                useThemeGradient
+                width={9}
               />
             )}
           </TooltipProvider>
@@ -375,11 +369,11 @@ export const ChatInput = memo(function ChatInput({
       </div>
 
       <input
+        className="hidden"
+        multiple
+        onChange={handleFileChange}
         ref={fileInputRef}
         type="file"
-        multiple
-        className="hidden"
-        onChange={handleFileChange}
       />
     </div>
   );

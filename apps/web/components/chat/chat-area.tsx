@@ -1,39 +1,30 @@
 "use client";
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo,
-} from "react";
+import type { Message as LangGraphMessage } from "@langchain/langgraph-sdk";
 import { cn } from "@workspace/ui/lib/utils";
-import type { Message, AttachedFile } from "./chat-interface";
-import type {
-  Message as LangGraphMessage,
-} from "@langchain/langgraph-sdk";
-import {
-  useChat,
-  ProcessedEvent as ChatProcessedEvent,
-  type UseChatOptions,
-  type ChatError,
-} from "@/lib/chat";
-import { useChatSettings } from "@/lib/stores/chat-settings";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useTheme } from "@/components/theme/theme-provider";
+import {
+  type ChatError,
+  type ProcessedEvent as ChatProcessedEvent,
+  type UseChatOptions,
+  useChat,
+} from "@/lib/chat";
+import { useAuthStore } from "@/lib/stores/auth";
+import { useChatSettings } from "@/lib/stores/chat-settings";
 import { createThreadsClient } from "@/lib/threads";
 import { generateConversationTitle } from "@/lib/title-utils";
-import { useAuthStore } from "@/lib/stores/auth";
-import { toast } from "sonner";
-import type { ToolCall } from "./tool-call-message";
 import { getToolUIConfig } from "@/lib/tool-config";
-
-// Extracted components
-import { groupMessages, type MessageGroup as MessageGroupType } from "./message-grouping";
 import { ChatEmptyState } from "./chat-empty-state";
+import type { AttachedFile as ChatInputAttachedFile } from "./chat-input";
+import { ChatInputArea } from "./chat-input-area";
+import type { AttachedFile, Message } from "./chat-interface";
 import { ChatLoadingIndicator } from "./chat-loading-indicator";
 import { MessageGroup } from "./message-group";
-import { ChatInputArea } from "./chat-input-area";
-import type { AttachedFile as ChatInputAttachedFile } from "./chat-input";
+// Extracted components
+import { groupMessages } from "./message-grouping";
+import type { ToolCall } from "./tool-call-message";
 
 // ============================================================================
 // MAIN CHAT AREA
@@ -66,13 +57,9 @@ export function ChatArea({
   const { user } = useAuthStore();
 
   const [chatError, setChatError] = useState<string | null>(null);
-  const [liveActivityEvents, setLiveActivityEvents] = useState<
-    ChatProcessedEvent[]
-  >([]);
+  const [liveActivityEvents, setLiveActivityEvents] = useState<ChatProcessedEvent[]>([]);
   const [currentToolCalls, setCurrentToolCalls] = useState<ToolCall[]>([]);
-  const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(
-    new Set(),
-  );
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
 
   // Thread ID handler
   const handleThreadId = useCallback(
@@ -81,7 +68,7 @@ export function ChatArea({
         onThreadChange?.(newId);
       }
     },
-    [threadId, onThreadChange],
+    [threadId, onThreadChange]
   );
 
   // Error handler
@@ -106,7 +93,7 @@ export function ChatArea({
                 status: "loading" as const,
                 namespace: toolConfig.namespace,
               };
-            },
+            }
           );
           setCurrentToolCalls((prev) => [...prev, ...calls]);
         }
@@ -135,14 +122,13 @@ export function ChatArea({
         }
       }
     },
-    [settings.showToolCalls],
+    [settings.showToolCalls]
   );
 
   // Chat options
   const chatOptions = useMemo<UseChatOptions>(
     () => ({
-      apiUrl:
-        process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
+      apiUrl: process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
       assistantId: "agent",
       threadId: threadId ?? undefined,
       userId: user?.id,
@@ -151,7 +137,7 @@ export function ChatArea({
       onEvent: handleEvent,
       fetchStateHistory: true,
     }),
-    [threadId, user?.id, handleThreadId, handleError, handleEvent],
+    [threadId, user?.id, handleThreadId, handleError, handleEvent]
   );
 
   // Initialize chat hook
@@ -187,7 +173,7 @@ export function ChatArea({
       top: chatContainerRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messageGroups.length]);
+  }, []);
 
   // ============================================================================
   // MESSAGE ACTIONS
@@ -207,17 +193,15 @@ export function ChatArea({
       const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
 
       if (!isLastGroup) {
-        const confirmMsg = `This will replace all messages after this point. This action cannot be undone.`;
+        const confirmMsg =
+          "This will replace all messages after this point. This action cannot be undone.";
         if (!window.confirm(confirmMsg)) {
           return;
         }
       }
 
       if (parentCheckpoint) {
-        chat.submit(
-          { messages: [{ type: "human", content }] },
-          { checkpoint: parentCheckpoint },
-        );
+        chat.submit({ messages: [{ type: "human", content }] }, { checkpoint: parentCheckpoint });
         if (isLastGroup) {
           toast.success("Created new branch from edited message");
         } else {
@@ -225,15 +209,13 @@ export function ChatArea({
         }
       } else if (messageIndex === 0) {
         chat.submit({ messages: [{ type: "human", content }] });
-        toast.success(
-          isLastGroup ? "Message updated" : "Replacing conversation",
-        );
+        toast.success(isLastGroup ? "Message updated" : "Replacing conversation");
       } else {
         toast.error("Unable to edit: No checkpoint available");
         console.error("Missing checkpoint for message:", liveMessage);
       }
     },
-    [chat],
+    [chat]
   );
 
   const handleRegenerate = useCallback(
@@ -248,7 +230,8 @@ export function ChatArea({
       const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
 
       if (!isLastGroup) {
-        const confirmMsg = `This will replace all messages after this point. This action cannot be undone.`;
+        const confirmMsg =
+          "This will replace all messages after this point. This action cannot be undone.";
         if (!window.confirm(confirmMsg)) {
           return;
         }
@@ -265,14 +248,14 @@ export function ChatArea({
         toast.error("Unable to regenerate: No checkpoint available");
       }
     },
-    [chat],
+    [chat]
   );
 
   const handleBranchChange = useCallback(
     (branch: string) => {
       chat.setBranch(branch);
     },
-    [chat],
+    [chat]
   );
 
   const handleDelete = useCallback(
@@ -284,11 +267,11 @@ export function ChatArea({
       });
       onMessagesChange(messages.filter((m) => m.id !== id));
     },
-    [messages, onMessagesChange],
+    [messages, onMessagesChange]
   );
 
   const handleSubmit = useCallback(
-    async (text: string, files: ChatInputAttachedFile[]) => {
+    async (text: string, _files: ChatInputAttachedFile[]) => {
       const newMessage = { type: "human" as const, content: text };
 
       const submitOptions: Record<string, any> = {
@@ -308,22 +291,18 @@ export function ChatArea({
       chat.submit({ messages: [newMessage] }, submitOptions);
       onAttachedFilesChange([]);
 
-      if (
-        chat.threadId &&
-        chat.messages.filter((m) => m.type !== "system").length === 0
-      ) {
+      if (chat.threadId && chat.messages.filter((m) => m.type !== "system").length === 0) {
         try {
           const client = createThreadsClient(
-            process.env.NEXT_PUBLIC_LANGGRAPH_API_URL ||
-            "http://localhost:2024",
+            process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024"
           );
           client.updateThread(chat.threadId, {
             title: generateConversationTitle(text),
           });
-        } catch { }
+        } catch {}
       }
     },
-    [chat, onAttachedFilesChange],
+    [chat, onAttachedFilesChange]
   );
 
   const handleStop = useCallback(() => {
@@ -334,7 +313,7 @@ export function ChatArea({
     (fileId: string) => {
       onAttachedFilesChange(attachedFiles.filter((f) => f.id !== fileId));
     },
-    [attachedFiles, onAttachedFilesChange],
+    [attachedFiles, onAttachedFilesChange]
   );
 
   // ============================================================================
@@ -343,40 +322,25 @@ export function ChatArea({
 
   const hasMessages = messageGroups.length > 0;
   const showLoading =
-    chat.isLoading &&
-    (chat.messages.length === 0 ||
-      chat.messages[chat.messages.length - 1]?.type === "human");
+    chat.isLoading && (chat.messages.length === 0 || chat.messages.at(-1)?.type === "human");
 
   return (
-    <div className="flex-1 flex flex-col relative z-10">
+    <div className="relative z-10 flex flex-1 flex-col">
       {/* Messages Container */}
       <div
-        ref={chatContainerRef}
         className={cn(
-          "flex-1 overflow-y-auto custom-scrollbar",
-          hasMessages ? "p-4" : "flex items-center justify-center",
+          "custom-scrollbar flex-1 overflow-y-auto",
+          hasMessages ? "p-4" : "flex items-center justify-center"
         )}
+        ref={chatContainerRef}
       >
-        {!hasMessages ? (
-          <ChatEmptyState
-            attachedFiles={attachedFiles}
-            onSubmit={handleSubmit}
-            onStop={handleStop}
-            isLoading={chat.isLoading}
-            onSettingsOpen={onSettingsOpen}
-            showToolCalls={settings.showToolCalls}
-            onToggleToolCalls={toggleShowToolCalls}
-            isLightTheme={isLightTheme}
-            onAttachedFilesChange={onAttachedFilesChange}
-            onRemoveFile={handleRemoveFile}
-          />
-        ) : (
+        {hasMessages ? (
           // Messages List - Render by Groups
-          <div className="max-w-4xl mx-auto w-full space-y-6">
+          <div className="mx-auto w-full max-w-4xl space-y-6">
             {/* Error Display */}
             {chatError && (
               <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-                <p className="text-sm font-medium">Error</p>
+                <p className="font-medium text-sm">Error</p>
                 <p className="text-xs opacity-80">{chatError}</p>
               </div>
             )}
@@ -387,20 +351,20 @@ export function ChatArea({
 
               return (
                 <MessageGroup
-                  key={group.id}
-                  id={group.id}
-                  userMessage={group.userMessage}
                   assistantMessage={group.assistantMessage}
-                  toolCalls={group.toolCalls}
-                  isLastGroup={isLastGroup}
                   branch={group.branch}
                   branchOptions={group.branchOptions}
+                  id={group.id}
+                  isLastGroup={isLastGroup}
                   isLoading={chat.isLoading}
-                  showToolCalls={settings.showToolCalls}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onRegenerate={handleRegenerate}
+                  key={group.id}
                   onBranchChange={handleBranchChange}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                  onRegenerate={handleRegenerate}
+                  showToolCalls={settings.showToolCalls}
+                  toolCalls={group.toolCalls}
+                  userMessage={group.userMessage}
                 />
               );
             })}
@@ -408,14 +372,27 @@ export function ChatArea({
             {/* Loading Indicator */}
             {showLoading && (
               <ChatLoadingIndicator
-                isLightTheme={isLightTheme}
-                showToolCalls={settings.showToolCalls}
-                showActivityTimeline={settings.showActivityTimeline}
                 currentToolCalls={currentToolCalls}
+                isLightTheme={isLightTheme}
                 liveActivityEvents={liveActivityEvents}
+                showActivityTimeline={settings.showActivityTimeline}
+                showToolCalls={settings.showToolCalls}
               />
             )}
           </div>
+        ) : (
+          <ChatEmptyState
+            attachedFiles={attachedFiles}
+            isLightTheme={isLightTheme}
+            isLoading={chat.isLoading}
+            onAttachedFilesChange={onAttachedFilesChange}
+            onRemoveFile={handleRemoveFile}
+            onSettingsOpen={onSettingsOpen}
+            onStop={handleStop}
+            onSubmit={handleSubmit}
+            onToggleToolCalls={toggleShowToolCalls}
+            showToolCalls={settings.showToolCalls}
+          />
         )}
       </div>
 
@@ -423,15 +400,15 @@ export function ChatArea({
       {hasMessages && (
         <ChatInputArea
           attachedFiles={attachedFiles}
-          onSubmit={handleSubmit}
-          onStop={handleStop}
-          isLoading={chat.isLoading}
-          onSettingsOpen={onSettingsOpen}
-          showToolCalls={settings.showToolCalls}
-          onToggleToolCalls={toggleShowToolCalls}
           isLightTheme={isLightTheme}
+          isLoading={chat.isLoading}
           onAttachedFilesChange={onAttachedFilesChange}
           onRemoveFile={handleRemoveFile}
+          onSettingsOpen={onSettingsOpen}
+          onStop={handleStop}
+          onSubmit={handleSubmit}
+          onToggleToolCalls={toggleShowToolCalls}
+          showToolCalls={settings.showToolCalls}
         />
       )}
     </div>

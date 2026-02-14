@@ -56,23 +56,23 @@ interface AssistantsState {
   createAssistant: (
     apiUrl: string,
     userId: string,
-    data: CreateAssistantData,
+    data: CreateAssistantData
   ) => Promise<Assistant>;
   updateAssistant: (
     apiUrl: string,
     userId: string,
     id: string,
-    data: Partial<CreateAssistantData>,
+    data: Partial<CreateAssistantData>
   ) => Promise<void>;
   deleteAssistant: (
     apiUrl: string,
     userId: string,
-    id: string,
+    id: string
   ) => Promise<void>;
   setDefaultAssistant: (
     apiUrl: string,
     userId: string,
-    id: string,
+    id: string
   ) => Promise<void>;
   selectAssistant: (assistant: Assistant | null) => void;
   setViewMode: (mode: AssistantViewMode) => void;
@@ -94,9 +94,11 @@ export const useAssistantsStore = create<AssistantsState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await fetch(
-            `${apiUrl}/assistants?user_id=${userId}&include_public=true`,
+            `${apiUrl}/assistants?user_id=${userId}&include_public=true`
           );
-          if (!response.ok) throw new Error("Failed to fetch assistants");
+          if (!response.ok) {
+            throw new Error("Failed to fetch assistants");
+          }
           const assistants = await response.json();
           set({ assistants, isLoading: false });
         } catch (error) {
@@ -107,14 +109,16 @@ export const useAssistantsStore = create<AssistantsState>()(
       createAssistant: async (
         apiUrl: string,
         userId: string,
-        data: CreateAssistantData,
+        data: CreateAssistantData
       ) => {
         const response = await fetch(`${apiUrl}/assistants?user_id=${userId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        if (!response.ok) throw new Error("Failed to create assistant");
+        if (!response.ok) {
+          throw new Error("Failed to create assistant");
+        }
         const assistant = await response.json();
         set((state) => ({ assistants: [...state.assistants, assistant] }));
         return assistant;
@@ -124,7 +128,7 @@ export const useAssistantsStore = create<AssistantsState>()(
         apiUrl: string,
         userId: string,
         id: string,
-        data: Partial<CreateAssistantData>,
+        data: Partial<CreateAssistantData>
       ) => {
         const response = await fetch(
           `${apiUrl}/assistants/${id}?user_id=${userId}`,
@@ -132,9 +136,11 @@ export const useAssistantsStore = create<AssistantsState>()(
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
-          },
+          }
         );
-        if (!response.ok) throw new Error("Failed to update assistant");
+        if (!response.ok) {
+          throw new Error("Failed to update assistant");
+        }
         const updated = await response.json();
         set((state) => ({
           assistants: state.assistants.map((a) => (a.id === id ? updated : a)),
@@ -146,9 +152,11 @@ export const useAssistantsStore = create<AssistantsState>()(
           `${apiUrl}/assistants/${id}?user_id=${userId}`,
           {
             method: "DELETE",
-          },
+          }
         );
-        if (!response.ok) throw new Error("Failed to delete assistant");
+        if (!response.ok) {
+          throw new Error("Failed to delete assistant");
+        }
         set((state) => ({
           assistants: state.assistants.filter((a) => a.id !== id),
           selectedAssistant:
@@ -159,15 +167,17 @@ export const useAssistantsStore = create<AssistantsState>()(
       setDefaultAssistant: async (
         apiUrl: string,
         userId: string,
-        id: string,
+        id: string
       ) => {
         const response = await fetch(
           `${apiUrl}/assistants/${id}/default?user_id=${userId}`,
           {
             method: "POST",
-          },
+          }
         );
-        if (!response.ok) throw new Error("Failed to set default assistant");
+        if (!response.ok) {
+          throw new Error("Failed to set default assistant");
+        }
         set((state) => ({
           assistants: state.assistants.map((a) => ({
             ...a,
@@ -198,6 +208,6 @@ export const useAssistantsStore = create<AssistantsState>()(
         viewMode: state.viewMode,
         sortBy: state.sortBy,
       }),
-    },
-  ),
+    }
+  )
 );

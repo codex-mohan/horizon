@@ -1,13 +1,13 @@
-import { AgentState } from "../state.js";
-import { RunnableConfig } from "@langchain/core/runnables";
-import { SystemMessage, BaseMessage } from "@langchain/core/messages";
-import { createLLM } from "../../lib/llm.js";
+import { type BaseMessage, SystemMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { agentConfig } from "../../lib/config.js";
+import { createLLM } from "../../lib/llm.js";
+import type { AgentState } from "../state.js";
 import { tools } from "../tools/index.js";
 
 export async function AgentNode(
   state: AgentState,
-  config: RunnableConfig,
+  _config: RunnableConfig
 ): Promise<Partial<AgentState>> {
   console.log("[AgentNode] Processing...");
 
@@ -39,7 +39,7 @@ export async function AgentNode(
 
   let messages = state.messages;
   const hasSystemPrompt = messages.some(
-    (msg: BaseMessage) => msg._getType() === "system",
+    (msg: BaseMessage) => msg._getType() === "system"
   );
 
   if (!hasSystemPrompt) {
@@ -50,7 +50,7 @@ export async function AgentNode(
     if (Array.isArray(msg.content)) {
       const textContent = msg.content
         .map((c: any) =>
-          typeof c === "string" ? c : c.type === "text" ? c.text : "",
+          typeof c === "string" ? c : c.type === "text" ? c.text : ""
         )
         .join("\n");
       const newMsg = Object.create(Object.getPrototypeOf(msg));

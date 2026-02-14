@@ -1,14 +1,14 @@
 import { Suspense } from "react";
 
 export const metadata = {
-    title: "Sign In - Horizon",
-    description: "Sign in to your Horizon account",
+  title: "Sign In - Horizon",
+  description: "Sign in to your Horizon account",
 };
 
 export default function AuthLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-    return <Suspense fallback={null}>{children}</Suspense>;
+  return <Suspense fallback={null}>{children}</Suspense>;
 }

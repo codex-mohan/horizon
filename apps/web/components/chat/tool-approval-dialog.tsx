@@ -1,17 +1,6 @@
 "use client";
 
-import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  AlertTriangle,
-  Terminal,
-  Shield,
-  CheckCircle2,
-  XCircle,
-  Info,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Button } from "@workspace/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -20,8 +9,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog";
-import { Button } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  Shield,
+  Terminal,
+  XCircle,
+} from "lucide-react";
+import React from "react";
 
 export interface ToolApprovalData {
   type: "tool_approval_required";
@@ -67,8 +67,12 @@ function getToolRiskLevel(toolName: string): "low" | "medium" | "high" {
   ];
   const mediumRiskTools = ["file_read", "fetch_url_content", "search_web"];
 
-  if (highRiskTools.includes(toolName)) return "high";
-  if (mediumRiskTools.includes(toolName)) return "medium";
+  if (highRiskTools.includes(toolName)) {
+    return "high";
+  }
+  if (mediumRiskTools.includes(toolName)) {
+    return "medium";
+  }
   return "low";
 }
 
@@ -94,11 +98,13 @@ export function ToolApprovalDialog({
   const [rejectionReason, setRejectionReason] = React.useState("");
   const [isRejecting, setIsRejecting] = React.useState(false);
 
-  if (!data) return null;
+  if (!data) {
+    return null;
+  }
 
   const toolCall = data.tool_call;
   const riskLevel = getToolRiskLevel(toolCall.name);
-  const allTools = [...data.all_pending_tools, ...data.auto_execute_tools];
+  const _allTools = [...data.all_pending_tools, ...data.auto_execute_tools];
 
   const riskConfig = {
     high: {
@@ -141,20 +147,20 @@ export function ToolApprovalDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog onOpenChange={() => {}} open={isOpen}>
       <DialogContent
         className={cn("sm:max-w-lg", "border-2", risk.borderColor, className)}
       >
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className={cn("p-2 rounded-lg", risk.bgColor, risk.color)}>
+            <div className={cn("rounded-lg p-2", risk.bgColor, risk.color)}>
               <RiskIcon className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold">
+              <DialogTitle className="font-semibold text-lg">
                 Tool Execution Request
               </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground">
+              <DialogDescription className="text-muted-foreground text-sm">
                 The agent wants to execute a tool that requires your approval
               </DialogDescription>
             </div>
@@ -165,9 +171,9 @@ export function ToolApprovalDialog({
           {/* Risk Level Badge */}
           <div
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+              "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
               risk.bgColor,
-              risk.color,
+              risk.color
             )}
           >
             <span className="font-medium">{risk.label}</span>
@@ -183,10 +189,10 @@ export function ToolApprovalDialog({
             </div>
 
             {/* Arguments Preview */}
-            <div className="bg-muted/50 rounded-lg p-3">
+            <div className="rounded-lg bg-muted/50 p-3">
               <button
+                className="flex w-full items-center justify-between text-sm"
                 onClick={() => setShowDetails(!showDetails)}
-                className="flex items-center justify-between w-full text-sm"
               >
                 <span className="font-medium">Arguments</span>
                 {showDetails ? (
@@ -198,32 +204,32 @@ export function ToolApprovalDialog({
               <AnimatePresence>
                 {showDetails && (
                   <motion.pre
-                    initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
+                    className="mt-2 max-h-48 overflow-auto rounded bg-background/50 p-2 font-mono text-xs"
                     exit={{ height: 0, opacity: 0 }}
-                    className="mt-2 text-xs overflow-auto max-h-48 bg-background/50 rounded p-2 font-mono"
+                    initial={{ height: 0, opacity: 0 }}
                   >
                     {formatArgs(toolCall.args)}
                   </motion.pre>
                 )}
               </AnimatePresence>
               {!showDetails && (
-                <p className="mt-1 text-xs text-muted-foreground truncate">
+                <p className="mt-1 truncate text-muted-foreground text-xs">
                   {Object.keys(toolCall.args).join(", ")}
                 </p>
               )}
             </div>
 
             {/* Message */}
-            <p className="text-sm text-muted-foreground">{data.message}</p>
+            <p className="text-muted-foreground text-sm">{data.message}</p>
 
             {/* All Pending Tools */}
             {data.all_pending_tools.length > 1 && (
-              <div className="text-xs text-muted-foreground">
-                <p className="font-medium mb-1">
+              <div className="text-muted-foreground text-xs">
+                <p className="mb-1 font-medium">
                   Additional tools waiting for approval:
                 </p>
-                <ul className="list-disc list-inside space-y-0.5">
+                <ul className="list-inside list-disc space-y-0.5">
                   {data.all_pending_tools.slice(1).map((tool) => (
                     <li key={tool.id}>{tool.name}</li>
                   ))}
@@ -233,11 +239,11 @@ export function ToolApprovalDialog({
 
             {/* Auto-execute Tools */}
             {data.auto_execute_tools.length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                <p className="font-medium mb-1">
+              <div className="text-muted-foreground text-xs">
+                <p className="mb-1 font-medium">
                   Tools that will auto-execute:
                 </p>
-                <ul className="list-disc list-inside space-y-0.5">
+                <ul className="list-inside list-disc space-y-0.5">
                   {data.auto_execute_tools.map((tool) => (
                     <li key={tool.id}>{tool.name}</li>
                   ))}
@@ -250,19 +256,19 @@ export function ToolApprovalDialog({
           <AnimatePresence>
             {isRejecting && (
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
                 className="space-y-2"
+                exit={{ height: 0, opacity: 0 }}
+                initial={{ height: 0, opacity: 0 }}
               >
-                <label className="text-sm font-medium">
+                <label className="font-medium text-sm">
                   Reason for rejection (optional)
                 </label>
                 <textarea
-                  value={rejectionReason}
+                  className="min-h-[80px] w-full resize-none rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="Explain why you're rejecting this tool execution..."
-                  className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  value={rejectionReason}
                 />
               </motion.div>
             )}
@@ -273,20 +279,20 @@ export function ToolApprovalDialog({
           {isRejecting ? (
             <>
               <Button
-                variant="outline"
+                className="gap-2"
                 onClick={() => {
                   setIsRejecting(false);
                   setRejectionReason("");
                 }}
-                className="gap-2"
+                variant="outline"
               >
                 <XCircle className="h-4 w-4" />
                 Cancel
               </Button>
               <Button
-                variant="destructive"
-                onClick={handleReject}
                 className="gap-2"
+                onClick={handleReject}
+                variant="destructive"
               >
                 <XCircle className="h-4 w-4" />
                 Reject Tool
@@ -295,14 +301,14 @@ export function ToolApprovalDialog({
           ) : (
             <>
               <Button
-                variant="outline"
-                onClick={handleReject}
                 className="gap-2"
+                onClick={handleReject}
+                variant="outline"
               >
                 <XCircle className="h-4 w-4" />
                 Reject
               </Button>
-              <Button onClick={onApprove} className="gap-2">
+              <Button className="gap-2" onClick={onApprove}>
                 <CheckCircle2 className="h-4 w-4" />
                 Approve
               </Button>

@@ -1,7 +1,7 @@
+import fs from "node:fs";
+import path from "node:path";
 import { Hono } from "hono";
 import { v4 as uuidv4 } from "uuid";
-import fs from "fs";
-import path from "path";
 import type { Assistant } from "./types.js";
 
 // Extend Hono context with db
@@ -15,7 +15,7 @@ interface Variables {
       create: (assistant: Assistant) => Assistant;
       update: (
         id: string,
-        updates: Partial<Assistant>,
+        updates: Partial<Assistant>
       ) => Assistant | undefined;
       delete: (id: string) => boolean;
       setDefault: (userId: string, assistantId: string) => boolean;
@@ -268,7 +268,7 @@ app.post("/:id/avatar", async (c) => {
         {
           error: "Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed",
         },
-        400,
+        400
       );
     }
 

@@ -1,39 +1,39 @@
 "use client";
 
-import { useEffect, createContext, useContext, type ReactNode } from "react";
-import { useAuthStore, type AuthUser } from "@/lib/stores/auth";
+import { createContext, type ReactNode, useContext, useEffect } from "react";
+import { type AuthUser, useAuthStore } from "@/lib/stores/auth";
 
 interface AuthContextValue {
-    user: AuthUser | null;
-    isLoading: boolean;
-    isInitialized: boolean;
+  user: AuthUser | null;
+  isLoading: boolean;
+  isInitialized: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue>({
-    user: null,
-    isLoading: false,
-    isInitialized: false,
+  user: null,
+  isLoading: false,
+  isInitialized: false,
 });
 
 export function useAuth() {
-    return useContext(AuthContext);
+  return useContext(AuthContext);
 }
 
 interface AuthProviderProps {
-    children: ReactNode;
+  children: ReactNode;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-    const { user, isLoading, isInitialized, refreshUser } = useAuthStore();
+  const { user, isLoading, isInitialized, refreshUser } = useAuthStore();
 
-    // Refresh user on mount
-    useEffect(() => {
-        refreshUser();
-    }, [refreshUser]);
+  // Refresh user on mount
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
 
-    return (
-        <AuthContext.Provider value={{ user, isLoading, isInitialized }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  return (
+    <AuthContext.Provider value={{ user, isLoading, isInitialized }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

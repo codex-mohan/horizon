@@ -80,9 +80,9 @@ export class ExitError extends ShellError {
   constructor(
     command: string,
     exitCode: number,
-    stderr: string = "",
-    stdout: string = "",
-    context: ErrorContext = {},
+    stderr = "",
+    stdout = "",
+    context: ErrorContext = {}
   ) {
     const message = stdout
       ? `Command failed with exit code ${exitCode}: ${command}\n\nSTDOUT:\n${stdout}\n\nSTDERR:\n${stderr}`

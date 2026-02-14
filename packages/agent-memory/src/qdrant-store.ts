@@ -1,9 +1,9 @@
 import { QdrantClient } from "@qdrant/js-client-rest";
 import type {
+  MemoryConfig,
   MemoryEntry,
   MemoryQuery,
   MemorySearchResult,
-  MemoryConfig,
   VectorPoint,
 } from "./types.js";
 
@@ -16,9 +16,9 @@ import type {
  * - Semantic search with filtering
  */
 export class QdrantStore {
-  private client: QdrantClient;
-  private config: MemoryConfig;
-  private initialized: boolean = false;
+  private readonly client: QdrantClient;
+  private readonly config: MemoryConfig;
+  private initialized = false;
 
   constructor(config: MemoryConfig) {
     this.config = {
@@ -37,17 +37,19 @@ export class QdrantStore {
    * Initialize the collection if it doesn't exist
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {
+      return;
+    }
 
     try {
       const collections = await this.client.getCollections();
       const exists = collections.collections.some(
-        (c: { name: string }) => c.name === this.config.collection_name,
+        (c: { name: string }) => c.name === this.config.collection_name
       );
 
       if (!exists) {
         console.log(
-          `[Qdrant] Creating collection: ${this.config.collection_name}`,
+          `[Qdrant] Creating collection: ${this.config.collection_name}`
         );
         await this.client.createCollection(this.config.collection_name, {
           vectors: {
@@ -133,7 +135,9 @@ export class QdrantStore {
         },
       }));
 
-    if (points.length === 0) return;
+    if (points.length === 0) {
+      return;
+    }
 
     await this.client.upsert(this.config.collection_name, {
       points,
@@ -145,7 +149,7 @@ export class QdrantStore {
    */
   async search(
     queryVector: number[],
-    query: MemoryQuery,
+    query: MemoryQuery
   ): Promise<MemorySearchResult[]> {
     await this.initialize();
 
@@ -208,7 +212,7 @@ export class QdrantStore {
   async getByThread(
     userId: string,
     threadId: string,
-    limit: number = 100,
+    limit = 100
   ): Promise<MemoryEntry[]> {
     await this.initialize();
 
@@ -263,7 +267,7 @@ export class QdrantStore {
   /**
    * Delete a specific memory
    */
-  async delete(userId: string, memoryId: string): Promise<void> {
+  async delete(_userId: string, memoryId: string): Promise<void> {
     await this.initialize();
 
     await this.client.delete(this.config.collection_name, {
@@ -281,7 +285,7 @@ export class QdrantStore {
       filter: {
         must: [{ key: "user_id", match: { value: userId } }],
       },
-      limit: 10000,
+      limit: 10_000,
     });
 
     const ids = results.points.map((p) => p.id);

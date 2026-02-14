@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { cn } from "@workspace/ui/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
-import { Terminal, ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
-import { ToolStatusBadge, ModernSpinner, ShimmerText } from "./loading-effects";
-import { getToolUIConfig } from "@/lib/tool-config";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, ChevronDown, ChevronUp, Copy, Terminal } from "lucide-react";
+import { useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
+import { getToolUIConfig } from "@/lib/tool-config";
+import { ModernSpinner, ShimmerText, ToolStatusBadge } from "./loading-effects";
 
 interface ShellToolProps {
   toolName: string;
@@ -54,32 +54,32 @@ export function ShellTool({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "rounded-xl overflow-hidden border shadow-2xl",
+        "overflow-hidden rounded-xl border shadow-2xl",
         isLight
-          ? "bg-card/95 border-border"
-          : "bg-slate-950/90 border-slate-800/50",
+          ? "border-border bg-card/95"
+          : "border-slate-800/50 bg-slate-950/90"
       )}
+      initial={{ opacity: 0, y: 10 }}
     >
       {/* Terminal Header */}
       <div
         className={cn(
-          "flex items-center justify-between px-4 py-2.5 border-b",
+          "flex items-center justify-between border-b px-4 py-2.5",
           isLight
-            ? "bg-muted/80 border-border"
-            : "bg-slate-900/80 border-slate-800/50",
+            ? "border-border bg-muted/80"
+            : "border-slate-800/50 bg-slate-900/80"
         )}
       >
         <div className="flex items-center gap-3">
-          <div className={cn("p-1.5 rounded-lg", config.icon.bgColor)}>
-            <Terminal className={cn("w-4 h-4", config.icon.color)} />
+          <div className={cn("rounded-lg p-1.5", config.icon.bgColor)}>
+            <Terminal className={cn("h-4 w-4", config.icon.color)} />
           </div>
           <span
             className={cn(
-              "text-sm font-medium",
-              isLight ? "text-foreground" : "text-slate-200",
+              "font-medium text-sm",
+              isLight ? "text-foreground" : "text-slate-200"
             )}
           >
             {config.displayName}
@@ -92,16 +92,16 @@ export function ShellTool({
             <span
               className={cn(
                 "text-xs",
-                isLight ? "text-muted-foreground" : "text-slate-500",
+                isLight ? "text-muted-foreground" : "text-slate-500"
               )}
             >
               {executionTime}s
             </span>
           )}
           <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-red-500/80" />
-            <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-            <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+            <div className="h-3 w-3 rounded-full bg-red-500/80" />
+            <div className="h-3 w-3 rounded-full bg-amber-500/80" />
+            <div className="h-3 w-3 rounded-full bg-emerald-500/80" />
           </div>
         </div>
       </div>
@@ -110,47 +110,47 @@ export function ShellTool({
       <div
         className={cn(
           "border-b",
-          isLight ? "border-border" : "border-slate-800/50",
+          isLight ? "border-border" : "border-slate-800/50"
         )}
       >
         <button
-          onClick={() => setShowArgs(!showArgs)}
           className={cn(
-            "w-full flex items-center justify-between px-4 py-2.5 text-xs transition-colors",
+            "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
             isLight
               ? "text-muted-foreground hover:text-foreground"
-              : "text-slate-400 hover:text-slate-300",
+              : "text-slate-400 hover:text-slate-300"
           )}
+          onClick={() => setShowArgs(!showArgs)}
         >
           <span className="font-medium uppercase tracking-wider">Command</span>
           {showArgs ? (
-            <ChevronUp className="w-3.5 h-3.5" />
+            <ChevronUp className="h-3.5 w-3.5" />
           ) : (
-            <ChevronDown className="w-3.5 h-3.5" />
+            <ChevronDown className="h-3.5 w-3.5" />
           )}
         </button>
 
         <AnimatePresence>
           {showArgs && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
+              exit={{ height: 0, opacity: 0 }}
+              initial={{ height: 0, opacity: 0 }}
             >
               <div className="px-4 pb-3">
-                <div className="relative group">
+                <div className="group relative">
                   <code
                     className={cn(
-                      "block p-3 rounded-lg text-sm font-mono border",
+                      "block rounded-lg border p-3 font-mono text-sm",
                       isLight
-                        ? "bg-muted/50 text-emerald-600 border-border"
-                        : "bg-slate-900/50 text-emerald-400 border-slate-800/50",
+                        ? "border-border bg-muted/50 text-emerald-600"
+                        : "border-slate-800/50 bg-slate-900/50 text-emerald-400"
                     )}
                   >
                     <span
                       className={cn(
-                        isLight ? "text-muted-foreground" : "text-slate-500",
+                        isLight ? "text-muted-foreground" : "text-slate-500"
                       )}
                     >
                       $
@@ -158,22 +158,22 @@ export function ShellTool({
                     {args.command || args.cmd || JSON.stringify(args)}
                   </code>
                   <button
-                    onClick={() =>
-                      handleCopy(
-                        args.command || args.cmd || JSON.stringify(args),
-                      )
-                    }
                     className={cn(
-                      "absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity",
+                      "absolute top-2 right-2 rounded-md p-1.5 opacity-0 transition-opacity group-hover:opacity-100",
                       isLight
                         ? "bg-muted text-muted-foreground hover:text-foreground"
-                        : "bg-slate-800/50 text-slate-400 hover:text-slate-200",
+                        : "bg-slate-800/50 text-slate-400 hover:text-slate-200"
                     )}
+                    onClick={() =>
+                      handleCopy(
+                        args.command || args.cmd || JSON.stringify(args)
+                      )
+                    }
                   >
                     {copied ? (
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="h-3.5 w-3.5" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="h-3.5 w-3.5" />
                     )}
                   </button>
                 </div>
@@ -187,77 +187,77 @@ export function ShellTool({
       {(result || error || isLoading) && (
         <div>
           <button
-            onClick={() => setShowResult(!showResult)}
             className={cn(
-              "w-full flex items-center justify-between px-4 py-2.5 text-xs transition-colors",
+              "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
               isLight
                 ? "text-muted-foreground hover:text-foreground"
-                : "text-slate-400 hover:text-slate-300",
+                : "text-slate-400 hover:text-slate-300"
             )}
+            onClick={() => setShowResult(!showResult)}
           >
             <span className="font-medium uppercase tracking-wider">
               {error ? "Error" : "Output"}
             </span>
             {showResult ? (
-              <ChevronUp className="w-3.5 h-3.5" />
+              <ChevronUp className="h-3.5 w-3.5" />
             ) : (
-              <ChevronDown className="w-3.5 h-3.5" />
+              <ChevronDown className="h-3.5 w-3.5" />
             )}
           </button>
 
           <AnimatePresence>
             {showResult && (
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
+                exit={{ height: 0, opacity: 0 }}
+                initial={{ height: 0, opacity: 0 }}
               >
                 <div className="px-4 pb-4">
                   {isLoading && !result && !error ? (
                     <div className="flex items-center gap-3 p-4">
                       <ModernSpinner size="sm" />
                       <ShimmerText
-                        text="Executing command..."
                         className={cn(
                           "text-sm",
-                          isLight ? "text-muted-foreground" : "text-slate-400",
+                          isLight ? "text-muted-foreground" : "text-slate-400"
                         )}
+                        text="Executing command..."
                       />
                     </div>
                   ) : error ? (
-                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                      <code className="text-sm font-mono text-destructive whitespace-pre-wrap">
+                    <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+                      <code className="whitespace-pre-wrap font-mono text-destructive text-sm">
                         {error}
                       </code>
                     </div>
                   ) : (
-                    <div className="relative group">
+                    <div className="group relative">
                       <pre
                         className={cn(
-                          "p-3 rounded-lg text-sm font-mono border overflow-auto",
+                          "overflow-auto rounded-lg border p-3 font-mono text-sm",
                           isLight
-                            ? "bg-muted/50 text-foreground border-border"
-                            : "bg-slate-900/50 text-slate-300 border-slate-800/50",
+                            ? "border-border bg-muted/50 text-foreground"
+                            : "border-slate-800/50 bg-slate-900/50 text-slate-300",
                           config.metadata?.maxResultHeight &&
-                            `max-h-[${config.metadata.maxResultHeight}]`,
+                            `max-h-[${config.metadata.maxResultHeight}]`
                         )}
                       >
                         <code className="whitespace-pre-wrap">{result}</code>
                       </pre>
                       <button
-                        onClick={() => result && handleCopy(result)}
                         className={cn(
-                          "absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity",
+                          "absolute top-2 right-2 rounded-md p-1.5 opacity-0 transition-opacity group-hover:opacity-100",
                           isLight
                             ? "bg-muted text-muted-foreground hover:text-foreground"
-                            : "bg-slate-800/50 text-slate-400 hover:text-slate-200",
+                            : "bg-slate-800/50 text-slate-400 hover:text-slate-200"
                         )}
+                        onClick={() => result && handleCopy(result)}
                       >
                         {copied ? (
-                          <Check className="w-3.5 h-3.5" />
+                          <Check className="h-3.5 w-3.5" />
                         ) : (
-                          <Copy className="w-3.5 h-3.5" />
+                          <Copy className="h-3.5 w-3.5" />
                         )}
                       </button>
                     </div>
