@@ -1,24 +1,55 @@
 import type { AIMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { END, START, StateGraph } from "@langchain/langgraph";
 import { FileSystemCheckpointer } from "./fs-checkpointer.js";
 import { AgentNode } from "./nodes/Agent.js";
 import { ApprovalGate } from "./nodes/ApprovalGate.js";
 import { EndMiddleware } from "./nodes/EndMiddleware.js";
 import { initializeMemory, MemoryRetrieval } from "./nodes/MemoryRetrieval.js";
-// Import nodes
 import { StartMiddleware } from "./nodes/StartMiddleware.js";
 import { ToolExecution } from "./nodes/ToolExecution.js";
-import { type AgentState, AgentStateAnnotation } from "./state.js";
+import { type AgentState, AgentStateAnnotation, type ToolApprovalConfig } from "./state.js";
+import { isDangerousTool } from "./tools/index.js";
 
-// Initialize memory on import
 initializeMemory();
 
-/**
- * Conditional: Does the agent want to use tools?
- */
-const shouldCheckApproval = (
-  state: AgentState
-): "ApprovalGate" | "EndMiddleware" => {
+function getToolApprovalConfig(config: RunnableConfig): ToolApprovalConfig {
+  const configurable = config.configurable as Record<string, unknown> | undefined;
+  return (
+    (configurable?.tool_approval as ToolApprovalConfig) || {
+      mode: "dangerous_only",
+      auto_approve_tools: [],
+      never_approve_tools: [],
+    }
+  );
+}
+
+function needsApproval(toolName: string, approvalConfig: ToolApprovalConfig): boolean {
+  const { mode, auto_approve_tools, never_approve_tools } = approvalConfig;
+
+  if (auto_approve_tools.includes(toolName)) {
+    return false;
+  }
+
+  if (never_approve_tools.includes(toolName)) {
+    return true;
+  }
+
+  switch (mode) {
+    case "never_ask":
+      return false;
+    case "always_ask":
+      return true;
+    case "dangerous_only":
+    default:
+      return isDangerousTool(toolName);
+  }
+}
+
+const routeAfterAgent = (
+  state: AgentState,
+  config: RunnableConfig
+): "ApprovalGate" | "ToolExecution" | "EndMiddleware" => {
   const lastMessage = state.messages.at(-1);
 
   if (!lastMessage || lastMessage._getType() !== "ai") {
@@ -28,33 +59,23 @@ const shouldCheckApproval = (
   const aiMessage = lastMessage as AIMessage;
   const toolCalls = aiMessage.tool_calls || [];
 
-  if (toolCalls.length > 0) {
+  if (toolCalls.length === 0) {
+    return "EndMiddleware";
+  }
+
+  const approvalConfig = getToolApprovalConfig(config);
+
+  const anyNeedsApproval = toolCalls.some((tc) => needsApproval(tc.name, approvalConfig));
+
+  if (anyNeedsApproval) {
+    console.log("[Graph] Routing to ApprovalGate for tool approval");
     return "ApprovalGate";
   }
 
-  return "EndMiddleware";
+  console.log("[Graph] All tools auto-approved, routing to ToolExecution");
+  return "ToolExecution";
 };
 
-/**
- * Conditional: Execute tools or finish?
- */
-const shouldExecuteTools = (
-  state: AgentState
-): "ToolExecution" | "EndMiddleware" => {
-  const approvedTools = state.pending_tool_calls?.filter(
-    (tc) => tc.status === "approved"
-  );
-
-  if (approvedTools && approvedTools.length > 0) {
-    return "ToolExecution";
-  }
-
-  return "EndMiddleware";
-};
-
-/**
- * Conditional: Continue after tools or finish?
- */
 const shouldContinue = (state: AgentState): "AgentNode" | "EndMiddleware" => {
   const maxCalls = state.metadata?.max_model_calls || 10;
 
@@ -66,14 +87,26 @@ const shouldContinue = (state: AgentState): "AgentNode" | "EndMiddleware" => {
   return "AgentNode";
 };
 
-/**
- * Multi-Node Graph Architecture
- *
- * Flow:
- * START → StartMiddleware → MemoryRetrieval → AgentNode → ApprovalGate → ToolExecution → (loop to AgentNode) → EndMiddleware → END
- */
+const routeAfterApproval = (state: AgentState): "ToolExecution" | "EndMiddleware" => {
+  const lastMessage = state.messages.at(-1);
+
+  if (lastMessage && lastMessage._getType() === "ai") {
+    const aiMessage = lastMessage as AIMessage;
+    if (aiMessage.content && typeof aiMessage.content === "string") {
+      if (
+        aiMessage.content.includes("unable to execute") ||
+        aiMessage.content.includes("rejected")
+      ) {
+        console.log("[Graph] Tools rejected, ending");
+        return "EndMiddleware";
+      }
+    }
+  }
+
+  return "ToolExecution";
+};
+
 export const graph = new StateGraph(AgentStateAnnotation)
-  // Add all nodes with PascalCase names
   .addNode("StartMiddleware", StartMiddleware)
   .addNode("MemoryRetrieval", MemoryRetrieval)
   .addNode("AgentNode", AgentNode)
@@ -81,38 +114,32 @@ export const graph = new StateGraph(AgentStateAnnotation)
   .addNode("ToolExecution", ToolExecution)
   .addNode("EndMiddleware", EndMiddleware)
 
-  // Linear flow: Start → Memory → Agent
   .addEdge(START, "StartMiddleware")
   .addEdge("StartMiddleware", "MemoryRetrieval")
   .addEdge("MemoryRetrieval", "AgentNode")
 
-  // Agent → ApprovalGate (conditional on tool calls)
-  .addConditionalEdges("AgentNode", shouldCheckApproval, {
+  .addConditionalEdges("AgentNode", routeAfterAgent, {
     ApprovalGate: "ApprovalGate",
-    EndMiddleware: "EndMiddleware",
-  })
-
-  // ApprovalGate → ToolExecution (conditional on approved tools)
-  .addConditionalEdges("ApprovalGate", shouldExecuteTools, {
     ToolExecution: "ToolExecution",
     EndMiddleware: "EndMiddleware",
   })
 
-  // ToolExecution → AgentNode (loop back) or EndMiddleware (finish)
+  .addConditionalEdges("ApprovalGate", routeAfterApproval, {
+    ToolExecution: "ToolExecution",
+    EndMiddleware: "EndMiddleware",
+  })
+
   .addConditionalEdges("ToolExecution", shouldContinue, {
     AgentNode: "AgentNode",
     EndMiddleware: "EndMiddleware",
   })
 
-  // EndMiddleware → END
   .addEdge("EndMiddleware", END)
 
   .compile({ checkpointer: new FileSystemCheckpointer() });
 
 console.log("[Graph] Multi-node graph compiled:");
 console.log(
-  "  Nodes: StartMiddleware → MemoryRetrieval → AgentNode → ApprovalGate → ToolExecution → EndMiddleware"
+  "  Nodes: StartMiddleware → MemoryRetrieval → AgentNode → ApprovalGate/ToolExecution → EndMiddleware"
 );
-console.log(
-  "  Flow: START → Start → Memory → Agent → [Approval → Tools → Agent loop] → End → END"
-);
+console.log("  Flow: START → Start → Memory → Agent → [Approval → Tools → Agent loop] → End → END");

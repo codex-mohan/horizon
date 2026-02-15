@@ -116,14 +116,14 @@ export const ChatBubble = React.memo(
           className={cn(
             "flex size-10 shrink-0 items-center justify-center self-start rounded-lg transition-transform duration-200 hover:scale-110",
             isUser
-              ? "bg-gradient-to-br from-[var(--primary)] to-[var(--accent)]"
+              ? "bg-linear-to-br from-primary to-accent"
               : "glass border border-border",
             !(showAvatar || isUser) && "invisible",
             isEditing && "mt-2"
           )}
         >
           {isUser ? (
-            <User className="size-5 text-[var(--foreground)]" />
+            <User className="size-5 text-foreground" />
           ) : (
             <Bot className="size-5 text-primary" />
           )}
@@ -191,9 +191,9 @@ export const ChatBubble = React.memo(
                   "wrap-break-word relative rounded-xl p-4 font-body leading-relaxed",
                   isUser
                     ? cn(
-                        isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
-                        "text-foreground"
-                      )
+                      isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
+                      "text-foreground"
+                    )
                     : "w-full text-foreground"
                 )}
               >

@@ -6,15 +6,13 @@
  * - Message editing and regeneration
  * - Optimistic updates
  * - Event processing
+ * - Tool approval handling with proper LangGraph interrupt/resume
  */
 
 import type { Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-// ============================================================================
-// TYPES
-// ============================================================================
+import type { ToolApprovalMode } from "@/lib/stores/chat-settings";
 
 export interface ChatError {
   type: "rate_limit" | "server_error" | "network_error" | "unknown";
@@ -34,14 +32,17 @@ export interface MessageMetadata {
   firstSeenState?: {
     parent_checkpoint?: { checkpoint_id: string };
   };
-  // Branch navigation metadata
   branch?: string;
   branchOptions?: string[];
-
-  // Stream metadata for multi-agent support
   streamMetadata?: {
     langgraph_node?: string;
   };
+}
+
+export interface ToolApprovalConfig {
+  mode: ToolApprovalMode;
+  auto_approve_tools: string[];
+  never_approve_tools: string[];
 }
 
 export interface UseChatOptions {
@@ -54,6 +55,7 @@ export interface UseChatOptions {
   onEvent?: (event: Record<string, unknown>) => void;
   onInterrupt?: (interrupt: Record<string, unknown>) => void;
   fetchStateHistory?: boolean;
+  toolApproval?: ToolApprovalConfig;
 }
 
 export interface SubmitOptions {
@@ -63,46 +65,49 @@ export interface SubmitOptions {
   metadata?: Record<string, unknown>;
 }
 
+export interface ActionRequest {
+  name: string;
+  arguments: Record<string, unknown>;
+  description: string;
+}
+
+export interface ReviewConfig {
+  action_name: string;
+  allowed_decisions: string[];
+}
+
+export interface InterruptData {
+  action_requests: ActionRequest[];
+  review_configs: ReviewConfig[];
+}
+
+export interface HitlDecision {
+  type: "approve" | "reject";
+  message?: string;
+}
+
 export interface UseChatReturn {
   messages: Message[];
   isLoading: boolean;
   error: unknown;
   threadId: string | undefined;
   lastEvent: Record<string, unknown> | null;
-
-  // UI state for generative UI
   ui: UIMessage[];
-
-  // Interrupt handling
-  interrupt: Record<string, unknown> | null;
+  interrupt: InterruptData | null;
   isWaitingForInterrupt: boolean;
-
-  // Core actions
   submit: (
     input: { messages: Array<{ type: string; content: string }> } | undefined,
     options?: SubmitOptions
   ) => void;
   stop: () => void;
-
-  // Branching actions
   setBranch: (branch: string) => void;
-
-  // Interrupt actions
   approveInterrupt: () => void;
   rejectInterrupt: (reason?: string) => void;
-
-  // Metadata support
   getMessagesMetadata: (message: Message) => MessageMetadata | null;
-  getToolCalls: (message: any) => any[];
-
-  // Utilities
+  getToolCalls: (message: unknown) => unknown[];
   processEvent: (event: Record<string, unknown>) => ProcessedEvent | null;
-  stream: any;
+  stream: unknown;
 }
-
-// ============================================================================
-// ERROR CLASSIFICATION
-// ============================================================================
 
 function classifyError(error: unknown): ChatError {
   if (error instanceof Error) {
@@ -111,8 +116,7 @@ function classifyError(error: unknown): ChatError {
     if (message.includes("rate limit") || message.includes("429")) {
       return {
         type: "rate_limit",
-        message:
-          "Rate limit exceeded. Please wait a moment before trying again.",
+        message: "Rate limit exceeded. Please wait a moment before trying again.",
         details: error,
       };
     }
@@ -147,10 +151,6 @@ function classifyError(error: unknown): ChatError {
   };
 }
 
-// ============================================================================
-// EVENT PROCESSING
-// ============================================================================
-
 const nodeStartTimes = new Map<string, number>();
 
 function getIconForNode(nodeName: string): string {
@@ -161,21 +161,13 @@ function getIconForNode(nodeName: string): string {
   if (lower.includes("tool") || lower.includes("action")) {
     return "wrench";
   }
-  if (
-    lower.includes("think") ||
-    lower.includes("reason") ||
-    lower.includes("agent")
-  ) {
+  if (lower.includes("think") || lower.includes("reason") || lower.includes("agent")) {
     return "brain";
   }
   if (lower.includes("start") || lower.includes("init")) {
     return "rocket";
   }
-  if (
-    lower.includes("done") ||
-    lower.includes("complete") ||
-    lower.includes("finish")
-  ) {
+  if (lower.includes("done") || lower.includes("complete") || lower.includes("finish")) {
     return "check";
   }
   if (lower.includes("compress") || lower.includes("summar")) {
@@ -184,9 +176,7 @@ function getIconForNode(nodeName: string): string {
   return "sparkles";
 }
 
-function processStreamEvent(
-  event: Record<string, unknown>
-): ProcessedEvent | null {
+function processStreamEvent(event: Record<string, unknown>): ProcessedEvent | null {
   if (event.event === "updates" && event.data) {
     const data = event.data as Record<string, unknown>;
     const nodeNames = Object.keys(data);
@@ -239,34 +229,22 @@ function formatNodeName(name: string): string {
     .trim();
 }
 
-// ============================================================================
-// UI MESSAGE TYPE
-// ============================================================================
-
 export interface UIMessage {
   id: string;
   name: string;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
   metadata?: {
     message_id?: string;
     tool_call_id?: string;
     tool_name?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
-
-// ============================================================================
-// STATE TYPE
-// ============================================================================
 
 interface ChatState {
   messages: Message[];
   ui?: UIMessage[];
 }
-
-// ============================================================================
-// MAIN HOOK
-// ============================================================================
 
 export function useChat(options: UseChatOptions): UseChatReturn {
   const {
@@ -279,22 +257,22 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     onEvent,
     onInterrupt,
     fetchStateHistory,
+    toolApproval,
   } = options;
 
-  // Track thread ID locally since useStream uses callback
   const [currentThreadId, setCurrentThreadId] = useState<string | undefined>(
     initialThreadId ?? undefined
   );
-  const [lastEvent, setLastEvent] = useState<Record<string, unknown> | null>(
-    null
-  );
-  const [interrupt, setInterrupt] = useState<Record<string, unknown> | null>(
-    null
-  );
+  const [lastEvent, setLastEvent] = useState<Record<string, unknown> | null>(null);
+  const [interrupt, setInterrupt] = useState<InterruptData | null>(null);
   const [uiMessages, setUIMessages] = useState<UIMessage[]>([]);
   const onThreadIdCalledRef = useRef(false);
+  const toolApprovalRef = useRef(toolApproval);
 
-  // Handle thread ID callback
+  useEffect(() => {
+    toolApprovalRef.current = toolApproval;
+  }, [toolApproval]);
+
   const handleThreadId = useCallback(
     (threadId: string) => {
       setCurrentThreadId(threadId);
@@ -306,7 +284,6 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     [initialThreadId, onThreadId]
   );
 
-  // Handle errors
   const handleError = useCallback(
     (error: unknown) => {
       onError?.(classifyError(error));
@@ -314,7 +291,6 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     [onError]
   );
 
-  // Handle update events (for tracking & timeline)
   const handleUpdateEvent = useCallback(
     (data: unknown) => {
       const eventObj = { event: "updates", data };
@@ -324,20 +300,23 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     [onEvent]
   );
 
-  // Handle interrupt events (Human-in-the-Loop)
   const handleInterrupt = useCallback(
     (interruptData: unknown) => {
       console.log("[useChat] Interrupt received:", interruptData);
-      const interruptObj = interruptData as Record<string, unknown>;
-      setInterrupt(interruptObj);
-      onInterrupt?.(interruptObj);
+
+      // LangGraph sends interrupt as { action_requests: [...], review_configs: [...] }
+      const interruptObj = interruptData as InterruptData;
+      if (interruptObj && Array.isArray(interruptObj.action_requests)) {
+        setInterrupt(interruptObj);
+        onInterrupt?.(interruptData as Record<string, unknown>);
+      } else {
+        console.warn("[useChat] Unknown interrupt format:", interruptData);
+      }
     },
     [onInterrupt]
   );
 
-  // Handle custom events for real-time UI updates
   const handleCustomEvent = useCallback((event: unknown) => {
-    console.log("[useChat] Custom event received:", event);
     const customEvent = event as { event?: string; data?: UIMessage };
 
     if (customEvent.event === "ui" && customEvent.data) {
@@ -362,7 +341,6 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       });
     }
 
-    // Handle status updates by tool_call_id for better real-time updates
     if (customEvent.event === "status" && customEvent.data) {
       const statusData = customEvent.data as unknown as {
         tool_call_id?: string;
@@ -377,7 +355,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
           if (existingIndex >= 0) {
             const updated = [...prev];
-            const { tool_call_id, status, ...rest } = statusData;
+            const { status, ...rest } = statusData;
             updated[existingIndex] = {
               ...updated[existingIndex],
               props: {
@@ -394,7 +372,6 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     }
   }, []);
 
-  // Reset thread callback tracking when threadId changes
   useEffect(() => {
     if (initialThreadId) {
       setCurrentThreadId(initialThreadId);
@@ -404,10 +381,6 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     }
   }, [initialThreadId]);
 
-  // Use the LangGraph SDK's useStream hook with full capabilities
-  // Critical Fix: Pass currentThreadId (state) instead of initialThreadId (prop)
-  // This ensures that once we have an ID (generated on first message), we stick to it
-  // even if the parent prop hasn't updated yet (e.g. silent URL replacement).
   const stream = useStream<ChatState>({
     apiUrl,
     assistantId,
@@ -418,21 +391,10 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     onUpdateEvent: handleUpdateEvent,
     onInterrupt: handleInterrupt,
     onCustomEvent: handleCustomEvent,
-    // Throttle for smoother updates (30ms balances responsiveness with performance)
     throttle: 30,
-
     fetchStateHistory,
   } as any);
 
-  // Reset UI messages when streaming stops (conversation ends)
-  useEffect(() => {
-    if (!stream.isLoading && uiMessages.length > 0) {
-      // Keep the final state but could optionally clear here
-      // setUIMessages([]);
-    }
-  }, [stream.isLoading, uiMessages.length]);
-
-  // Submit function
   const submit = useCallback(
     (
       input: { messages: Array<{ type: string; content: string }> } | undefined,
@@ -440,9 +402,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     ) => {
       const submitOptions: Record<string, unknown> = {};
 
-      // Add checkpoint for edit/regenerate
       if (options?.checkpoint) {
-        // robustly handle checkpoint as object or string
         const cp = options.checkpoint;
         if (typeof cp === "object" && cp !== null) {
           submitOptions.checkpoint = cp;
@@ -451,114 +411,138 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         }
       }
 
-      // Add thread ID for optimistic creation
       if (options?.threadId) {
         submitOptions.threadId = options.threadId;
       }
 
-      // Add optimistic values for instant UI updates
       if (options?.optimisticValues) {
         submitOptions.optimisticValues = options.optimisticValues;
       }
 
-      // Add metadata (e.g. user_id)
-      if (userId || options?.metadata) {
-        submitOptions.metadata = {
-          ...(userId ? { user_id: userId } : {}),
-          ...options?.metadata,
-        };
+      const config: { configurable: Record<string, unknown> } = {
+        configurable: {},
+      };
+
+      if (userId) {
+        config.configurable.user_id = userId;
       }
 
-      // Submit with or without input (undefined input for regenerate)
+      const currentToolApproval = toolApprovalRef.current;
+      if (currentToolApproval) {
+        config.configurable.tool_approval = currentToolApproval;
+      }
+
+      if (Object.keys(config.configurable).length > 0) {
+        submitOptions.config = config;
+      }
+
+      if (options?.metadata) {
+        submitOptions.metadata = options.metadata;
+      }
+
       if (input) {
         stream.submit(
           { messages: input.messages as unknown as Message[] },
           Object.keys(submitOptions).length > 0 ? submitOptions : undefined
         );
       } else {
-        // For regeneration - submit undefined to replay from checkpoint
         stream.submit(undefined, submitOptions);
       }
     },
-    [stream.submit, userId]
+    [stream, userId]
   );
 
-  // Stable stop function
   const stop = useCallback(() => {
     stream.stop();
-  }, [stream.stop]);
-
-  // Approve interrupt (resume with approval)
-  const approveInterrupt = useCallback(() => {
-    console.log("[useChat] Approving interrupt");
-    setInterrupt(null);
-
-    // Submit with command to resume
-    stream.submit(undefined, {
-      command: { resume: "approved" },
-    });
   }, [stream]);
 
-  // Reject interrupt (resume with rejection)
+  // Resume with approval - uses Command(resume={decisions: [...]})
+  const approveInterrupt = useCallback(() => {
+    console.log("[useChat] Approving interrupt");
+
+    const currentInterrupt = interrupt;
+    setInterrupt(null);
+
+    if (currentInterrupt && currentThreadId) {
+      // Build decisions array - one approve for each action_request
+      const decisions: HitlDecision[] = currentInterrupt.action_requests.map(() => ({
+        type: "approve" as const,
+      }));
+
+      console.log("[useChat] Sending decisions:", decisions);
+
+      // Use Command(resume={...}) pattern via stream.submit
+      const streamAny = stream as any;
+      streamAny.submit(undefined, {
+        command: {
+          resume: {
+            decisions,
+          },
+        },
+      });
+    }
+  }, [currentThreadId, interrupt, stream]);
+
   const rejectInterrupt = useCallback(
     (reason?: string) => {
       console.log("[useChat] Rejecting interrupt:", reason);
+
+      const currentInterrupt = interrupt;
       setInterrupt(null);
 
-      // Submit with command to resume with rejection
-      stream.submit(undefined, {
-        command: { resume: reason || "rejected" },
-      });
+      if (currentInterrupt && currentThreadId) {
+        // Build decisions array - one reject for each action_request
+        const decisions: HitlDecision[] = currentInterrupt.action_requests.map(() => ({
+          type: "reject" as const,
+          message: reason || "User declined",
+        }));
+
+        console.log("[useChat] Sending reject decisions:", decisions);
+
+        const streamAny = stream as any;
+        streamAny.submit(undefined, {
+          command: {
+            resume: {
+              decisions,
+            },
+          },
+        });
+      }
     },
-    [stream]
+    [currentThreadId, interrupt, stream]
   );
 
-  // Get metadata for a message (parent checkpoint)
   const getMessagesMetadata = useCallback(
     (message: Message): MessageMetadata | null => {
-      if (!stream.getMessagesMetadata) {
+      const streamAny = stream as any;
+      if (!streamAny.getMessagesMetadata) {
         return null;
       }
       try {
-        return stream.getMessagesMetadata(message) as MessageMetadata | null;
-      } catch (err) {
-        console.error("[useChat] getMessagesMetadata error:", err);
+        return streamAny.getMessagesMetadata(message) as MessageMetadata | null;
+      } catch {
         return null;
       }
     },
     [stream]
   );
 
-  // Stable event processor
-  const processEvent = useCallback(
-    (event: Record<string, unknown>): ProcessedEvent | null => {
-      return processStreamEvent(event);
-    },
-    []
-  );
+  const processEvent = useCallback((event: Record<string, unknown>): ProcessedEvent | null => {
+    return processStreamEvent(event);
+  }, []);
 
-  // Extract messages - rely on stream.messages
   const messages = stream.messages ?? [];
 
-  console.log("[useChat] Messages:", stream.messages);
-
-  // Use real-time UI messages from custom events
-  // Merge stream UI with real-time updates, preferring real-time for updates
   const streamUIMessages = (stream.values?.ui as UIMessage[]) ?? [];
-
-  // Create a map of existing UI messages by ID for deduplication
   const uiMessageMap = new Map<string, UIMessage>();
 
-  // Add stream UI messages first (as fallback)
   streamUIMessages.forEach((msg) => {
     uiMessageMap.set(msg.id, msg);
   });
 
-  // Overlay with real-time UI messages (these take precedence)
   uiMessages.forEach((msg) => {
     const existing = uiMessageMap.get(msg.id);
     if (existing) {
-      // Merge with existing
       uiMessageMap.set(msg.id, {
         ...existing,
         props: { ...existing.props, ...msg.props },
@@ -571,11 +555,11 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
   const mergedUIMessages = Array.from(uiMessageMap.values());
 
-  // Stable setBranch function for switching conversation branches
   const setBranch = useCallback(
     (branch: string) => {
-      if (stream.setBranch) {
-        stream.setBranch(branch);
+      const streamAny = stream as any;
+      if (streamAny.setBranch) {
+        streamAny.setBranch(branch);
       }
     },
     [stream]
@@ -587,28 +571,17 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     error: stream.error,
     threadId: currentThreadId,
     lastEvent,
-
-    // UI state for generative UI - use real-time updates merged with stream
     ui: mergedUIMessages,
-
-    // Interrupt handling
     interrupt,
     isWaitingForInterrupt: interrupt !== null,
-
-    // Core actions
     submit,
     stop,
-
-    // Branching actions
     setBranch,
-
-    // Interrupt actions
     approveInterrupt,
     rejectInterrupt,
-
     getMessagesMetadata,
-    getToolCalls: stream.getToolCalls,
+    getToolCalls: stream.getToolCalls as (message: unknown) => unknown[],
     processEvent,
-    stream, // Expose raw stream for advanced usage
+    stream,
   };
 }

@@ -6,7 +6,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import { GradientButton } from "@workspace/ui/components/gradient-button";
@@ -19,12 +24,18 @@ import {
 } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
 import {
+  AlertTriangle,
+  Check,
   LinkIcon,
   Loader2,
   Mic,
   Paperclip,
   Plus,
   Send,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldOff,
   SlidersHorizontal,
   Terminal,
   Wrench,
@@ -34,13 +45,14 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useClipboardPaste } from "@/hooks/use-clipboard-paste";
 import { type AttachedFile, processFiles } from "@/lib/file-processing";
+import {
+  ALL_TOOLS,
+  DANGEROUS_TOOLS,
+  type ToolApprovalMode,
+  useChatSettings,
+} from "@/lib/stores/chat-settings";
 
-// Re-export for backward compatibility
 export type { AttachedFile };
-
-// ============================================================================
-// TYPES
-// ============================================================================
 
 export interface ChatInputProps {
   onSubmit: (text: string, files: AttachedFile[]) => void;
@@ -56,10 +68,6 @@ export interface ChatInputProps {
   placeholder?: string;
 }
 
-// ============================================================================
-// STATIC DATA
-// ============================================================================
-
 const modelGroups = {
   OpenAI: ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
   Anthropic: ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
@@ -67,9 +75,42 @@ const modelGroups = {
   Local: ["ollama/llama2", "vllm/mistral"],
 } as const;
 
-// ============================================================================
-// CHAT INPUT COMPONENT
-// ============================================================================
+const APPROVAL_MODE_CONFIG: Record<
+  ToolApprovalMode,
+  { label: string; description: string; icon: React.ElementType }
+> = {
+  always_ask: {
+    label: "Always Ask",
+    description: "Prompt for all tools",
+    icon: ShieldAlert,
+  },
+  dangerous_only: {
+    label: "Dangerous Only",
+    description: "Default - prompt for risky tools",
+    icon: Shield,
+  },
+  never_ask: {
+    label: "Never Ask",
+    description: "Auto-approve all tools",
+    icon: ShieldOff,
+  },
+};
+
+function getToolDisplayName(toolName: string): string {
+  const names: Record<string, string> = {
+    shell_execute: "Shell Execute",
+    file_write: "File Write",
+    file_delete: "File Delete",
+    web_search: "Web Search",
+    fetch_url_content: "Fetch URL",
+    duckduckgo_search: "DuckDuckGo Search",
+  };
+  return names[toolName] || toolName;
+}
+
+function isToolDangerous(toolName: string): boolean {
+  return DANGEROUS_TOOLS.includes(toolName);
+}
 
 export const ChatInput = memo(function ChatInput({
   onSubmit,
@@ -89,20 +130,19 @@ export const ChatInput = memo(function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize clipboard paste handler
+  const { settings, setToolApprovalMode, toggleAutoApproveTool, toggleNeverApproveTool } =
+    useChatSettings();
+
   const { handlePaste } = useClipboardPaste({
-    maxFileSize: 100 * 1024 * 1024, // 100MB
+    maxFileSize: 100 * 1024 * 1024,
     onFilesPasted: onAttachedFilesChange,
     existingFiles: attachedFiles,
   });
 
-  // Auto-resize textarea to fit content up to 5 lines
   useEffect(() => {
     const el = textareaRef.current;
     if (el) {
-      // Reset height to auto to correctly calculate scrollHeight for shrinking content
       el.style.height = "auto";
-      // Set new height based on scrollHeight, capped at max-height (approx 5 lines)
       const newHeight = Math.min(el.scrollHeight, 120);
       el.style.height = `${newHeight}px`;
     }
@@ -137,16 +177,13 @@ export const ChatInput = memo(function ChatInput({
 
       const { validFiles, errors } = processFiles(Array.from(files));
 
-      // Show error messages
       errors.forEach((error) => {
         toast.error(error);
       });
 
       if (validFiles.length > 0) {
         onAttachedFilesChange([...attachedFiles, ...validFiles]);
-        toast.success(
-          `Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`
-        );
+        toast.success(`Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`);
       }
 
       e.target.value = "";
@@ -154,21 +191,13 @@ export const ChatInput = memo(function ChatInput({
     [attachedFiles, onAttachedFilesChange]
   );
 
-  const _removeFile = useCallback(
-    (fileId: string) => {
-      onAttachedFilesChange(attachedFiles.filter((f) => f.id !== fileId));
-    },
-    [attachedFiles, onAttachedFilesChange]
-  );
+  const wordCount = useMemo(() => text.trim().split(/\s+/).filter(Boolean).length, [text]);
 
-  const wordCount = useMemo(
-    () => text.trim().split(/\s+/).filter(Boolean).length,
-    [text]
-  );
+  const approvalMode = settings.toolApprovalMode || "dangerous_only";
+  const ModeIcon = APPROVAL_MODE_CONFIG[approvalMode]?.icon || Shield;
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Textarea */}
       <Textarea
         className="max-h-[120px] min-h-[44px] resize-none overflow-y-auto overflow-x-hidden border-0 bg-transparent py-3 focus-visible:ring-0"
         disabled={disabled}
@@ -181,12 +210,9 @@ export const ChatInput = memo(function ChatInput({
         value={text}
       />
 
-      {/* Bottom Bar */}
       <div className="flex items-center justify-between gap-3 border-border/50 border-t pt-2">
-        {/* Left side - All Control Buttons */}
         <div className="flex items-center gap-1">
           <TooltipProvider>
-            {/* Attachment / Upload */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <DropdownMenu>
@@ -200,9 +226,7 @@ export const ChatInput = memo(function ChatInput({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="z-100 animate-scale-in">
-                    <DropdownMenuItem
-                      onClick={() => fileInputRef.current?.click()}
-                    >
+                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
                       <Paperclip className="mr-2 size-4" />
                       Upload File
                     </DropdownMenuItem>
@@ -218,21 +242,126 @@ export const ChatInput = memo(function ChatInput({
               </TooltipContent>
             </Tooltip>
 
-            {/* Tools button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className="transition-transform duration-200 hover:scale-110"
-                  size="icon-sm"
-                  variant="ghost"
+            {/* Tools Settings Menu */}
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      className={cn(
+                        "transition-transform duration-200 hover:scale-110",
+                        settings.toolApprovalMode === "always_ask" && "text-amber-500",
+                        settings.toolApprovalMode === "never_ask" && "text-emerald-500"
+                      )}
+                      size="icon-sm"
+                      variant="ghost"
+                    >
+                      <Wrench className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="z-100 animate-scale-in" side="top">
+                  <p>Tool Settings</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <DropdownMenuContent align="start" className="z-100 w-72">
+                <DropdownMenuLabel className="flex items-center gap-2">
+                  <Shield className="size-4" />
+                  Tool Approval Mode
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuRadioGroup
+                  onValueChange={(value) => setToolApprovalMode(value as ToolApprovalMode)}
+                  value={settings.toolApprovalMode}
                 >
-                  <Wrench className="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="z-100 animate-scale-in" side="top">
-                <p>Tools</p>
-              </TooltipContent>
-            </Tooltip>
+                  {Object.entries(APPROVAL_MODE_CONFIG).map(([mode, config]) => {
+                    const Icon = config.icon;
+                    return (
+                      <DropdownMenuRadioItem
+                        className="flex items-center gap-2"
+                        key={mode}
+                        value={mode}
+                      >
+                        <Icon className="size-4" />
+                        <div className="flex flex-col">
+                          <span>{config.label}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {config.description}
+                          </span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    );
+                  })}
+                </DropdownMenuRadioGroup>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="flex items-center gap-2">
+                    <ShieldCheck className="size-4" />
+                    <span>Tool Permissions</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="z-100 w-64">
+                    <DropdownMenuLabel className="text-xs">
+                      Auto-approve / Always require
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {ALL_TOOLS.map((toolName) => {
+                      const isDangerous = isToolDangerous(toolName);
+                      const autoApproveTools = settings.autoApproveTools || [];
+                      const neverApproveTools = settings.neverApproveTools || [];
+                      const isAutoApproved = autoApproveTools.includes(toolName);
+                      const isNeverApproved = neverApproveTools.includes(toolName);
+
+                      return (
+                        <DropdownMenuItem
+                          className="flex items-center justify-between"
+                          key={toolName}
+                          onClick={() => {
+                            if (isAutoApproved) {
+                              toggleNeverApproveTool(toolName);
+                            } else if (isNeverApproved) {
+                              toggleAutoApproveTool(toolName);
+                            } else {
+                              toggleAutoApproveTool(toolName);
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            {isDangerous ? (
+                              <AlertTriangle className="size-4 text-amber-500" />
+                            ) : (
+                              <Check className="size-4 text-emerald-500" />
+                            )}
+                            <span>{getToolDisplayName(toolName)}</span>
+                          </div>
+                          <span
+                            className={cn(
+                              "text-xs",
+                              isAutoApproved && "text-emerald-500",
+                              isNeverApproved && "text-amber-500"
+                            )}
+                          >
+                            {isAutoApproved ? "Auto" : isNeverApproved ? "Always ask" : "Default"}
+                          </span>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+                <DropdownMenuSeparator />
+
+                <div className="flex items-center gap-2 px-2 py-1.5 text-muted-foreground text-xs">
+                  <ModeIcon className="size-3" />
+                  <span>
+                    Current: {APPROVAL_MODE_CONFIG[approvalMode]?.label || "Dangerous Only"}
+                  </span>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Tool calls toggle */}
             <Tooltip>
@@ -279,10 +408,8 @@ export const ChatInput = memo(function ChatInput({
           </TooltipProvider>
         </div>
 
-        {/* Right side - Context + Send */}
         <div className="flex items-center gap-2">
           <TooltipProvider>
-            {/* Model selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -293,20 +420,12 @@ export const ChatInput = memo(function ChatInput({
                   {selectedModel}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="z-100 w-48 animate-scale-in"
-              >
+              <DropdownMenuContent align="end" className="z-100 w-48 animate-scale-in">
                 {Object.entries(modelGroups).map(([group, models]) => (
                   <div key={group}>
-                    <DropdownMenuLabel className="text-xs">
-                      {group}
-                    </DropdownMenuLabel>
+                    <DropdownMenuLabel className="text-xs">{group}</DropdownMenuLabel>
                     {models.map((model) => (
-                      <DropdownMenuItem
-                        key={model}
-                        onClick={() => setSelectedModel(model)}
-                      >
+                      <DropdownMenuItem key={model} onClick={() => setSelectedModel(model)}>
                         {model}
                       </DropdownMenuItem>
                     ))}
@@ -316,7 +435,6 @@ export const ChatInput = memo(function ChatInput({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Voice input */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -334,12 +452,10 @@ export const ChatInput = memo(function ChatInput({
 
             <div className="h-5 w-px bg-border/50" />
 
-            {/* Word count */}
             <span className="min-w-[60px] text-right text-muted-foreground text-xs">
               {wordCount} words
             </span>
 
-            {/* Send/Stop button */}
             {isLoading ? (
               <Button
                 className="h-9 bg-destructive/10 px-4 text-destructive hover:bg-destructive/20"

@@ -22,8 +22,8 @@ import { ChatInputArea } from "./chat-input-area";
 import type { AttachedFile, Message } from "./chat-interface";
 import { ChatLoadingIndicator } from "./chat-loading-indicator";
 import { MessageGroup } from "./message-group";
-// Extracted components
 import { groupMessages } from "./message-grouping";
+import { ToolApprovalDialog } from "./tool-approval-dialog";
 import type { ToolCall } from "./tool-call-message";
 
 // ============================================================================
@@ -55,6 +55,15 @@ export function ChatArea({
   const isLightTheme = themeMode === "light";
   const { settings, toggleShowToolCalls } = useChatSettings();
   const { user } = useAuthStore();
+
+  const toolApprovalConfig = useMemo(
+    () => ({
+      mode: settings.toolApprovalMode || "dangerous_only",
+      auto_approve_tools: settings.autoApproveTools || [],
+      never_approve_tools: settings.neverApproveTools || [],
+    }),
+    [settings.toolApprovalMode, settings.autoApproveTools, settings.neverApproveTools]
+  );
 
   const [chatError, setChatError] = useState<string | null>(null);
   const [liveActivityEvents, setLiveActivityEvents] = useState<ChatProcessedEvent[]>([]);
@@ -136,8 +145,9 @@ export function ChatArea({
       onError: handleError,
       onEvent: handleEvent,
       fetchStateHistory: true,
+      toolApproval: toolApprovalConfig,
     }),
-    [threadId, user?.id, handleThreadId, handleError, handleEvent]
+    [threadId, user?.id, handleThreadId, handleError, handleEvent, toolApprovalConfig]
   );
 
   // Initialize chat hook
@@ -409,6 +419,36 @@ export function ChatArea({
           onSubmit={handleSubmit}
           onToggleToolCalls={toggleShowToolCalls}
           showToolCalls={settings.showToolCalls}
+        />
+      )}
+
+      {/* Tool Approval Dialog */}
+      {chat.isWaitingForInterrupt && chat.interrupt && (
+        <ToolApprovalDialog
+          data={{
+            type: "tool_approval_required",
+            tool_call: {
+              id: "0",
+              name: chat.interrupt.action_requests[0]?.name || "unknown",
+              args: chat.interrupt.action_requests[0]?.arguments || {},
+              status: "pending",
+            },
+            all_pending_tools: chat.interrupt.action_requests.map((ar, idx) => ({
+              id: String(idx),
+              name: ar.name,
+              args: ar.arguments,
+              status: "pending",
+            })),
+            auto_execute_tools: [],
+            message: chat.interrupt.action_requests.map((ar) => ar.description).join("\n"),
+          }}
+          isOpen={true}
+          onApprove={() => {
+            chat.approveInterrupt();
+          }}
+          onReject={(reason) => {
+            chat.rejectInterrupt(reason);
+          }}
         />
       )}
     </div>

@@ -21,10 +21,7 @@ export interface UIMessage {
  * Reducer for UI messages
  * Handles adding new messages and updating existing ones (for streaming)
  */
-function uiMessageReducer(
-  existing: UIMessage[],
-  updates: UIMessage | UIMessage[]
-): UIMessage[] {
+function uiMessageReducer(existing: UIMessage[], updates: UIMessage | UIMessage[]): UIMessage[] {
   const updatesArray = Array.isArray(updates) ? updates : [updates];
   const existingMap = new Map(existing.map((msg) => [msg.id, msg]));
 
@@ -55,13 +52,7 @@ export interface ToolCall {
   args: Record<string, any>;
   result?: string;
   error?: string;
-  status:
-    | "pending"
-    | "approved"
-    | "rejected"
-    | "executing"
-    | "completed"
-    | "failed";
+  status: "pending" | "approved" | "rejected" | "executing" | "completed" | "failed";
   retry_count: number;
   started_at?: number;
   completed_at?: number;
@@ -70,12 +61,7 @@ export interface ToolCall {
 /**
  * Interrupt Status
  */
-export type InterruptStatus =
-  | "idle"
-  | "waiting_approval"
-  | "approved"
-  | "rejected"
-  | "error";
+export type InterruptStatus = "idle" | "waiting_approval" | "approved" | "rejected" | "error";
 
 /**
  * Interrupt Data
@@ -245,6 +231,14 @@ export const AgentStateAnnotation = Annotation.Root({
 
 export type AgentState = typeof AgentStateAnnotation.State;
 
+export type ToolApprovalMode = "always_ask" | "dangerous_only" | "never_ask";
+
+export interface ToolApprovalConfig {
+  mode: ToolApprovalMode;
+  auto_approve_tools: string[];
+  never_approve_tools: string[];
+}
+
 /**
  * Configuration passed via RunnableConfig.configurable
  */
@@ -252,9 +246,8 @@ export interface AgentConfigurable {
   thread_id: string;
   checkpoint_id?: string;
   user_id?: string;
-  requires_approval?: string[];
+  tool_approval?: ToolApprovalConfig;
   enable_reasoning?: boolean;
   max_model_calls?: number;
   max_tool_calls?: number;
-  enable_interrupt?: boolean;
 }
