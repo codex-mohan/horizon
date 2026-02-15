@@ -48,16 +48,13 @@ export function ConversationsPanel({ onClose }: ConversationsPanelProps) {
 
   // Bulk selection state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedThreadIds, setSelectedThreadIds] = useState<Set<string>>(
-    new Set()
-  );
+  const [selectedThreadIds, setSelectedThreadIds] = useState<Set<string>>(new Set());
   const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
 
   const router = useRouter();
-  const { currentThreadId, setCurrentThreadId } = useConversationStore();
+  const { currentThreadId, setCurrentThreadId, threadRefreshVersion } = useConversationStore();
   const { user } = useAuthStore();
-  const apiUrl =
-    process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
+  const apiUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
   const threadsClient = useMemo(() => createThreadsClient(apiUrl), [apiUrl]);
 
   const fetchThreads = useCallback(async () => {
@@ -73,23 +70,15 @@ export function ConversationsPanel({ onClose }: ConversationsPanelProps) {
       const allThreads = await threadsClient.listThreads();
       console.log("[ConversationsPanel] ALL threads (no filter):", allThreads);
 
-      console.log(
-        "[ConversationsPanel] Calling listThreads for user:",
-        user.id
-      );
+      console.log("[ConversationsPanel] Calling listThreads for user:", user.id);
       // Filter threads by current user's ID
       const fetchedThreads = await threadsClient.listThreads(user.id);
-      console.log(
-        "[ConversationsPanel] User-filtered threads:",
-        fetchedThreads
-      );
+      console.log("[ConversationsPanel] User-filtered threads:", fetchedThreads);
 
       // For now, show all threads if user-filtered is empty but all threads exist
       // This handles legacy threads created without user_id metadata
       if (fetchedThreads.length === 0 && allThreads.length > 0) {
-        console.log(
-          "[ConversationsPanel] Using all threads (legacy threads without user_id)"
-        );
+        console.log("[ConversationsPanel] Using all threads (legacy threads without user_id)");
         setThreads(allThreads);
       } else {
         setThreads(fetchedThreads);
@@ -103,7 +92,7 @@ export function ConversationsPanel({ onClose }: ConversationsPanelProps) {
 
   useEffect(() => {
     fetchThreads();
-  }, [fetchThreads]);
+  }, [fetchThreads, threadRefreshVersion]);
 
   const handleDeleteThread = async (threadId: string) => {
     setDeletingId(threadId);
@@ -154,9 +143,7 @@ export function ConversationsPanel({ onClose }: ConversationsPanelProps) {
         }
       }
 
-      toast.success(
-        `Deleted ${successCount} conversation${successCount !== 1 ? "s" : ""}`
-      );
+      toast.success(`Deleted ${successCount} conversation${successCount !== 1 ? "s" : ""}`);
 
       // If current thread was deleted, redirect
       if (currentThreadId && selectedThreadIds.has(currentThreadId)) {
@@ -250,10 +237,7 @@ export function ConversationsPanel({ onClose }: ConversationsPanelProps) {
           </div>
 
           <Button
-            className={cn(
-              "shrink-0",
-              isSelectionMode && "bg-primary/20 text-primary"
-            )}
+            className={cn("shrink-0", isSelectionMode && "bg-primary/20 text-primary")}
             onClick={() => {
               setIsSelectionMode(!isSelectionMode);
               if (isSelectionMode) {
@@ -261,16 +245,10 @@ export function ConversationsPanel({ onClose }: ConversationsPanelProps) {
               }
             }}
             size="icon"
-            title={
-              isSelectionMode ? "Cancel selection" : "Select conversations"
-            }
+            title={isSelectionMode ? "Cancel selection" : "Select conversations"}
             variant={isSelectionMode ? "secondary" : "ghost"}
           >
-            {isSelectionMode ? (
-              <X className="size-4" />
-            ) : (
-              <CheckSquare className="size-4" />
-            )}
+            {isSelectionMode ? <X className="size-4" /> : <CheckSquare className="size-4" />}
           </Button>
         </div>
 
@@ -291,9 +269,7 @@ export function ConversationsPanel({ onClose }: ConversationsPanelProps) {
               Delete ({selectedThreadIds.size})
             </Button>
             <Button onClick={toggleSelectAll} size="sm" variant="outline">
-              {selectedThreadIds.size === threads.length
-                ? "Deselect All"
-                : "Select All"}
+              {selectedThreadIds.size === threads.length ? "Deselect All" : "Select All"}
             </Button>
           </div>
         ) : (
@@ -326,13 +302,10 @@ export function ConversationsPanel({ onClose }: ConversationsPanelProps) {
                     !isSelectionMode &&
                     "bg-primary/30 ring-1 ring-primary/50",
                   isSelectionMode && "cursor-pointer",
-                  selectedThreadIds.has(thread.thread_id) &&
-                    "bg-primary/10 ring-1 ring-primary/30"
+                  selectedThreadIds.has(thread.thread_id) && "bg-primary/10 ring-1 ring-primary/30"
                 )}
                 key={thread.thread_id}
-                onClick={() =>
-                  isSelectionMode && toggleThreadSelection(thread.thread_id)
-                }
+                onClick={() => isSelectionMode && toggleThreadSelection(thread.thread_id)}
               >
                 {isSelectionMode && (
                   <div className="shrink-0 text-primary">
@@ -354,8 +327,7 @@ export function ConversationsPanel({ onClose }: ConversationsPanelProps) {
                   }}
                 >
                   <div className="truncate font-display font-medium text-sm">
-                    {(thread.metadata?.title as string) ||
-                      `Conversation ${i + 1}`}
+                    {(thread.metadata?.title as string) || `Conversation ${i + 1}`}
                   </div>
                   <div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
                     <Clock className="size-3" />
@@ -375,10 +347,7 @@ export function ConversationsPanel({ onClose }: ConversationsPanelProps) {
                         <MoreHorizontal className="size-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="animate-scale-in"
-                    >
+                    <DropdownMenuContent align="end" className="animate-scale-in">
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         disabled={deletingId === thread.thread_id}

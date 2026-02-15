@@ -73,6 +73,15 @@ app.get("/threads/:threadId/state", async (c) => {
     const state = await graph.getState({
       configurable: { thread_id: threadId },
     });
+
+    // Log for debugging
+    if (state.next && state.next.length > 0) {
+      console.log(`[GET /state] Thread ${threadId} has pending tasks:`, state.next);
+      if (state.tasks) {
+        console.log(`[GET /state] Tasks:`, JSON.stringify(state.tasks, null, 2));
+      }
+    }
+
     return c.json(state);
   } catch (_e) {
     return c.json({ values: {}, next: [], tasks: [] });
@@ -131,25 +140,21 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
   const config = body.config || {};
   const command = body.command;
 
-  const checkpointId = findCheckpointId(body);
-
   console.log(`[POST /runs/stream] Thread: ${threadId}`);
-  console.log(`[POST /runs/stream] Checkpoint ID: ${checkpointId}`);
+  console.log(`[POST /runs/stream] Full body:`, JSON.stringify(body).slice(0, 1000));
   console.log(`[POST /runs/stream] Has Command: ${!!command}`);
+  console.log(`[POST /runs/stream] Command:`, command ? JSON.stringify(command) : "null");
 
   const streamMode = body.stream_mode || ["updates", "messages", "custom"];
 
   const toolApprovalConfig: ToolApprovalConfig =
     config.configurable?.tool_approval || getDefaultToolApprovalConfig();
 
-  console.log("[POST /runs/stream] Tool Approval Config:", JSON.stringify(toolApprovalConfig));
-
   const runConfig = {
     configurable: {
       thread_id: threadId,
       user_id: config.configurable?.user_id,
       tool_approval: toolApprovalConfig,
-      ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
     },
     streamMode,
   };
@@ -158,7 +163,7 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
     let stream;
 
     if (command) {
-      console.log("[POST /runs/stream] Resuming with command:", JSON.stringify(command));
+      console.log("[POST /runs/stream] Creating Command with:", JSON.stringify(command));
       const resumeCommand = new Command(command);
       stream = await graph.stream(resumeCommand, runConfig);
     } else {
@@ -170,10 +175,12 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
         for await (const chunk of stream) {
           const chunkRecord = chunk as Record<string, unknown>;
 
+          console.log("[POST /runs/stream] Chunk:", JSON.stringify(chunkRecord).slice(0, 500));
+
           // Check for __interrupt__ in the chunk (LangGraph interrupt format)
           if (chunkRecord.__interrupt__) {
             console.log(
-              "[POST /runs/stream] Interrupt detected:",
+              "[POST /runs/stream] __interrupt__ detected:",
               JSON.stringify(chunkRecord.__interrupt__)
             );
 

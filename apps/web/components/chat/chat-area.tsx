@@ -13,6 +13,7 @@ import {
 } from "@/lib/chat";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useChatSettings } from "@/lib/stores/chat-settings";
+import { useConversationStore } from "@/lib/stores/conversation";
 import { createThreadsClient } from "@/lib/threads";
 import { generateConversationTitle } from "@/lib/title-utils";
 import { getToolUIConfig } from "@/lib/tool-config";
@@ -23,7 +24,7 @@ import type { AttachedFile, Message } from "./chat-interface";
 import { ChatLoadingIndicator } from "./chat-loading-indicator";
 import { MessageGroup } from "./message-group";
 import { groupMessages } from "./message-grouping";
-import { ToolApprovalDialog } from "./tool-approval-dialog";
+import { ToolApprovalBanner } from "./tool-approval-banner";
 import type { ToolCall } from "./tool-call-message";
 
 // ============================================================================
@@ -55,6 +56,7 @@ export function ChatArea({
   const isLightTheme = themeMode === "light";
   const { settings, toggleShowToolCalls } = useChatSettings();
   const { user } = useAuthStore();
+  const { triggerThreadRefresh } = useConversationStore();
 
   const toolApprovalConfig = useMemo(
     () => ({
@@ -153,6 +155,13 @@ export function ChatArea({
   // Initialize chat hook
   const chat = useChat(chatOptions);
 
+  // Trigger thread list refresh when a new thread is created
+  useEffect(() => {
+    if (chat.threadId && threadId === null) {
+      triggerThreadRefresh();
+    }
+  }, [chat.threadId, threadId, triggerThreadRefresh]);
+
   // Group messages
   const messageGroups = useMemo(() => {
     return groupMessages(chat.messages, chat, hiddenMessageIds);
@@ -174,8 +183,20 @@ export function ChatArea({
       setLiveActivityEvents([]);
       setCurrentToolCalls([]);
       setHiddenMessageIds(new Set());
+      setChatError(null);
     }
   }, [threadId, onMessagesChange, onAttachedFilesChange]);
+
+  // Reset when navigating to new conversation
+  useEffect(() => {
+    // Reset all local state when threadId becomes null/undefined (new chat)
+    if (!threadId) {
+      setCurrentToolCalls([]);
+      setLiveActivityEvents([]);
+      setHiddenMessageIds(new Set());
+      setChatError(null);
+    }
+  }, [threadId]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -334,6 +355,15 @@ export function ChatArea({
   const showLoading =
     chat.isLoading && (chat.messages.length === 0 || chat.messages.at(-1)?.type === "human");
 
+  // Debug: Log interrupt state
+  useEffect(() => {
+    console.log("[ChatArea] Interrupt state:", {
+      isWaitingForInterrupt: chat.isWaitingForInterrupt,
+      hasInterrupt: !!chat.interrupt,
+      interruptData: chat.interrupt,
+    });
+  }, [chat.isWaitingForInterrupt, chat.interrupt]);
+
   return (
     <div className="relative z-10 flex flex-1 flex-col">
       {/* Messages Container */}
@@ -379,6 +409,32 @@ export function ChatArea({
               );
             })}
 
+            {/* Tool Approval Banner - shown in message area */}
+            {chat.isWaitingForInterrupt && chat.interrupt && (
+              <ToolApprovalBanner
+                data={{
+                  type: "tool_approval_required",
+                  tool_call: {
+                    id: "0",
+                    name: chat.interrupt.action_requests[0]?.name || "unknown",
+                    args: chat.interrupt.action_requests[0]?.arguments || {},
+                    status: "pending",
+                  },
+                  all_pending_tools: chat.interrupt.action_requests.map((ar, idx) => ({
+                    id: String(idx),
+                    name: ar.name,
+                    args: ar.arguments,
+                    status: "pending",
+                  })),
+                  auto_execute_tools: [],
+                  message: chat.interrupt.action_requests.map((ar) => ar.description).join("\n"),
+                }}
+                onApprove={() => chat.approveInterrupt()}
+                onReject={() => chat.rejectInterrupt()}
+                isLoading={chat.isResuming}
+              />
+            )}
+
             {/* Loading Indicator */}
             {showLoading && (
               <ChatLoadingIndicator
@@ -419,36 +475,6 @@ export function ChatArea({
           onSubmit={handleSubmit}
           onToggleToolCalls={toggleShowToolCalls}
           showToolCalls={settings.showToolCalls}
-        />
-      )}
-
-      {/* Tool Approval Dialog */}
-      {chat.isWaitingForInterrupt && chat.interrupt && (
-        <ToolApprovalDialog
-          data={{
-            type: "tool_approval_required",
-            tool_call: {
-              id: "0",
-              name: chat.interrupt.action_requests[0]?.name || "unknown",
-              args: chat.interrupt.action_requests[0]?.arguments || {},
-              status: "pending",
-            },
-            all_pending_tools: chat.interrupt.action_requests.map((ar, idx) => ({
-              id: String(idx),
-              name: ar.name,
-              args: ar.arguments,
-              status: "pending",
-            })),
-            auto_execute_tools: [],
-            message: chat.interrupt.action_requests.map((ar) => ar.description).join("\n"),
-          }}
-          isOpen={true}
-          onApprove={() => {
-            chat.approveInterrupt();
-          }}
-          onReject={(reason) => {
-            chat.rejectInterrupt(reason);
-          }}
         />
       )}
     </div>

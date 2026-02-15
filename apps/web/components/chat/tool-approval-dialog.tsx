@@ -1,14 +1,6 @@
 "use client";
 
 import { Button } from "@workspace/ui/components/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog";
 import { cn } from "@workspace/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -21,26 +13,26 @@ import {
   Terminal,
   XCircle,
 } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 export interface ToolApprovalData {
   type: "tool_approval_required";
   tool_call: {
     id: string;
     name: string;
-    args: Record<string, any>;
+    args: Record<string, unknown>;
     status: string;
   };
   all_pending_tools: Array<{
     id: string;
     name: string;
-    args: Record<string, any>;
+    args: Record<string, unknown>;
     status: string;
   }>;
   auto_execute_tools: Array<{
     id: string;
     name: string;
-    args: Record<string, any>;
+    args: Record<string, unknown>;
     status: string;
   }>;
   message: string;
@@ -50,13 +42,10 @@ interface ToolApprovalDialogProps {
   isOpen: boolean;
   data: ToolApprovalData | null;
   onApprove: () => void;
-  onReject: (reason?: string) => void;
+  onReject: () => void;
   className?: string;
 }
 
-/**
- * Get risk level for a tool
- */
 function getToolRiskLevel(toolName: string): "low" | "medium" | "high" {
   const highRiskTools = [
     "shell_execute",
@@ -67,19 +56,12 @@ function getToolRiskLevel(toolName: string): "low" | "medium" | "high" {
   ];
   const mediumRiskTools = ["file_read", "fetch_url_content", "search_web"];
 
-  if (highRiskTools.includes(toolName)) {
-    return "high";
-  }
-  if (mediumRiskTools.includes(toolName)) {
-    return "medium";
-  }
+  if (highRiskTools.includes(toolName)) return "high";
+  if (mediumRiskTools.includes(toolName)) return "medium";
   return "low";
 }
 
-/**
- * Format tool arguments for display
- */
-function formatArgs(args: Record<string, any>): string {
+function formatArgs(args: Record<string, unknown>): string {
   try {
     return JSON.stringify(args, null, 2);
   } catch {
@@ -94,23 +76,29 @@ export function ToolApprovalDialog({
   onReject,
   className,
 }: ToolApprovalDialogProps) {
-  const [showDetails, setShowDetails] = React.useState(false);
-  const [rejectionReason, setRejectionReason] = React.useState("");
-  const [isRejecting, setIsRejecting] = React.useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
-  if (!data) {
-    return null;
-  }
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  if (!isOpen || !data) return null;
 
   const toolCall = data.tool_call;
   const riskLevel = getToolRiskLevel(toolCall.name);
-  const _allTools = [...data.all_pending_tools, ...data.auto_execute_tools];
 
   const riskConfig = {
     high: {
       color: "text-red-500",
       bgColor: "bg-red-500/10",
-      borderColor: "border-red-500/20",
+      borderColor: "border-red-500/30",
       icon: AlertTriangle,
       label: "High Risk",
       description: "This tool can modify your system or execute commands",
@@ -118,7 +106,7 @@ export function ToolApprovalDialog({
     medium: {
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",
-      borderColor: "border-amber-500/20",
+      borderColor: "border-amber-500/30",
       icon: Shield,
       label: "Medium Risk",
       description: "This tool can access external resources",
@@ -126,7 +114,7 @@ export function ToolApprovalDialog({
     low: {
       color: "text-emerald-500",
       bgColor: "bg-emerald-500/10",
-      borderColor: "border-emerald-500/20",
+      borderColor: "border-emerald-500/30",
       icon: Info,
       label: "Low Risk",
       description: "This tool has limited access",
@@ -136,186 +124,122 @@ export function ToolApprovalDialog({
   const risk = riskConfig[riskLevel];
   const RiskIcon = risk.icon;
 
-  const handleReject = () => {
-    if (isRejecting) {
-      onReject(rejectionReason || "User rejected tool execution");
-      setIsRejecting(false);
-      setRejectionReason("");
-    } else {
-      setIsRejecting(true);
-    }
-  };
-
   return (
-    <Dialog onOpenChange={() => {}} open={isOpen}>
-      <DialogContent
-        className={cn("sm:max-w-lg", "border-2", risk.borderColor, className)}
+    <AnimatePresence>
+      <motion.div
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-[9999] flex items-center justify-center"
+        exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
       >
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className={cn("rounded-lg p-2", risk.bgColor, risk.color)}>
-              <RiskIcon className="h-5 w-5" />
-            </div>
-            <div>
-              <DialogTitle className="font-semibold text-lg">
-                Tool Execution Request
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground text-sm">
-                The agent wants to execute a tool that requires your approval
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+        <motion.div
+          animate={{ opacity: 1 }}
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+        />
 
-        <div className="space-y-4">
-          {/* Risk Level Badge */}
-          <div
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
-              risk.bgColor,
-              risk.color
-            )}
-          >
-            <span className="font-medium">{risk.label}</span>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-muted-foreground">{risk.description}</span>
-          </div>
-
-          {/* Tool Details */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Terminal className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{toolCall.name}</span>
-            </div>
-
-            {/* Arguments Preview */}
-            <div className="rounded-lg bg-muted/50 p-3">
-              <button
-                className="flex w-full items-center justify-between text-sm"
-                onClick={() => setShowDetails(!showDetails)}
-              >
-                <span className="font-medium">Arguments</span>
-                {showDetails ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </button>
-              <AnimatePresence>
-                {showDetails && (
-                  <motion.pre
-                    animate={{ height: "auto", opacity: 1 }}
-                    className="mt-2 max-h-48 overflow-auto rounded bg-background/50 p-2 font-mono text-xs"
-                    exit={{ height: 0, opacity: 0 }}
-                    initial={{ height: 0, opacity: 0 }}
-                  >
-                    {formatArgs(toolCall.args)}
-                  </motion.pre>
-                )}
-              </AnimatePresence>
-              {!showDetails && (
-                <p className="mt-1 truncate text-muted-foreground text-xs">
-                  {Object.keys(toolCall.args).join(", ")}
+        <motion.div
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className={cn(
+            "relative z-10 w-full max-w-lg mx-4 rounded-2xl border-2 bg-background shadow-2xl",
+            risk.borderColor,
+            className
+          )}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        >
+          <div className="border-b p-6">
+            <div className="flex items-start gap-4">
+              <div className={cn("rounded-xl p-3", risk.bgColor, risk.color)}>
+                <RiskIcon className="h-6 w-6" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-semibold text-lg">Tool Execution Request</h2>
+                <p className="text-muted-foreground text-sm">
+                  The agent wants to execute a tool that requires your approval
                 </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 p-6">
+            <div
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-4 py-3 text-sm",
+                risk.bgColor,
+                risk.color
+              )}
+            >
+              <span className="font-medium">{risk.label}</span>
+              <span className="opacity-50">•</span>
+              <span className="opacity-80">{risk.description}</span>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Terminal className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{toolCall.name}</span>
+              </div>
+
+              <div className="rounded-lg bg-muted/50 p-3">
+                <button
+                  className="flex w-full items-center justify-between text-sm"
+                  onClick={() => setShowDetails(!showDetails)}
+                  type="button"
+                >
+                  <span className="font-medium">Arguments</span>
+                  {showDetails ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
+                <AnimatePresence>
+                  {showDetails && (
+                    <motion.pre
+                      animate={{ height: "auto", opacity: 1 }}
+                      className="mt-2 max-h-48 overflow-auto rounded bg-background/50 p-2 font-mono text-xs"
+                      exit={{ height: 0, opacity: 0 }}
+                      initial={{ height: 0, opacity: 0 }}
+                    >
+                      {formatArgs(toolCall.args)}
+                    </motion.pre>
+                  )}
+                </AnimatePresence>
+                {!showDetails && (
+                  <p className="mt-1 truncate text-muted-foreground text-xs">
+                    {Object.keys(toolCall.args).join(", ")}
+                  </p>
+                )}
+              </div>
+
+              {data.all_pending_tools.length > 1 && (
+                <div className="text-muted-foreground text-xs">
+                  <p className="mb-1 font-medium">Additional tools waiting for approval:</p>
+                  <ul className="list-inside list-disc space-y-0.5">
+                    {data.all_pending_tools.slice(1).map((tool) => (
+                      <li key={tool.id}>{tool.name}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
-
-            {/* Message */}
-            <p className="text-muted-foreground text-sm">{data.message}</p>
-
-            {/* All Pending Tools */}
-            {data.all_pending_tools.length > 1 && (
-              <div className="text-muted-foreground text-xs">
-                <p className="mb-1 font-medium">
-                  Additional tools waiting for approval:
-                </p>
-                <ul className="list-inside list-disc space-y-0.5">
-                  {data.all_pending_tools.slice(1).map((tool) => (
-                    <li key={tool.id}>{tool.name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Auto-execute Tools */}
-            {data.auto_execute_tools.length > 0 && (
-              <div className="text-muted-foreground text-xs">
-                <p className="mb-1 font-medium">
-                  Tools that will auto-execute:
-                </p>
-                <ul className="list-inside list-disc space-y-0.5">
-                  {data.auto_execute_tools.map((tool) => (
-                    <li key={tool.id}>{tool.name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
 
-          {/* Rejection Reason Input */}
-          <AnimatePresence>
-            {isRejecting && (
-              <motion.div
-                animate={{ height: "auto", opacity: 1 }}
-                className="space-y-2"
-                exit={{ height: 0, opacity: 0 }}
-                initial={{ height: 0, opacity: 0 }}
-              >
-                <label className="font-medium text-sm">
-                  Reason for rejection (optional)
-                </label>
-                <textarea
-                  className="min-h-[80px] w-full resize-none rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Explain why you're rejecting this tool execution..."
-                  value={rejectionReason}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <DialogFooter className="gap-2">
-          {isRejecting ? (
-            <>
-              <Button
-                className="gap-2"
-                onClick={() => {
-                  setIsRejecting(false);
-                  setRejectionReason("");
-                }}
-                variant="outline"
-              >
-                <XCircle className="h-4 w-4" />
-                Cancel
-              </Button>
-              <Button
-                className="gap-2"
-                onClick={handleReject}
-                variant="destructive"
-              >
-                <XCircle className="h-4 w-4" />
-                Reject Tool
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                className="gap-2"
-                onClick={handleReject}
-                variant="outline"
-              >
-                <XCircle className="h-4 w-4" />
-                Reject
-              </Button>
-              <Button className="gap-2" onClick={onApprove}>
-                <CheckCircle2 className="h-4 w-4" />
-                Approve
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <div className="flex justify-end gap-3 border-t p-6">
+            <Button onClick={onReject} variant="outline">
+              <XCircle className="mr-2 h-4 w-4" />
+              Reject
+            </Button>
+            <Button onClick={onApprove}>
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Approve
+            </Button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }

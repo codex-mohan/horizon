@@ -8,7 +8,7 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
-import { Copy, RefreshCw } from "lucide-react";
+import { Bot, Copy, RefreshCw } from "lucide-react";
 import { hasCustomUI } from "@/lib/tool-config";
 import { BranchSwitcher } from "./branch-switcher";
 import { ChatBubble } from "./chat-bubble";
@@ -76,93 +76,109 @@ export function MessageGroup({
       )}
 
       {/* Assistant Group */}
-      {assistantMessage && (
-        <div className="group space-y-2">
-          {/* Assistant Message (no actions inside bubble) */}
-          <ChatBubble
-            isLastGroup={isLastGroup}
-            isLastInGroup={true}
-            isLastMessage={isLastGroup} // Actions are outside the bubble
-            isLoading={isLoading}
-            message={assistantMessage}
-            showActions={false}
-            showAvatar={true}
-          />
+      {(assistantMessage || toolCalls.length > 0) && (
+        <div className="group flex items-start gap-4">
+          {/* Assistant Avatar - Always at top of group, before all content */}
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center self-start rounded-lg transition-transform duration-200 hover:scale-110",
+              "glass border border-border"
+            )}
+          >
+            <Bot className="size-5 text-primary" />
+          </div>
 
-          {/* Tool Calls */}
-          {toolCalls.length > 0 && showToolCalls && (
-            <div className="ml-14 space-y-2">
-              {/* Custom Tool UIs */}
-              <GenerativeUIRenderer
-                isLoading={toolCalls.some((tc) => tc.status === "loading")}
-                toolCalls={toolCalls.filter((tc) => hasCustomUI(tc.name))}
-              />
-
-              {/* Standard Tool Display */}
-              {toolCalls.some((tc) => !hasCustomUI(tc.name)) && (
-                <ToolCallMessage
+          <div className="flex-1 min-w-0 space-y-2">
+            {/* Tool Calls - Render first (AI decides to use tools before responding) */}
+            {toolCalls.length > 0 && showToolCalls && (
+              <div className="space-y-2">
+                {/* Custom Tool UIs */}
+                <GenerativeUIRenderer
                   isLoading={toolCalls.some((tc) => tc.status === "loading")}
-                  toolCalls={toolCalls.filter((tc) => !hasCustomUI(tc.name))}
+                  toolCalls={toolCalls.filter((tc) => hasCustomUI(tc.name))}
                 />
-              )}
-            </div>
-          )}
 
-          {/* Actions Bar - OUTSIDE the bubble, at group level */}
-          <div className="ml-14 flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            {/* Branch Switcher - Only on last group */}
-            {isLastGroup && branchOptions && branchOptions.length > 1 && (
-              <BranchSwitcher
-                branch={branch}
-                branchOptions={branchOptions}
-                onSelect={onBranchChange}
+                {/* Standard Tool Display */}
+                {toolCalls.some((tc) => !hasCustomUI(tc.name)) && (
+                  <ToolCallMessage
+                    isLoading={toolCalls.some((tc) => tc.status === "loading")}
+                    toolCalls={toolCalls.filter((tc) => !hasCustomUI(tc.name))}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Assistant Text Message - Render after tool calls */}
+            {assistantMessage && (assistantMessage.content || assistantMessage.reasoning) && (
+              <ChatBubble
+                isLastGroup={isLastGroup}
+                isLastInGroup={true}
+                isLastMessage={isLastGroup}
+                isLoading={isLoading}
+                message={assistantMessage}
+                showActions={false}
+                showAvatar={false}
               />
             )}
 
-            {/* Regenerate Button */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    className="transition-all duration-200 hover:scale-110"
-                    disabled={isLoading}
-                    onClick={() => onRegenerate(assistantMessage.id, isLastGroup)}
-                    size="icon-sm"
-                    variant="ghost"
-                  >
-                    <RefreshCw
-                      className={cn("size-4 text-foreground", isLoading && "animate-spin")}
-                    />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {isLastGroup
-                      ? "Regenerate response (creates new branch)"
-                      : "Regenerate response (replaces conversation from here)"}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {/* Actions Bar */}
+            {assistantMessage && (
+              <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                {/* Branch Switcher - Only on last group */}
+                {isLastGroup && branchOptions && branchOptions.length > 1 && (
+                  <BranchSwitcher
+                    branch={branch}
+                    branchOptions={branchOptions}
+                    onSelect={onBranchChange}
+                  />
+                )}
 
-            {/* Copy Button */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    className="transition-all duration-200 hover:scale-110"
-                    onClick={() => navigator.clipboard.writeText(assistantMessage.content)}
-                    size="icon-sm"
-                    variant="ghost"
-                  >
-                    <Copy className="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Copy message</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                {/* Regenerate Button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        className="transition-all duration-200 hover:scale-110"
+                        disabled={isLoading}
+                        onClick={() => onRegenerate(assistantMessage.id, isLastGroup)}
+                        size="icon-sm"
+                        variant="ghost"
+                      >
+                        <RefreshCw
+                          className={cn("size-4 text-foreground", isLoading && "animate-spin")}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {isLastGroup
+                          ? "Regenerate response (creates new branch)"
+                          : "Regenerate response (replaces conversation from here)"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Copy Button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        className="transition-all duration-200 hover:scale-110"
+                        onClick={() => navigator.clipboard.writeText(assistantMessage.content)}
+                        size="icon-sm"
+                        variant="ghost"
+                      >
+                        <Copy className="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Copy message</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
           </div>
         </div>
       )}

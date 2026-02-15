@@ -99,12 +99,12 @@
       "createdAt": "2026-02-09T14:16:22.443Z"
     },
     {
-      "id": "28c53c5a-02fe-47ef-9941-b1f316ee22eb",
+      "id": "faf95d71-6e43-4bb1-a9d9-7bb3623e11dd",
       "userId": "cfae84e8-b7bf-494f-9763-2e2871eeb523",
-      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJjZmFlODRlOC1iN2JmLTQ5NGYtOTc2My0yZTI4NzFlZWI1MjMiLCJzZXNzaW9uSWQiOiIyOGM1M2M1YS0wMmZlLTQ3ZWYtOTk0MS1iMWYzMTZlZTIyZWIiLCJpYXQiOjE3NzEwOTU4NDgsImV4cCI6MTc3MzY4Nzg0OH0.L0NCjLfAhdv1z1vs1LaJnMGZRTxHAJxc7osFCoJjXn4",
-      "expiresAt": "2026-02-15T19:04:08.182Z",
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJjZmFlODRlOC1iN2JmLTQ5NGYtOTc2My0yZTI4NzFlZWI1MjMiLCJzZXNzaW9uSWQiOiJmYWY5NWQ3MS02ZTQzLTRiYjEtYTlkOS03YmIzNjIzZTExZGQiLCJpYXQiOjE3NzExODY5ODgsImV4cCI6MTc3Mzc3ODk4OH0.ESIxoe6XXp7LYAgv7Omi8sPjPV5rJoC9fxzZ4ECJqyY",
+      "expiresAt": "2026-02-16T20:23:08.496Z",
       "rememberMe": false,
-      "createdAt": "2026-02-14T19:04:08.188Z"
+      "createdAt": "2026-02-15T20:23:08.500Z"
     }
   ],
   "assistants": []

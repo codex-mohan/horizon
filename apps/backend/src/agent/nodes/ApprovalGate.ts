@@ -109,13 +109,19 @@ export async function ApprovalGate(
   console.log("[ApprovalGate] Calling interrupt() with HITL request");
 
   // Use LangGraph's interrupt() - this pauses execution and returns decisions when resumed
-  const decisions = interrupt(hitlRequest) as HitlDecision[] | undefined;
+  const decisions = interrupt(hitlRequest);
 
-  console.log("[ApprovalGate] Received decisions:", decisions);
+  console.log("[ApprovalGate] interrupt() returned:", typeof decisions, Array.isArray(decisions));
+  console.log("[ApprovalGate] decisions value:", JSON.stringify(decisions));
 
   // If we get here, we've been resumed with decisions
-  if (!decisions || !Array.isArray(decisions)) {
-    console.log("[ApprovalGate] No decisions received, returning empty");
+  if (!decisions) {
+    console.log("[ApprovalGate] No decisions received (null/undefined), returning empty");
+    return {};
+  }
+
+  if (!Array.isArray(decisions)) {
+    console.log("[ApprovalGate] Decisions is not an array:", typeof decisions);
     return {};
   }
 
@@ -127,33 +133,31 @@ export async function ApprovalGate(
     const tc = toolsNeedingApproval[i];
     if (!tc) continue;
 
-    const decision = decisions[i];
+    const decision = decisions[i] as HitlDecision | undefined;
     if (!decision) continue;
 
+    console.log(`[ApprovalGate] Processing decision ${i}:`, decision.type);
+
     if (decision.type === "reject") {
-      console.log("[ApprovalGate] Tool rejected:", tc.name, decision.message);
+      console.log("[ApprovalGate] Tool rejected:", tc.name);
       rejectedToolNames.push(tc.name);
 
       newMessages.push(
         new ToolMessage({
-          content: `Tool execution rejected: ${decision.message || "User declined"}`,
+          content: `Tool execution rejected: User declined`,
           tool_call_id: tc.id || `unknown_${Date.now()}_${i}`,
           name: tc.name,
         })
       );
     } else if (decision.type === "approve") {
       console.log("[ApprovalGate] Tool approved:", tc.name);
-      // Tool will be executed by ToolExecution node
-    } else if (decision.type === "edit" && decision.edited_action) {
-      console.log("[ApprovalGate] Tool edited:", tc.name, "->", decision.edited_action.name);
-      // Update tool call args - handled by modifying the state
     }
   }
 
   // If any tools were rejected, add a message explaining
   if (rejectedToolNames.length > 0) {
     const rejectionMessage = new AIMessage({
-      content: `I was unable to execute the following tool(s) because they were rejected: ${rejectedToolNames.join(", ")}. ${decisions.find((d) => d.message)?.message || ""}`,
+      content: `I was unable to execute the following tool(s) because they were rejected: ${rejectedToolNames.join(", ")}.`,
     });
 
     return {
@@ -161,5 +165,6 @@ export async function ApprovalGate(
     } as Partial<AgentState>;
   }
 
+  console.log("[ApprovalGate] All tools approved, continuing to ToolExecution");
   return {};
 }

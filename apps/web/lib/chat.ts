@@ -95,6 +95,7 @@ export interface UseChatReturn {
   ui: UIMessage[];
   interrupt: InterruptData | null;
   isWaitingForInterrupt: boolean;
+  isResuming: boolean;
   submit: (
     input: { messages: Array<{ type: string; content: string }> } | undefined,
     options?: SubmitOptions
@@ -102,7 +103,7 @@ export interface UseChatReturn {
   stop: () => void;
   setBranch: (branch: string) => void;
   approveInterrupt: () => void;
-  rejectInterrupt: (reason?: string) => void;
+  rejectInterrupt: () => void;
   getMessagesMetadata: (message: Message) => MessageMetadata | null;
   getToolCalls: (message: unknown) => unknown[];
   processEvent: (event: Record<string, unknown>) => ProcessedEvent | null;
@@ -266,6 +267,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   const [lastEvent, setLastEvent] = useState<Record<string, unknown> | null>(null);
   const [interrupt, setInterrupt] = useState<InterruptData | null>(null);
   const [uiMessages, setUIMessages] = useState<UIMessage[]>([]);
+  const [isResuming, setIsResuming] = useState(false);
+  const [isActivelyResuming, setIsActivelyResuming] = useState(false);
   const onThreadIdCalledRef = useRef(false);
   const toolApprovalRef = useRef(toolApproval);
 
@@ -296,24 +299,56 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       const eventObj = { event: "updates", data };
       setLastEvent(eventObj);
       onEvent?.(eventObj);
+
+      // Check if this event contains an interrupt (skip if actively resuming)
+      if (!isActivelyResuming && data && typeof data === "object") {
+        const dataRecord = data as Record<string, unknown>;
+        if (dataRecord.__interrupt__) {
+          console.log("[useChat] Interrupt in update event:", dataRecord.__interrupt__);
+          const interruptValue =
+            (dataRecord.__interrupt__ as any)?.value || dataRecord.__interrupt__;
+          if (interruptValue && interruptValue.action_requests) {
+            setInterrupt(interruptValue as InterruptData);
+          }
+        }
+      }
     },
-    [onEvent]
+    [onEvent, isActivelyResuming]
   );
 
   const handleInterrupt = useCallback(
     (interruptData: unknown) => {
-      console.log("[useChat] Interrupt received:", interruptData);
+      // Don't process interrupts while actively resuming
+      if (isActivelyResuming) {
+        console.log("[useChat] Ignoring interrupt callback - actively resuming");
+        return;
+      }
+
+      console.log("[useChat] onInterrupt callback fired with:", JSON.stringify(interruptData));
 
       // LangGraph sends interrupt as { action_requests: [...], review_configs: [...] }
       const interruptObj = interruptData as InterruptData;
       if (interruptObj && Array.isArray(interruptObj.action_requests)) {
+        console.log("[useChat] Setting interrupt state with action_requests");
         setInterrupt(interruptObj);
         onInterrupt?.(interruptData as Record<string, unknown>);
       } else {
-        console.warn("[useChat] Unknown interrupt format:", interruptData);
+        console.warn("[useChat] Unknown interrupt format, trying to extract:", interruptData);
+        // Try to handle different formats
+        if (interruptData && typeof interruptData === "object") {
+          const data = interruptData as Record<string, unknown>;
+          // Maybe it's nested
+          if (data.value && (data.value as any).action_requests) {
+            console.log("[useChat] Found nested action_requests in .value");
+            setInterrupt(data.value as InterruptData);
+          } else if (data.action_requests) {
+            console.log("[useChat] Found action_requests at root");
+            setInterrupt(interruptData as InterruptData);
+          }
+        }
       }
     },
-    [onInterrupt]
+    [onInterrupt, isActivelyResuming]
   );
 
   const handleCustomEvent = useCallback((event: unknown) => {
@@ -379,7 +414,69 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     } else {
       onThreadIdCalledRef.current = false;
     }
+    // Clear all state when thread changes
+    setInterrupt(null);
+    setUIMessages([]);
+    setLastEvent(null);
+    setIsActivelyResuming(false);
   }, [initialThreadId]);
+
+  // Check for pending interrupts when thread is loaded
+  useEffect(() => {
+    if (!currentThreadId || isActivelyResuming) {
+      // No thread or actively resuming - ensure interrupt is cleared appropriately
+      if (!isActivelyResuming) {
+        setInterrupt(null);
+      }
+      return;
+    }
+
+    const checkForInterrupt = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/threads/${currentThreadId}/state`);
+        if (!response.ok) return;
+
+        const state = await response.json();
+        console.log("[useChat] State check for thread", currentThreadId, {
+          hasNext: state.next?.length > 0,
+          next: state.next,
+        });
+
+        // Check if the thread has pending tasks (interrupt)
+        if (state.next && state.next.length > 0) {
+          // Thread has pending execution - check for interrupt data
+          if (state.tasks && Array.isArray(state.tasks)) {
+            for (const task of state.tasks) {
+              if (task.interrupts && task.interrupts.length > 0) {
+                const interruptValue = task.interrupts[0].value;
+                if (interruptValue && interruptValue.action_requests) {
+                  console.log("[useChat] Found pending interrupt:", interruptValue);
+                  setInterrupt(interruptValue as InterruptData);
+                  return;
+                }
+              }
+            }
+          }
+
+          // Also check state.values for __interrupt__ data
+          if (state.values?.__interrupt__) {
+            const interruptValue = state.values.__interrupt__;
+            const value = interruptValue.value || interruptValue;
+            if (value && value.action_requests) {
+              console.log("[useChat] Found interrupt in state.values:", value);
+              setInterrupt(value as InterruptData);
+              return;
+            }
+          }
+        }
+      } catch (error) {
+        console.error("[useChat] Error checking for interrupt:", error);
+      }
+    };
+
+    const timeoutId = setTimeout(checkForInterrupt, 300);
+    return () => clearTimeout(timeoutId);
+  }, [currentThreadId, apiUrl, isActivelyResuming]);
 
   const stream = useStream<ChatState>({
     apiUrl,
@@ -394,6 +491,26 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     throttle: 30,
     fetchStateHistory,
   } as any);
+
+  // The SDK exposes interrupt as a property on stream - use it as a fallback
+  const streamInterrupt = (stream as any).interrupt;
+
+  // Update interrupt state when stream.interrupt changes
+  useEffect(() => {
+    if (isActivelyResuming) {
+      return;
+    }
+    if (streamInterrupt && !interrupt) {
+      console.log("[useChat] stream.interrupt detected:", streamInterrupt);
+      // The interrupt value might be nested
+      const interruptValue = streamInterrupt.value || streamInterrupt;
+      if (interruptValue && interruptValue.action_requests) {
+        setInterrupt(interruptValue as InterruptData);
+      } else if (typeof streamInterrupt === "object" && (streamInterrupt as any).action_requests) {
+        setInterrupt(streamInterrupt as InterruptData);
+      }
+    }
+  }, [streamInterrupt, interrupt, isActivelyResuming]);
 
   const submit = useCallback(
     (
@@ -456,61 +573,60 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     stream.stop();
   }, [stream]);
 
-  // Resume with approval - uses Command(resume={decisions: [...]})
+  // Resume with approval
   const approveInterrupt = useCallback(() => {
     console.log("[useChat] Approving interrupt");
 
     const currentInterrupt = interrupt;
     setInterrupt(null);
+    setIsResuming(true);
+    setIsActivelyResuming(true);
 
     if (currentInterrupt && currentThreadId) {
-      // Build decisions array - one approve for each action_request
       const decisions: HitlDecision[] = currentInterrupt.action_requests.map(() => ({
         type: "approve" as const,
       }));
 
-      console.log("[useChat] Sending decisions:", decisions);
+      console.log("[useChat] Sending approve decisions:", decisions);
 
-      // Use Command(resume={...}) pattern via stream.submit
+      // Use the stream's submit method with command
       const streamAny = stream as any;
-      streamAny.submit(undefined, {
-        command: {
-          resume: {
-            decisions,
-          },
-        },
+      streamAny.submit(null, {
+        command: { resume: decisions },
       });
+      setIsResuming(false);
+    } else {
+      setIsResuming(false);
+      setIsActivelyResuming(false);
     }
   }, [currentThreadId, interrupt, stream]);
 
-  const rejectInterrupt = useCallback(
-    (reason?: string) => {
-      console.log("[useChat] Rejecting interrupt:", reason);
+  const rejectInterrupt = useCallback(() => {
+    console.log("[useChat] Rejecting interrupt");
 
-      const currentInterrupt = interrupt;
-      setInterrupt(null);
+    const currentInterrupt = interrupt;
+    setInterrupt(null);
+    setIsResuming(true);
+    setIsActivelyResuming(true);
 
-      if (currentInterrupt && currentThreadId) {
-        // Build decisions array - one reject for each action_request
-        const decisions: HitlDecision[] = currentInterrupt.action_requests.map(() => ({
-          type: "reject" as const,
-          message: reason || "User declined",
-        }));
+    if (currentInterrupt && currentThreadId) {
+      const decisions: HitlDecision[] = currentInterrupt.action_requests.map(() => ({
+        type: "reject" as const,
+      }));
 
-        console.log("[useChat] Sending reject decisions:", decisions);
+      console.log("[useChat] Sending reject decisions:", decisions);
 
-        const streamAny = stream as any;
-        streamAny.submit(undefined, {
-          command: {
-            resume: {
-              decisions,
-            },
-          },
-        });
-      }
-    },
-    [currentThreadId, interrupt, stream]
-  );
+      // Use the stream's submit method with command
+      const streamAny = stream as any;
+      streamAny.submit(null, {
+        command: { resume: decisions },
+      });
+      setIsResuming(false);
+    } else {
+      setIsResuming(false);
+      setIsActivelyResuming(false);
+    }
+  }, [currentThreadId, interrupt, stream]);
 
   const getMessagesMetadata = useCallback(
     (message: Message): MessageMetadata | null => {
@@ -532,6 +648,24 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   }, []);
 
   const messages = stream.messages ?? [];
+
+  // Reset isActivelyResuming when stream finishes (no longer loading and no interrupt)
+  useEffect(() => {
+    if (!stream.isLoading && !(stream as any).interrupt && isActivelyResuming) {
+      setIsActivelyResuming(false);
+    }
+  }, [stream.isLoading, isActivelyResuming, stream]);
+
+  // Debug: Log stream state
+  useEffect(() => {
+    console.log("[useChat] Stream state:", {
+      isLoading: stream.isLoading,
+      hasMessages: messages.length > 0,
+      hasInterrupt: !!(stream as any).interrupt,
+      hasValues: !!(stream as any).values,
+      valuesKeys: (stream as any).values ? Object.keys((stream as any).values) : [],
+    });
+  }, [stream.isLoading, messages.length, stream]);
 
   const streamUIMessages = (stream.values?.ui as UIMessage[]) ?? [];
   const uiMessageMap = new Map<string, UIMessage>();
@@ -567,13 +701,14 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
   return {
     messages,
-    isLoading: stream.isLoading,
+    isLoading: stream.isLoading && !interrupt,
     error: stream.error,
     threadId: currentThreadId,
     lastEvent,
     ui: mergedUIMessages,
     interrupt,
     isWaitingForInterrupt: interrupt !== null,
+    isResuming,
     submit,
     stop,
     setBranch,

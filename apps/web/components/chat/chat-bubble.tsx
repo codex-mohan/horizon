@@ -106,28 +106,29 @@ export const ChatBubble = React.memo(
     return (
       <div
         className={cn(
-          "group flex animate-slide-up gap-4",
-          isUser ? "flex-row-reverse" : "flex-row",
+          "group flex animate-slide-up",
+          isUser ? "flex-row-reverse gap-4" : "flex-row",
+          !isUser && !showAvatar && "gap-0",
+          !isUser && showAvatar && "gap-4",
           isEditing && "w-full"
         )}
       >
         {/* Avatar */}
-        <div
-          className={cn(
-            "flex size-10 shrink-0 items-center justify-center self-start rounded-lg transition-transform duration-200 hover:scale-110",
-            isUser
-              ? "bg-linear-to-br from-primary to-accent"
-              : "glass border border-border",
-            !(showAvatar || isUser) && "invisible",
-            isEditing && "mt-2"
-          )}
-        >
-          {isUser ? (
-            <User className="size-5 text-foreground" />
-          ) : (
-            <Bot className="size-5 text-primary" />
-          )}
-        </div>
+        {(showAvatar || isUser) && (
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center self-start rounded-lg transition-transform duration-200 hover:scale-110",
+              isUser ? "bg-linear-to-br from-primary to-accent" : "glass border border-border",
+              isEditing && "mt-2"
+            )}
+          >
+            {isUser ? (
+              <User className="size-5 text-foreground" />
+            ) : (
+              <Bot className="size-5 text-primary" />
+            )}
+          </div>
+        )}
 
         {/* Message Content */}
         <div
@@ -191,9 +192,9 @@ export const ChatBubble = React.memo(
                   "wrap-break-word relative rounded-xl p-4 font-body leading-relaxed",
                   isUser
                     ? cn(
-                      isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
-                      "text-foreground"
-                    )
+                        isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
+                        "text-foreground"
+                      )
                     : "w-full text-foreground"
                 )}
               >
