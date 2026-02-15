@@ -124,7 +124,7 @@ export function MessageGroup({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    className="size-8 bg-background/50 transition-all duration-200 hover:scale-110 hover:bg-background/80"
+                    className="transition-all duration-200 hover:scale-110"
                     disabled={isLoading}
                     onClick={() => onRegenerate(assistantMessage.id, isLastGroup)}
                     size="icon-sm"
@@ -150,7 +150,7 @@ export function MessageGroup({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    className="size-8 bg-background/50 transition-all duration-200 hover:scale-110 hover:bg-background/80"
+                    className="transition-all duration-200 hover:scale-110"
                     onClick={() => navigator.clipboard.writeText(assistantMessage.content)}
                     size="icon-sm"
                     variant="ghost"

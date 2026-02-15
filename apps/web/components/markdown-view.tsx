@@ -372,34 +372,34 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         );
       },
       p: ({ children }: any) => (
-        <span className="mb-3 block break-words font-body text-[1.0625rem] text-foreground/90 leading-relaxed last:mb-0">
+        <span className="mt-3 mb-3 block wrap-break-word font-body text-[1.0625rem] text-foreground/90 leading-relaxed last:mb-0">
           {children}
         </span>
       ),
       h1: ({ children }: any) => (
-        <h1 className="mt-4 mb-2 font-bold font-display text-xl tracking-tight">
+        <h1 className="mt-4 mb-2 font-bold font-display text-foreground/90 text-xl tracking-tight">
           {children}
         </h1>
       ),
       h2: ({ children }: any) => (
-        <h2 className="mt-4 mb-2 font-bold font-display text-lg tracking-tight">
+        <h2 className="mt-4 mb-2 font-bold font-display text-foreground/90 text-lg tracking-tight">
           {children}
         </h2>
       ),
       h3: ({ children }: any) => (
-        <h3 className="mt-3 mb-1.5 font-bold font-display text-base tracking-tight">
+        <h3 className="mt-3 mb-2 font-bold font-display text-foreground/90 text-base tracking-tight">
           {children}
         </h3>
       ),
       ul: (props: any) => (
         <ul
-          className="[&_span]:!m-0 [&_span]:!inline my-3 list-disc pl-5 text-[1.0625rem] [&>li]:mt-1.5"
+          className="[&_span]:m-0! [&_span]:inline! my-3 list-disc pl-5 text-[1.0625rem] [&>li]:mt-1.5"
           {...props}
         />
       ),
       ol: (props: any) => (
         <ol
-          className="[&_span]:!m-0 [&_span]:!inline my-3 list-decimal pl-5 text-[1.0625rem] [&>li]:mt-1.5"
+          className="[&_span]:m-0! [&_span]:inline! my-3 list-decimal pl-5 text-[1.0625rem] [&>li]:mt-1.5"
           {...props}
         />
       ),

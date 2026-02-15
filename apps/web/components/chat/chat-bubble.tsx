@@ -138,35 +138,28 @@ export const ChatBubble = React.memo(
           )}
         >
           {/* File Attachments */}
-          {message.attachments &&
-            message.attachments.length > 0 &&
-            !isEditing && (
-              <div
-                className={cn(
-                  "mb-1 flex flex-wrap gap-2",
-                  isUser ? "justify-end" : "justify-start"
-                )}
-              >
-                {message.attachments.map((file) => (
-                  <FileBadge
-                    key={file.id}
-                    name={file.name}
-                    size={file.size}
-                    type={file.type}
-                    url={file.url}
-                  />
-                ))}
-              </div>
-            )}
+          {message.attachments && message.attachments.length > 0 && !isEditing && (
+            <div
+              className={cn("mb-1 flex flex-wrap gap-2", isUser ? "justify-end" : "justify-start")}
+            >
+              {message.attachments.map((file) => (
+                <FileBadge
+                  key={file.id}
+                  name={file.name}
+                  size={file.size}
+                  type={file.type}
+                  url={file.url}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Inline Editing Mode */}
           {isEditing ? (
             <div
               className={cn(
                 "w-full space-y-3 rounded-xl border p-4",
-                isLightTheme
-                  ? "border-slate-200 bg-white"
-                  : "border-border bg-muted/30"
+                isLightTheme ? "border-slate-200 bg-white" : "border-border bg-muted/30"
               )}
             >
               <Textarea
@@ -177,20 +170,12 @@ export const ChatBubble = React.memo(
                 value={editContent}
               />
               <div className="flex items-center justify-end gap-2 border-border/50 border-t pt-2">
-                <Button
-                  className="h-8"
-                  onClick={handleCancelEdit}
-                  size="sm"
-                  variant="ghost"
-                >
+                <Button className="h-8" onClick={handleCancelEdit} size="sm" variant="ghost">
                   Cancel
                 </Button>
                 <Button
                   className="h-8"
-                  disabled={
-                    !editContent.trim() ||
-                    editContent.trim() === message.content
-                  }
+                  disabled={!editContent.trim() || editContent.trim() === message.content}
                   onClick={handleSaveEdit}
                   size="sm"
                 >
@@ -206,9 +191,7 @@ export const ChatBubble = React.memo(
                   "wrap-break-word relative rounded-xl p-4 font-body leading-relaxed",
                   isUser
                     ? cn(
-                        isLightTheme
-                          ? "glass-user-bubble-light"
-                          : "glass-user-bubble",
+                        isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
                         "text-foreground"
                       )
                     : "w-full text-foreground"
@@ -217,9 +200,7 @@ export const ChatBubble = React.memo(
                 {/* Reasoning Block */}
                 {message.reasoning && (
                   <div className="mb-4">
-                    <div className="mb-2 font-medium text-amber-400/80 text-xs">
-                      Reasoning
-                    </div>
+                    <div className="mb-2 font-medium text-amber-400/80 text-xs">Reasoning</div>
                     <div className="rounded-2xl border border-amber-500/20 bg-amber-950/50 px-4 py-3">
                       <div className="whitespace-pre-wrap text-amber-100/90 text-sm">
                         {message.reasoning}
@@ -267,7 +248,7 @@ export const ChatBubble = React.memo(
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            className="size-8 bg-background/50 transition-all duration-200 hover:scale-110 hover:bg-background/80"
+                            className="transition-all duration-200 hover:scale-110"
                             disabled={isLoading}
                             onClick={handleEditClick}
                             size="icon-sm"
@@ -293,18 +274,13 @@ export const ChatBubble = React.memo(
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            className="size-8 bg-background/50 transition-all duration-200 hover:scale-110 hover:bg-background/80"
+                            className="transition-all duration-200 hover:scale-110"
                             disabled={isLoading}
                             onClick={handleRegenerateClick}
                             size="icon-sm"
                             variant="ghost"
                           >
-                            <RefreshCw
-                              className={cn(
-                                "size-4",
-                                isLoading && "animate-spin"
-                              )}
-                            />
+                            <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -323,7 +299,7 @@ export const ChatBubble = React.memo(
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          className="size-8 bg-background/50 transition-all duration-200 hover:scale-110 hover:bg-background/80"
+                          className="transition-all duration-200 hover:scale-110"
                           onClick={handleCopy}
                           size="icon-sm"
                           variant="ghost"

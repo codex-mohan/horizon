@@ -43,3 +43,8 @@ npm-debug.log*
 *.deb
 *.rpm
 *.apk
+
+# Telemetry
+telemetry-id
+.telemetry-id
+.telemetry
