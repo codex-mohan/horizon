@@ -6,11 +6,8 @@ import { ChatOllama } from "@langchain/ollama";
 import { ChatOpenAI } from "@langchain/openai";
 import { type AgentConfig, agentConfig } from "./config.js";
 
-export async function createLLM(
-  config: AgentConfig = agentConfig
-): Promise<BaseChatModel> {
-  const { MODEL_PROVIDER, MODEL_NAME, TEMPERATURE, MAX_TOKENS, BASE_URL } =
-    config;
+export async function createLLM(config: AgentConfig = agentConfig): Promise<BaseChatModel> {
+  const { MODEL_PROVIDER, MODEL_NAME, TEMPERATURE, MAX_TOKENS, BASE_URL } = config;
 
   console.log(`[LLM] Initializing ${MODEL_PROVIDER} model: ${MODEL_NAME}`);
 

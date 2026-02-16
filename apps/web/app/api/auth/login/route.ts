@@ -7,10 +7,7 @@ export async function POST(request: NextRequest) {
     const { username, password, rememberMe = false } = body;
 
     if (!(username && password)) {
-      return NextResponse.json(
-        { error: "Username and password are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Username and password are required" }, { status: 400 });
     }
 
     const result = await loginUser(username, password, rememberMe);
@@ -44,9 +41,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Login API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

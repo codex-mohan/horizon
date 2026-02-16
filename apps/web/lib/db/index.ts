@@ -154,12 +154,8 @@ export const db = {
     cleanExpired: (): number => {
       const database = loadDb();
       const now = new Date();
-      const expired = database.sessions.filter(
-        (s) => new Date(s.expiresAt) < now
-      );
-      database.sessions = database.sessions.filter(
-        (s) => new Date(s.expiresAt) >= now
-      );
+      const expired = database.sessions.filter((s) => new Date(s.expiresAt) < now);
+      database.sessions = database.sessions.filter((s) => new Date(s.expiresAt) >= now);
       saveDb(database);
       return expired.length;
     },
@@ -177,9 +173,7 @@ export const db = {
     },
     findDefault: (userId: string): Assistant | undefined => {
       const database = loadDb();
-      return database.assistants.find(
-        (a) => a.user_id === userId && a.is_default
-      );
+      return database.assistants.find((a) => a.user_id === userId && a.is_default);
     },
     findPublic: (): Assistant[] => {
       const database = loadDb();
@@ -191,10 +185,7 @@ export const db = {
       saveDb(database);
       return assistant;
     },
-    update: (
-      id: string,
-      updates: Partial<Assistant>
-    ): Assistant | undefined => {
+    update: (id: string, updates: Partial<Assistant>): Assistant | undefined => {
       const database = loadDb();
       const index = database.assistants.findIndex((a) => a.id === id);
       if (index === -1) {

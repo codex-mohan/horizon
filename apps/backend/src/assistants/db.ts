@@ -68,9 +68,7 @@ export const assistantsDb = {
 
   findDefault: (userId: string): Assistant | undefined => {
     const database = loadDb();
-    return database.assistants.find(
-      (a) => a.user_id === userId && a.is_default
-    );
+    return database.assistants.find((a) => a.user_id === userId && a.is_default);
   },
 
   findPublic: (): Assistant[] => {

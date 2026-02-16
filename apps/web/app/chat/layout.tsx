@@ -5,10 +5,6 @@ export const metadata: Metadata = {
   description: "AI Chat Interface by Singularity.ai",
 };
 
-export default function ChatLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ChatLayout({ children }: { children: React.ReactNode }) {
   return children;
 }

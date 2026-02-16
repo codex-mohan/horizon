@@ -16,11 +16,7 @@
  */
 
 import pc from "picocolors";
-import {
-  type ExecutionResult,
-  type ShellConfig,
-  ShellExecutor,
-} from "./executor.js";
+import { type ExecutionResult, type ShellConfig, ShellExecutor } from "./executor.js";
 import type { CommandHistory } from "./history.js";
 import { getPlatformInfo, type PlatformInfo } from "./platform.js";
 
@@ -286,9 +282,7 @@ export class InteractiveShell {
   /**
    * Handle built-in shell commands
    */
-  private async handleBuiltins(
-    command: string
-  ): Promise<ExecutionResult | null> {
+  private async handleBuiltins(command: string): Promise<ExecutionResult | null> {
     const trimmed = command.trim();
     const parts = trimmed.split(/\s+/);
     const cmd = parts[0]?.toLowerCase() ?? "";
@@ -344,9 +338,7 @@ export class InteractiveShell {
       case "history": {
         const count = Number.parseInt(args[0] ?? "", 10) || 20;
         const entries = this.executor.getHistory().getLast(count);
-        const output = entries
-          .map((e, i) => `${i + 1}  ${e.command}`)
-          .join("\n");
+        const output = entries.map((e, i) => `${i + 1}  ${e.command}`).join("\n");
         return createResult(`${output}\n`);
       }
 
@@ -564,10 +556,7 @@ export class InteractiveShell {
   /**
    * Create a new shell from serialized state
    */
-  static fromJSON(
-    json: string,
-    config: InteractiveConfig = {}
-  ): InteractiveShell {
+  static fromJSON(json: string, config: InteractiveConfig = {}): InteractiveShell {
     const { state, history } = JSON.parse(json);
 
     const shell = new InteractiveShell({

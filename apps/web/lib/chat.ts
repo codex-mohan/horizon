@@ -9,7 +9,7 @@
  * - Tool approval handling with proper LangGraph interrupt/resume
  */
 
-import type { Message } from "@langchain/langgraph-sdk";
+import { Client, type Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ToolApprovalMode } from "@/lib/stores/chat-settings";
@@ -277,14 +277,29 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   }, [toolApproval]);
 
   const handleThreadId = useCallback(
-    (threadId: string) => {
+    async (threadId: string) => {
       setCurrentThreadId(threadId);
+
+      // Update thread metadata with user_id for proper filtering
+      // Only do this for newly created threads (not when loading existing ones)
+      if (userId && !initialThreadId && !onThreadIdCalledRef.current) {
+        try {
+          const client = new Client({ apiUrl });
+          await client.threads.update(threadId, {
+            metadata: { user_id: userId },
+          });
+          console.log("[useChat] Updated thread metadata with user_id:", threadId);
+        } catch (error) {
+          console.error("[useChat] Failed to update thread metadata:", error);
+        }
+      }
+
       if (!(onThreadIdCalledRef.current || initialThreadId)) {
         onThreadIdCalledRef.current = true;
         onThreadId?.(threadId);
       }
     },
-    [initialThreadId, onThreadId]
+    [initialThreadId, onThreadId, userId, apiUrl]
   );
 
   const handleError = useCallback(
@@ -412,6 +427,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       setCurrentThreadId(initialThreadId);
       onThreadIdCalledRef.current = true;
     } else {
+      // Reset thread ID for new chat
+      setCurrentThreadId(undefined);
       onThreadIdCalledRef.current = false;
     }
     // Clear all state when thread changes
@@ -513,7 +530,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   }, [streamInterrupt, interrupt, isActivelyResuming]);
 
   const submit = useCallback(
-    (
+    async (
       input: { messages: Array<{ type: string; content: string }> } | undefined,
       options?: SubmitOptions
     ) => {
@@ -647,7 +664,9 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     return processStreamEvent(event);
   }, []);
 
-  const messages = stream.messages ?? [];
+  // Only return messages if we have an active thread
+  // When threadId is null/undefined (new chat), return empty array to show empty state
+  const messages = currentThreadId ? (stream.messages ?? []) : [];
 
   // Reset isActivelyResuming when stream finishes (no longer loading and no interrupt)
   useEffect(() => {

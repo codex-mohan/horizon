@@ -3,10 +3,7 @@
 import * as React from "react";
 
 interface GradientSliderProps
-  extends Omit<
-    React.HTMLAttributes<HTMLDivElement>,
-    "onChange" | "defaultValue"
-  > {
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange" | "defaultValue"> {
   gradientColors?: {
     from?: string;
     via?: string;
@@ -58,8 +55,7 @@ const GradientSlider = React.forwardRef<HTMLDivElement, GradientSliderProps>(
       [onChange, onValueChange]
     );
 
-    const valueArray =
-      controlledValue !== undefined ? controlledValue : internalValue;
+    const valueArray = controlledValue !== undefined ? controlledValue : internalValue;
     const value: any = valueArray[0];
 
     // Fixed: Provide default gradient colors
@@ -281,8 +277,7 @@ const GradientSlider = React.forwardRef<HTMLDivElement, GradientSliderProps>(
           <div
             className="pointer-events-none absolute inset-0 rounded-full"
             style={{
-              boxShadow:
-                "inset 0 1px 1px rgba(255,255,255,0.5), inset 0 -1px 1px rgba(0,0,0,0.1)",
+              boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5), inset 0 -1px 1px rgba(0,0,0,0.1)",
             }}
           />
         </div>

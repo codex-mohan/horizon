@@ -39,9 +39,7 @@ export default function Home() {
           <h1 className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text font-bold font-display text-2xl text-transparent tracking-tight">
             Horizon
           </h1>
-          <p className="font-accent text-muted-foreground text-sm italic">
-            Loading...
-          </p>
+          <p className="font-accent text-muted-foreground text-sm italic">Loading...</p>
         </div>
       </motion.div>
     </div>

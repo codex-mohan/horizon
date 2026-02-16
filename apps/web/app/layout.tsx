@@ -1,11 +1,6 @@
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
-import {
-  Playfair_Display,
-  Source_Code_Pro,
-  Source_Sans_3,
-  Space_Grotesk,
-} from "next/font/google";
+import { Playfair_Display, Source_Code_Pro, Source_Sans_3, Space_Grotesk } from "next/font/google";
 import type React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -50,8 +45,7 @@ const sourceCodePro = Source_Code_Pro({
 
 export const metadata: Metadata = {
   title: "Horizon - AI Chat Interface",
-  description:
-    "Experience the event horizon of AI conversations by Singularity.ai",
+  description: "Experience the event horizon of AI conversations by Singularity.ai",
   generator: "v0.app",
   icons: {
     icon: [

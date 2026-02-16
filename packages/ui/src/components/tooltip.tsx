@@ -11,9 +11,7 @@ function TooltipProvider({
   return <TooltipPrimitive.Provider delayDuration={delayDuration} {...props} />;
 }
 
-function Tooltip({
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
   return (
     <TooltipProvider>
       <TooltipPrimitive.Root {...props} />
@@ -21,9 +19,7 @@ function Tooltip({
   );
 }
 
-function TooltipTrigger({
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
+function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
   return <TooltipPrimitive.Trigger {...props} />;
 }
 
@@ -56,8 +52,7 @@ function TooltipContent({
   }, []);
 
   // Auto-detect variant based on theme
-  const resolvedVariant =
-    variant === "auto" ? (isDark ? "default" : "light") : variant;
+  const resolvedVariant = variant === "auto" ? (isDark ? "default" : "light") : variant;
 
   const contentStyle: React.CSSProperties =
     resolvedVariant === "light"
@@ -68,11 +63,9 @@ function TooltipContent({
           color-mix(in srgb, var(--gradient-to) 15%, transparent))`,
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
-          border:
-            "1px solid color-mix(in srgb, var(--gradient-via) 30%, transparent)",
+          border: "1px solid color-mix(in srgb, var(--gradient-via) 30%, transparent)",
           color: "var(--foreground)",
-          boxShadow:
-            "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
+          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
           ...style,
         }
       : {
@@ -81,8 +74,7 @@ function TooltipContent({
           var(--gradient-via),
           var(--gradient-to))`,
           color: "white",
-          boxShadow:
-            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
           ...style,
         };
 

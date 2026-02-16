@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import {
   DropdownMenu,
@@ -41,24 +37,12 @@ import { UserSettingsDialog } from "./user-settings-dialog";
 
 interface SidebarProps {
   isExpanded: boolean;
-  activeSection:
-    | "conversations"
-    | "my-items"
-    | "collections"
-    | "assistants"
-    | null;
-  onSectionChange: (
-    section: "conversations" | "my-items" | "collections" | "assistants"
-  ) => void;
+  activeSection: "conversations" | "my-items" | "collections" | "assistants" | null;
+  onSectionChange: (section: "conversations" | "my-items" | "collections" | "assistants") => void;
   onCollapse: () => void;
 }
 
-export function Sidebar({
-  isExpanded,
-  activeSection,
-  onSectionChange,
-  onCollapse,
-}: SidebarProps) {
+export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse }: SidebarProps) {
   const { user, logout } = useAuthStore();
   const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false);
   const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false);
@@ -164,23 +148,14 @@ export function Sidebar({
                     variant="ghost"
                   >
                     <Avatar className="size-10 transition-transform duration-200">
-                      <AvatarImage
-                        src={user?.avatarUrl || "/horizon-icon.png"}
-                      />
+                      <AvatarImage src={user?.avatarUrl || "/horizon-icon.png"} />
                       <AvatarFallback className="bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-[var(--foreground)]">
-                        {user?.displayName
-                          ? user.displayName.substring(0, 2).toUpperCase()
-                          : "U"}
+                        {user?.displayName ? user.displayName.substring(0, 2).toUpperCase() : "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56"
-                  side="right"
-                  sideOffset={10}
-                >
+                <DropdownMenuContent align="end" className="w-56" side="right" sideOffset={10}>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="font-medium text-sm leading-none">

@@ -70,18 +70,7 @@ export interface GlassButtonProps
 }
 
 const GlassButton = React.forwardRef<HTMLButtonElement, GlassButtonProps>(
-  (
-    {
-      className,
-      variant,
-      asChild = false,
-      size,
-      glowEffect = false,
-      children,
-      ...props
-    },
-    ref
-  ) => {
+  ({ className, variant, asChild = false, size, glowEffect = false, children, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     return (
       <div className="relative inline-block">
@@ -93,9 +82,7 @@ const GlassButton = React.forwardRef<HTMLButtonElement, GlassButtonProps>(
           ref={ref}
           {...props}
         >
-          <span className="relative z-10 flex items-center gap-2">
-            {children}
-          </span>
+          <span className="relative z-10 flex items-center gap-2">{children}</span>
         </Comp>
       </div>
     );

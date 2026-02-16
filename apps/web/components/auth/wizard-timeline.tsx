@@ -64,8 +64,7 @@ export function WizardTimeline({
                       "bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-emerald-500/30 shadow-lg",
                     isCurrent &&
                       "bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30 ring-4 ring-primary/20",
-                    isPending &&
-                      "border-2 border-muted-foreground/30 border-dashed bg-muted/50"
+                    isPending && "border-2 border-muted-foreground/30 border-dashed bg-muted/50"
                   )}
                   transition={{
                     repeat: isCurrent ? Number.POSITIVE_INFINITY : 0,
@@ -94,9 +93,7 @@ export function WizardTimeline({
                         initial={{ scale: 0 }}
                         key="current"
                       >
-                        <span className="font-bold text-lg text-white">
-                          {index + 1}
-                        </span>
+                        <span className="font-bold text-lg text-white">{index + 1}</span>
                       </motion.div>
                     ) : (
                       <motion.div

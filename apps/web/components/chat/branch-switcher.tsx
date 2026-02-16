@@ -129,9 +129,7 @@ export function BranchSwitcher({
         size="icon-sm"
         variant="ghost"
       >
-        <ChevronRight
-          className={cn(iconSizes[size], "text-muted-foreground")}
-        />
+        <ChevronRight className={cn(iconSizes[size], "text-muted-foreground")} />
       </Button>
     </div>
   );

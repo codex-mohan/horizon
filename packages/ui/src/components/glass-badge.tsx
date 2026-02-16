@@ -40,12 +40,7 @@ export interface GlassBadgeProps
     VariantProps<typeof glassBadgeVariants> {}
 
 function GlassBadge({ className, variant, ...props }: GlassBadgeProps) {
-  return (
-    <div
-      className={cn(glassBadgeVariants({ variant }), className)}
-      {...props}
-    />
-  );
+  return <div className={cn(glassBadgeVariants({ variant }), className)} {...props} />;
 }
 
 export { GlassBadge, glassBadgeVariants };

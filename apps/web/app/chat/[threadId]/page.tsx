@@ -54,9 +54,7 @@ export default function ChatPage() {
   const [isValidThread, setIsValidThread] = useState(true);
 
   // Track the active thread ID to pass to ChatArea
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(
-    isNewChat ? null : threadId
-  );
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(isNewChat ? null : threadId);
 
   // Refresh user on mount
   useEffect(() => {
@@ -106,8 +104,7 @@ export default function ChatPage() {
       setIsValidThread(true);
 
       try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
+        const apiUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
         const threadsClient = createThreadsClient(apiUrl);
         const thread = await threadsClient.getThread(threadId);
 
@@ -149,10 +146,7 @@ export default function ChatPage() {
   const handleThreadChange = useCallback(
     (newThreadId: string | null) => {
       if (newThreadId && newThreadId !== threadId && threadId === "new") {
-        console.log(
-          "[ChatPage] New thread created, transitioning:",
-          newThreadId
-        );
+        console.log("[ChatPage] New thread created, transitioning:", newThreadId);
 
         // 1. Update global store
         setCurrentThreadId(newThreadId);
@@ -215,47 +209,40 @@ export default function ChatPage() {
     setIsDragging(false);
   }, []);
 
-  const handleOverlayDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
+  const handleOverlayDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
 
-      const files = e.dataTransfer?.files
-        ? Array.from(e.dataTransfer.files)
-        : [];
-      if (!files || files.length === 0) {
-        return;
+    const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+    const validFiles: File[] = [];
+
+    files.forEach((file) => {
+      if (file.size > MAX_SIZE) {
+        toast.error(`File ${file.name} exceeds the 100MB limit.`);
+      } else {
+        validFiles.push(file);
       }
+    });
 
-      const MAX_SIZE = 100 * 1024 * 1024; // 100MB
-      const validFiles: File[] = [];
-
-      files.forEach((file) => {
-        if (file.size > MAX_SIZE) {
-          toast.error(`File ${file.name} exceeds the 100MB limit.`);
-        } else {
-          validFiles.push(file);
-        }
-      });
-
-      if (validFiles.length > 0) {
-        const newAttachedFiles: AttachedFile[] = validFiles.map((file) => ({
-          id: `file-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          url: URL.createObjectURL(file),
-          file,
-        }));
-        setAttachedFiles((prev) => [...prev, ...newAttachedFiles]);
-        toast.success(
-          `Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`
-        );
-      }
-    },
-    []
-  );
+    if (validFiles.length > 0) {
+      const newAttachedFiles: AttachedFile[] = validFiles.map((file) => ({
+        id: `file-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: URL.createObjectURL(file),
+        file,
+      }));
+      setAttachedFiles((prev) => [...prev, ...newAttachedFiles]);
+      toast.success(`Attached ${validFiles.length} file${validFiles.length > 1 ? "s" : ""}`);
+    }
+  }, []);
 
   // Show loading while checking auth
   if (!isInitialized) {
@@ -302,10 +289,7 @@ export default function ChatPage() {
           <p className="text-muted-foreground">
             This conversation doesn't exist or you don't have access to it.
           </p>
-          <button
-            className="text-primary hover:underline"
-            onClick={() => router.push("/chat/new")}
-          >
+          <button className="text-primary hover:underline" onClick={() => router.push("/chat/new")}>
             Start a new conversation
           </button>
         </motion.div>
@@ -348,10 +332,7 @@ export default function ChatPage() {
           threadId={activeThreadId}
         />
 
-        <SettingsSidebar
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-        />
+        <SettingsSidebar isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       </div>
     </>
   );

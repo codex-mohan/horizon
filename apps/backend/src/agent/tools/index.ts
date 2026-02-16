@@ -6,7 +6,7 @@ import { z } from "zod";
 const shellExecutor = new ShellExecutor();
 
 export const TOOL_CATEGORIES = {
-  safe: ["web_search", "fetch_url_content", "duckduckgo_search"],
+  safe: ["web_search", "fetch_url_content", "duckduckgo_search", "get_weather"],
   dangerous: ["shell_execute", "file_write", "file_delete"],
 } as const;
 
@@ -23,44 +23,59 @@ export function isDangerousTool(toolName: string): boolean {
   return getToolRiskLevel(toolName) === "dangerous";
 }
 
+/**
+ * Shell execution result structure for generative UI
+ */
+interface ShellResult {
+  command: string;
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  success: boolean;
+  duration: number;
+  cwd: string;
+  truncated: boolean;
+}
+
 export const shellTool = tool(
   async ({ command }: { command: string }) => {
     try {
       const result = await shellExecutor.execute(command);
 
-      // Return comprehensive result including both stdout and stderr
-      const output: string[] = [];
+      // Return structured JSON for the frontend to parse
+      const shellResult: ShellResult = {
+        command: result.command,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        exitCode: result.exitCode,
+        success: result.success,
+        duration: result.duration,
+        cwd: result.cwd,
+        truncated: result.truncated,
+      };
 
-      if (result.stdout) {
-        output.push(result.stdout);
-      }
-
-      if (result.stderr) {
-        if (output.length > 0) {
-          output.push("");
-        }
-        output.push(`[STDERR]: ${result.stderr}`);
-      }
-
-      if (result.exitCode !== 0) {
-        if (output.length > 0) {
-          output.push("");
-        }
-        output.push(`[Exit Code: ${result.exitCode}]`);
-      }
-
-      return output.join("\n") || "(no output)";
+      return JSON.stringify(shellResult);
     } catch (error) {
-      // Only handle actual execution errors, not command failures
-      return `Execution error: ${error}`;
+      // Handle execution errors (timeout, permission denied, etc.)
+      const errorResult: ShellResult = {
+        command: command,
+        stdout: "",
+        stderr: error instanceof Error ? error.message : String(error),
+        exitCode: -1,
+        success: false,
+        duration: 0,
+        cwd: process.cwd(),
+        truncated: false,
+      };
+      return JSON.stringify(errorResult);
     }
   },
   {
     name: "shell_execute",
     description:
-      "Execute a shell command in the sandbox. Returns both stdout and stderr. Commands that fail (non-zero exit) will still return their output along with the exit code.",
+      "Execute a shell command. Returns structured result with stdout, stderr, exit code, duration, and working directory. Use for file operations, system commands, git, npm, etc.",
     schema: z.object({
-      command: z.string().describe("The command to execute."),
+      command: z.string().describe("The shell command to execute."),
     }),
   }
 );

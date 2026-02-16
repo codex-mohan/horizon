@@ -99,10 +99,7 @@ const GlassGauge = React.forwardRef<HTMLDivElement, GlassGaugeProps>(
       >
         {/* Glow effect */}
         <div
-          className={cn(
-            "absolute rounded-full bg-linear-to-r opacity-60 blur-xl",
-            colors.glow
-          )}
+          className={cn("absolute rounded-full bg-linear-to-r opacity-60 blur-xl", colors.glow)}
           style={{
             width: config.size * 0.8,
             height: config.size * 0.8,
@@ -112,25 +109,12 @@ const GlassGauge = React.forwardRef<HTMLDivElement, GlassGaugeProps>(
           }}
         />
 
-        <div
-          className="relative"
-          style={{ width: config.size, height: config.size }}
-        >
-          <svg
-            className="-rotate-90 transform"
-            height={config.size}
-            width={config.size}
-          >
+        <div className="relative" style={{ width: config.size, height: config.size }}>
+          <svg className="-rotate-90 transform" height={config.size} width={config.size}>
             {/* Gradient definition */}
             {colorScheme === "gradient" && (
               <defs>
-                <linearGradient
-                  id={gradientId}
-                  x1="0%"
-                  x2="100%"
-                  y1="0%"
-                  y2="0%"
-                >
+                <linearGradient id={gradientId} x1="0%" x2="100%" y1="0%" y2="0%">
                   <stop offset="0%" stopColor="#06b6d4" />
                   <stop offset="50%" stopColor="#3b82f6" />
                   <stop offset="100%" stopColor="#a855f7" />
@@ -170,9 +154,7 @@ const GlassGauge = React.forwardRef<HTMLDivElement, GlassGaugeProps>(
               cy={config.size / 2}
               fill="none"
               r={radius}
-              stroke={
-                colorScheme === "gradient" ? `url(#${gradientId})` : undefined
-              }
+              stroke={colorScheme === "gradient" ? `url(#${gradientId})` : undefined}
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
@@ -188,9 +170,7 @@ const GlassGauge = React.forwardRef<HTMLDivElement, GlassGaugeProps>(
                 <span className="text-sm text-white/40">%</span>
               </span>
             )}
-            {label && (
-              <span className="mt-1 text-sm text-white/60">{label}</span>
-            )}
+            {label && <span className="mt-1 text-sm text-white/60">{label}</span>}
           </div>
         </div>
       </div>

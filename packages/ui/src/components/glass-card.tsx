@@ -37,16 +37,11 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
 );
 GlassCard.displayName = "GlassCard";
 
-const GlassCardHeader = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    className={cn("flex flex-col gap-1.5 p-6", className)}
-    ref={ref}
-    {...props}
-  />
-));
+const GlassCardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div className={cn("flex flex-col gap-1.5 p-6", className)} ref={ref} {...props} />
+  )
+);
 GlassCardHeader.displayName = "GlassCardHeader";
 
 const GlassCardTitle = React.forwardRef<
@@ -54,10 +49,7 @@ const GlassCardTitle = React.forwardRef<
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
   <h3
-    className={cn(
-      "font-semibold text-white text-xl leading-none tracking-tight",
-      className
-    )}
+    className={cn("font-semibold text-white text-xl leading-none tracking-tight", className)}
     ref={ref}
     {...props}
   />
@@ -72,24 +64,18 @@ const GlassCardDescription = React.forwardRef<
 ));
 GlassCardDescription.displayName = "GlassCardDescription";
 
-const GlassCardContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div className={cn("p-6 pt-0", className)} ref={ref} {...props} />
-));
+const GlassCardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div className={cn("p-6 pt-0", className)} ref={ref} {...props} />
+  )
+);
 GlassCardContent.displayName = "GlassCardContent";
 
-const GlassCardFooter = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    className={cn("flex items-center p-6 pt-0", className)}
-    ref={ref}
-    {...props}
-  />
-));
+const GlassCardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div className={cn("flex items-center p-6 pt-0", className)} ref={ref} {...props} />
+  )
+);
 GlassCardFooter.displayName = "GlassCardFooter";
 
 export {

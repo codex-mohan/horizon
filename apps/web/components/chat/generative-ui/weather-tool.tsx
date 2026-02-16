@@ -10,38 +10,46 @@ import {
   CloudSnow,
   Droplets,
   MapPin,
-  RefreshCw,
   Sun,
   Wind,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
+import { ModernSpinner, ShimmerText, ToolStatusBadge } from "./loading-effects";
+
+interface WeatherData {
+  city: string;
+  country?: string;
+  temperature: number;
+  condition: string;
+  humidity: number;
+  windSpeed: number;
+  units?: string;
+}
 
 interface WeatherToolProps {
   toolName?: string;
   status?: "pending" | "executing" | "completed" | "failed";
   args?: Record<string, unknown>;
   result?: string;
-  startedAt?: number;
-  completedAt?: number;
   error?: string;
   isLoading?: boolean;
-  city?: string;
-  temperature?: number;
-  condition?: string;
-  humidity?: number;
-  windSpeed?: number;
 }
 
 const weatherIcons: Record<string, typeof Sun> = {
-  sunny: Sun,
   clear: Sun,
+  sunny: Sun,
+  mainly: Sun,
   cloudy: Cloud,
-  rainy: CloudRain,
+  overcast: Cloud,
+  partly: Cloud,
+  rain: CloudRain,
+  drizzle: CloudRain,
   snow: CloudSnow,
   fog: CloudFog,
   mist: CloudFog,
-  storm: CloudLightning,
   thunderstorm: CloudLightning,
+  storm: CloudLightning,
   default: Cloud,
 };
 
@@ -54,251 +62,203 @@ function getWeatherIcon(condition?: string): typeof Sun {
   return weatherIcons.default;
 }
 
-function parseWeatherResult(result?: string): Partial<WeatherToolProps> {
-  if (!result) return {};
+function parseWeatherResult(result?: string): WeatherData | null {
+  if (!result) return null;
   try {
     const parsed = JSON.parse(result);
-    return {
-      city: parsed.city || parsed.location || parsed.name,
-      temperature: parsed.temperature || parsed.temp || parsed.current?.temp,
-      condition: parsed.condition || parsed.weather || parsed.current?.condition,
-      humidity: parsed.humidity || parsed.current?.humidity,
-      windSpeed: parsed.windSpeed || parsed.wind_speed || parsed.current?.wind_speed,
-    };
+    if (parsed.temperature !== undefined) {
+      return {
+        city: parsed.city || "Unknown",
+        country: parsed.country,
+        temperature: parsed.temperature,
+        condition: parsed.condition || "Unknown",
+        humidity: parsed.humidity || 0,
+        windSpeed: parsed.windSpeed || 0,
+        units: parsed.units || "celsius",
+      };
+    }
   } catch {
-    return {};
+    // Not JSON, return null
   }
+  return null;
 }
 
-export function WeatherTool(props: WeatherToolProps) {
+/**
+ * Weather Tool Component
+ * Compact, ergonomic design with glassmorphic styling
+ */
+export function WeatherTool({ status, args, result, error, isLoading }: WeatherToolProps) {
+  const [expanded, setExpanded] = useState(true);
   const { themeMode } = useTheme();
   const isLight = themeMode === "light";
 
-  const data: {
-    city: string | undefined;
-    temperature: number | undefined;
-    condition: string | undefined;
-    humidity: number | undefined;
-    windSpeed: number | undefined;
-  } = {
-    ...parseWeatherResult(props.result),
-    city:
-      props.city ||
-      (props.args?.city as string | undefined) ||
-      (props.args?.location as string | undefined),
-    temperature: props.temperature,
-    condition: props.condition,
-    humidity: props.humidity,
-    windSpeed: props.windSpeed,
-  };
+  // Get city from args
+  const city = (args?.city as string) || (args?.location as string) || "";
 
-  const WeatherIcon = getWeatherIcon(data.condition);
-  const isLoading = props.isLoading || props.status === "executing" || props.status === "pending";
-  const hasError = props.status === "failed" || props.error;
-  const hasResult = !isLoading && !hasError && data.temperature !== undefined;
+  // Parse weather data
+  const weatherData = useMemo(() => parseWeatherResult(result), [result]);
+
+  const WeatherIcon = getWeatherIcon(weatherData?.condition);
+  const isSearching = (isLoading || status === "executing") && !result && !error;
+  const hasResult = weatherData !== null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-      className={cn(
-        "overflow-hidden rounded-xl border shadow-lg",
-        isLight
-          ? "border-border bg-gradient-to-br from-blue-50/80 to-cyan-50/80"
-          : "border-blue-500/20 bg-gradient-to-br from-blue-950/40 to-cyan-950/40"
-      )}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn("overflow-hidden rounded-xl", "glass")}
+      initial={{ opacity: 0, y: 10 }}
     >
+      {/* Compact Header */}
       <div
         className={cn(
-          "flex items-center justify-between border-b px-4 py-3",
-          isLight ? "border-border/50" : "border-blue-500/20"
+          "flex cursor-pointer items-center justify-between px-3 py-2",
+          "hover:bg-primary/5 transition-colors"
         )}
+        onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              "rounded-xl p-2.5",
-              isLight ? "bg-blue-100 text-blue-600" : "bg-blue-500/20 text-blue-400"
-            )}
-          >
-            <Cloud className="h-5 w-5" />
+        <div className="flex items-center gap-2">
+          <div className={cn("rounded-lg p-1.5", "bg-blue-500/10 text-blue-500")}>
+            <Cloud className="h-4 w-4" />
           </div>
-          <div>
-            <span
-              className={cn(
-                "font-semibold text-sm",
-                isLight ? "text-foreground" : "text-slate-200"
-              )}
-            >
-              Weather
-            </span>
-            {data.city && (
-              <p
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">{city ? `Weather in ${city}` : "Weather"}</span>
+            {hasResult && status === "completed" && (
+              <span
                 className={cn(
-                  "text-xs flex items-center gap-1",
-                  isLight ? "text-muted-foreground" : "text-slate-400"
+                  "rounded-full px-2 py-0.5 text-xs font-medium",
+                  isLight ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-300"
                 )}
               >
-                <MapPin className="h-3 w-3" />
-                {data.city}
-              </p>
+                {weatherData.temperature}°C
+              </span>
             )}
           </div>
         </div>
-        {isLoading && (
-          <RefreshCw
-            className={cn("h-4 w-4 animate-spin", isLight ? "text-blue-500" : "text-blue-400")}
-          />
-        )}
+        <ToolStatusBadge status={status || "pending"} />
       </div>
 
-      <div className="p-4">
-        <AnimatePresence mode="wait">
-          {isLoading && (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-8 gap-3"
+      {/* Expandable Content */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            animate={{ height: "auto", opacity: 1 }}
+            className="overflow-hidden"
+            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0, opacity: 0 }}
+          >
+            <div
+              className={cn(
+                "border-t px-3 py-2",
+                isLight ? "border-border/50" : "border-primary/10"
+              )}
             >
-              <div className="relative">
-                <WeatherIcon
-                  className={cn("h-12 w-12", isLight ? "text-blue-400" : "text-blue-500")}
-                />
-                <div className="absolute inset-0 animate-ping">
-                  <WeatherIcon
-                    className={cn(
-                      "h-12 w-12 opacity-20",
-                      isLight ? "text-blue-400" : "text-blue-500"
-                    )}
+              {/* Loading State */}
+              {isSearching && (
+                <div className="flex items-center justify-center gap-3 py-4">
+                  <ModernSpinner size="sm" />
+                  <ShimmerText
+                    className={cn("text-sm", isLight ? "text-foreground" : "")}
+                    text="Fetching weather..."
                   />
                 </div>
-              </div>
-              <p className={cn("text-sm", isLight ? "text-muted-foreground" : "text-slate-400")}>
-                Fetching weather data...
-              </p>
-            </motion.div>
-          )}
+              )}
 
-          {hasError && (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="rounded-lg border border-destructive/20 bg-destructive/10 p-4"
-            >
-              <p className="text-destructive text-sm">{props.error || "Failed to fetch weather"}</p>
-            </motion.div>
-          )}
+              {/* Error State */}
+              {error && (
+                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-2">
+                  <p className="text-destructive text-xs">{error}</p>
+                </div>
+              )}
 
-          {hasResult && (
-            <motion.div
-              key="result"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <WeatherIcon
-                    className={cn("h-10 w-10", isLight ? "text-amber-500" : "text-amber-400")}
-                  />
-                  <div>
+              {/* Weather Result */}
+              {hasResult && !isSearching && (
+                <div className="space-y-3">
+                  {/* Main Weather Display */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <WeatherIcon
+                        className={cn("h-10 w-10", isLight ? "text-amber-500" : "text-amber-400")}
+                      />
+                      <div>
+                        <div className="flex items-baseline gap-1">
+                          <span
+                            className={cn(
+                              "text-3xl font-bold",
+                              isLight ? "text-foreground" : "text-foreground"
+                            )}
+                          >
+                            {weatherData.temperature}
+                          </span>
+                          <span
+                            className={cn(
+                              "text-lg",
+                              isLight ? "text-muted-foreground" : "text-muted-foreground"
+                            )}
+                          >
+                            °C
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3" />
+                          {weatherData.city}
+                          {weatherData.country && `, ${weatherData.country}`}
+                        </div>
+                      </div>
+                    </div>
                     <span
                       className={cn(
-                        "text-4xl font-bold",
-                        isLight ? "text-foreground" : "text-slate-100"
+                        "rounded-full px-3 py-1 text-xs font-medium",
+                        isLight ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-300"
                       )}
                     >
-                      {Math.round(data.temperature as number)}°
-                    </span>
-                    <span
-                      className={cn(
-                        "text-lg ml-1",
-                        isLight ? "text-muted-foreground" : "text-slate-400"
-                      )}
-                    >
-                      C
+                      {weatherData.condition}
                     </span>
                   </div>
-                </div>
-                {data.condition && (
-                  <span
-                    className={cn(
-                      "px-3 py-1.5 rounded-full text-sm font-medium",
-                      isLight ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-300"
-                    )}
-                  >
-                    {data.condition}
-                  </span>
-                )}
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {data.humidity !== undefined && (
-                  <div
-                    className={cn("rounded-lg p-3", isLight ? "bg-muted/50" : "bg-slate-800/50")}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg p-2",
+                        isLight ? "bg-muted/30" : "bg-background/30"
+                      )}
+                    >
                       <Droplets
                         className={cn("h-4 w-4", isLight ? "text-blue-500" : "text-blue-400")}
                       />
-                      <span
-                        className={cn(
-                          "text-xs",
-                          isLight ? "text-muted-foreground" : "text-slate-400"
-                        )}
-                      >
-                        Humidity
-                      </span>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Humidity</p>
+                        <p className="font-medium text-sm">{weatherData.humidity}%</p>
+                      </div>
                     </div>
-                    <span
+                    <div
                       className={cn(
-                        "text-lg font-semibold",
-                        isLight ? "text-foreground" : "text-slate-200"
+                        "flex items-center gap-2 rounded-lg p-2",
+                        isLight ? "bg-muted/30" : "bg-background/30"
                       )}
                     >
-                      {data.humidity}%
-                    </span>
-                  </div>
-                )}
-
-                {data.windSpeed !== undefined && (
-                  <div
-                    className={cn("rounded-lg p-3", isLight ? "bg-muted/50" : "bg-slate-800/50")}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
                       <Wind
                         className={cn("h-4 w-4", isLight ? "text-teal-500" : "text-teal-400")}
                       />
-                      <span
-                        className={cn(
-                          "text-xs",
-                          isLight ? "text-muted-foreground" : "text-slate-400"
-                        )}
-                      >
-                        Wind
-                      </span>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Wind</p>
+                        <p className="font-medium text-sm">{weatherData.windSpeed} km/h</p>
+                      </div>
                     </div>
-                    <span
-                      className={cn(
-                        "text-lg font-semibold",
-                        isLight ? "text-foreground" : "text-slate-200"
-                      )}
-                    >
-                      {data.windSpeed} km/h
-                    </span>
                   </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                </div>
+              )}
+
+              {/* Fallback: Raw result */}
+              {!isSearching && !error && !hasResult && result && (
+                <div className={cn("rounded-lg p-2", isLight ? "bg-muted/30" : "bg-background/30")}>
+                  <pre className="whitespace-pre-wrap font-mono text-xs">{result}</pre>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

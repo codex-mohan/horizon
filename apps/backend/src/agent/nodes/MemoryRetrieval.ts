@@ -52,9 +52,9 @@ export async function MemoryRetrieval(
     return updates;
   }
 
-  const lastUserMessage = [...state.messages]
-    .reverse()
-    .find((msg) => msg._getType() === "human") as HumanMessage | undefined;
+  const lastUserMessage = [...state.messages].reverse().find((msg) => msg._getType() === "human") as
+    | HumanMessage
+    | undefined;
 
   if (!lastUserMessage) {
     return updates;

@@ -92,11 +92,7 @@ function createAttachedFiles(
  * ```
  */
 export function useClipboardPaste(options: ClipboardPasteOptions) {
-  const {
-    maxFileSize = 100 * 1024 * 1024,
-    onFilesPasted,
-    existingFiles = [],
-  } = options;
+  const { maxFileSize = 100 * 1024 * 1024, onFilesPasted, existingFiles = [] } = options;
 
   const handlePaste = useCallback(
     (event: React.ClipboardEvent<HTMLElement>) => {
@@ -112,11 +108,7 @@ export function useClipboardPaste(options: ClipboardPasteOptions) {
       if (pastedFiles.length > 0) {
         event.preventDefault();
 
-        const { validFiles, errors } = createAttachedFiles(
-          pastedFiles,
-          maxFileSize,
-          existingFiles
-        );
+        const { validFiles, errors } = createAttachedFiles(pastedFiles, maxFileSize, existingFiles);
 
         // Show error messages
         errors.forEach((error) => {
@@ -129,9 +121,7 @@ export function useClipboardPaste(options: ClipboardPasteOptions) {
           onFilesPasted(updatedFiles);
 
           const fileCount = validFiles.length;
-          toast.success(
-            `Attached ${fileCount} file${fileCount > 1 ? "s" : ""} from clipboard`
-          );
+          toast.success(`Attached ${fileCount} file${fileCount > 1 ? "s" : ""} from clipboard`);
         }
 
         return;
@@ -150,9 +140,7 @@ export function useClipboardPaste(options: ClipboardPasteOptions) {
  * Standalone function to check if clipboard contains files
  * Useful for showing UI indicators before paste
  */
-export function clipboardContainsFiles(
-  clipboardData: DataTransfer | null
-): boolean {
+export function clipboardContainsFiles(clipboardData: DataTransfer | null): boolean {
   if (!clipboardData) {
     return false;
   }
@@ -169,9 +157,7 @@ export function clipboardContainsFiles(
 /**
  * Gets file count from clipboard
  */
-export function getClipboardFileCount(
-  clipboardData: DataTransfer | null
-): number {
+export function getClipboardFileCount(clipboardData: DataTransfer | null): number {
   if (!clipboardData) {
     return 0;
   }

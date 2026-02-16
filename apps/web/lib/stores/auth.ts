@@ -124,10 +124,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      updateProfile: async (updates: {
-        displayName?: string;
-        avatarUrl?: string;
-      }) => {
+      updateProfile: async (updates: { displayName?: string; avatarUrl?: string }) => {
         set({ isLoading: true });
         try {
           const response = await fetch("/api/auth/update", {

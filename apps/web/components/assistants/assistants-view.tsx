@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -39,13 +35,9 @@ interface AssistantsViewProps {
   onClose?: () => void;
 }
 
-export function AssistantsView({
-  onSelectAssistant,
-  onClose,
-}: AssistantsViewProps) {
+export function AssistantsView({ onSelectAssistant, onClose }: AssistantsViewProps) {
   const { user } = useAuthStore();
-  const apiUrl =
-    process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
+  const apiUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
 
   const {
     assistants,
@@ -72,9 +64,7 @@ export function AssistantsView({
       case "name":
         return a.name.localeCompare(b.name);
       case "date":
-        return (
-          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-        );
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       case "usage":
         // Placeholder for usage sorting
         return 0;
@@ -127,9 +117,7 @@ export function AssistantsView({
             <motion.button
               className={cn(
                 "relative rounded-md p-2 transition-colors",
-                viewMode === "grid"
-                  ? "text-foreground"
-                  : "text-muted-foreground"
+                viewMode === "grid" ? "text-foreground" : "text-muted-foreground"
               )}
               onClick={() => setViewMode("grid")}
               whileTap={{ scale: 0.95 }}
@@ -146,9 +134,7 @@ export function AssistantsView({
             <motion.button
               className={cn(
                 "relative rounded-md p-2 transition-colors",
-                viewMode === "list"
-                  ? "text-foreground"
-                  : "text-muted-foreground"
+                viewMode === "list" ? "text-foreground" : "text-muted-foreground"
               )}
               onClick={() => setViewMode("list")}
               whileTap={{ scale: 0.95 }}
@@ -171,15 +157,9 @@ export function AssistantsView({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setSortBy("name")}>
-                Name
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy("date")}>
-                Date
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy("usage")}>
-                Usage
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("name")}>Name</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("date")}>Date</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("usage")}>Usage</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -289,9 +269,7 @@ function GridView({
               initial={{ opacity: 0, y: 20 }}
               whileHover={{ opacity: 1, y: 0 }}
             >
-              <h3 className="truncate font-semibold text-sm">
-                {assistant.name}
-              </h3>
+              <h3 className="truncate font-semibold text-sm">{assistant.name}</h3>
               <p className="line-clamp-1 text-muted-foreground text-xs">
                 {assistant.description || "No description"}
               </p>
@@ -321,10 +299,7 @@ function GridView({
               )}
 
               <DropdownMenu>
-                <DropdownMenuTrigger
-                  asChild
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <Button
                     className="h-7 w-7 bg-background/80 backdrop-blur-sm"
                     size="icon"
@@ -425,17 +400,10 @@ function ListView({
             {/* Info */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="truncate font-medium text-sm">
-                  {assistant.name}
-                </h3>
-                {assistant.memory_enabled && (
-                  <Brain className="size-3 text-primary" />
-                )}
+                <h3 className="truncate font-medium text-sm">{assistant.name}</h3>
+                {assistant.memory_enabled && <Brain className="size-3 text-primary" />}
                 {assistant.is_public && (
-                  <Badge
-                    className="h-4 px-1.5 py-0 text-[10px]"
-                    variant="secondary"
-                  >
+                  <Badge className="h-4 px-1.5 py-0 text-[10px]" variant="secondary">
                     Public
                   </Badge>
                 )}
@@ -464,10 +432,7 @@ function ListView({
               </Button>
 
               <DropdownMenu>
-                <DropdownMenuTrigger
-                  asChild
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <Button size="icon-sm" variant="ghost">
                     <MoreHorizontal className="size-4" />
                   </Button>

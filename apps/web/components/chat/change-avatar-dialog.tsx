@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import { GradientButton } from "@workspace/ui/components/gradient-button";
 import { Input } from "@workspace/ui/components/input";
@@ -55,10 +51,7 @@ const BACKGROUND_COLORS = [
   "ffffff", // White
 ];
 
-export function ChangeAvatarDialog({
-  isOpen,
-  onClose,
-}: ChangeAvatarDialogProps) {
+export function ChangeAvatarDialog({ isOpen, onClose }: ChangeAvatarDialogProps) {
   const { user, updateProfile } = useAuthStore();
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [selectedSeed, setSelectedSeed] = useState("");
@@ -205,10 +198,7 @@ export function ChangeAvatarDialog({
             <div className="flex flex-col items-center gap-6">
               <div className="group relative">
                 <Avatar className="size-32 bg-muted/50 shadow-xl ring-4 ring-primary/10 transition-all duration-300 group-hover:ring-primary/30">
-                  <AvatarImage
-                    className="object-cover"
-                    src={avatarUrl || undefined}
-                  />
+                  <AvatarImage className="object-cover" src={avatarUrl || undefined} />
                   <AvatarFallback className="bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] font-display text-3xl text-white">
                     {user?.displayName?.substring(0, 2).toUpperCase() || "U"}
                   </AvatarFallback>
@@ -233,11 +223,7 @@ export function ChangeAvatarDialog({
               />
 
               <div className="flex gap-2">
-                <Button
-                  className="gap-2"
-                  onClick={handleGenerateRandom}
-                  variant="outline"
-                >
+                <Button className="gap-2" onClick={handleGenerateRandom} variant="outline">
                   <Dices className="size-4" />
                   Randomize
                 </Button>
@@ -263,8 +249,7 @@ export function ChangeAvatarDialog({
                 {PRESET_SEEDS.map((seed) => {
                   // Generate preview URL with the CURRENT selected color for consistency
                   const previewUrl = updateDiceBearUrl(seed, selectedColor);
-                  const isSelected =
-                    selectedSeed === seed && !avatarUrl.startsWith("data:");
+                  const isSelected = selectedSeed === seed && !avatarUrl.startsWith("data:");
 
                   return (
                     <button

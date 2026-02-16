@@ -7,18 +7,14 @@ export async function POST(request: NextRequest) {
     const { username, password, displayName } = body;
 
     if (!(username && password)) {
-      return NextResponse.json(
-        { error: "Username and password are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Username and password are required" }, { status: 400 });
     }
 
     // Validate username format
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
       return NextResponse.json(
         {
-          error:
-            "Username must be 3-20 characters, alphanumeric and underscores only",
+          error: "Username must be 3-20 characters, alphanumeric and underscores only",
         },
         { status: 400 }
       );
@@ -34,10 +30,7 @@ export async function POST(request: NextRequest) {
     const loginResult = await loginUser(username, password, false);
 
     if (!(loginResult.success && loginResult.token)) {
-      return NextResponse.json(
-        { error: "Account created but failed to login" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Account created but failed to login" }, { status: 500 });
     }
 
     const response = NextResponse.json({
@@ -61,9 +54,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Registration API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

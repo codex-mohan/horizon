@@ -2,14 +2,8 @@
 
 import { cn } from "@workspace/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
-  Globe,
-  Search,
-} from "lucide-react";
-import { useState } from "react";
+import { ExternalLink, Globe, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
 import { getToolUIConfig } from "@/lib/tool-config";
 import { ModernSpinner, ShimmerText, ToolStatusBadge } from "./loading-effects";
@@ -32,310 +26,246 @@ interface WebSearchToolProps {
 }
 
 /**
+ * Parse markdown-formatted search results from the tool
+ * Format:
+ * ## Search results for 'query'
+ *
+ * ### 1. [Title](URL)
+ * snippet text
+ *
+ * ### 2. [Title](URL)
+ * snippet text
+ */
+function parseMarkdownResults(result: string): SearchResult[] {
+  const results: SearchResult[] = [];
+
+  // Match pattern: ### N. [Title](URL)\nsnippet
+  const resultPattern = /###\s*\d+\.\s*\[([^\]]+)\]\(([^)]+)\)\s*\n([^\n#]+)/g;
+  let match;
+
+  while ((match = resultPattern.exec(result)) !== null) {
+    const [, title, url, snippet] = match;
+    if (title && url) {
+      results.push({
+        title: title.trim(),
+        url: url.trim(),
+        snippet: snippet?.trim() || "",
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
  * Web Search Tool Component
- * Displays search results in a modern card-based layout
- * Theme-aware - works in both light and dark modes
+ * Compact, ergonomic design with real-time status updates
+ * Uses glassmorphic styling from globals.css
  */
 export function WebSearchTool({
   toolName,
   status,
   args,
   result,
-  startedAt,
-  completedAt,
   error,
   isLoading,
 }: WebSearchToolProps) {
-  const [showArgs, setShowArgs] = useState(true);
-  const [expandedResults, setExpandedResults] = useState<Set<number>>(
-    new Set()
-  );
+  const [expanded, setExpanded] = useState(true);
   const config = getToolUIConfig(toolName);
   const { themeMode } = useTheme();
   const isLight = themeMode === "light";
 
-  // Parse search results from the result string
-  const searchResults: SearchResult[] = (() => {
-    if (!result) {
-      return [];
-    }
-    try {
-      // Try to parse as JSON first
-      const parsed = JSON.parse(result);
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-      if (parsed.results) {
-        return parsed.results;
-      }
-      return [];
-    } catch {
-      // Fallback: parse text format
-      const lines = result.split("\n").filter(Boolean);
-      return lines.slice(0, 5).map((line, i) => ({
-        title: `Result ${i + 1}`,
-        url: "#",
-        snippet: line,
-      }));
-    }
-  })();
+  // Get the search query
+  const query = args?.query || args?.q || args?.search || "";
 
-  const toggleResult = (index: number) => {
-    const newExpanded = new Set(expandedResults);
-    if (newExpanded.has(index)) {
-      newExpanded.delete(index);
-    } else {
-      newExpanded.add(index);
+  // Parse search results from markdown format
+  const searchResults = useMemo(() => {
+    if (!result) return [];
+
+    // Try parsing markdown format first
+    const markdownResults = parseMarkdownResults(result);
+    if (markdownResults.length > 0) {
+      return markdownResults;
     }
-    setExpandedResults(newExpanded);
-  };
+
+    // Fallback: try JSON parse
+    try {
+      const parsed = JSON.parse(result);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed.results) return parsed.results;
+    } catch {
+      // Not JSON, return empty - will show raw result
+    }
+
+    return [];
+  }, [result]);
+
+  // Determine if we have actual results to show
+  const hasResults = searchResults.length > 0;
+  const isSearching = (isLoading || status === "executing") && !result && !error;
 
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "overflow-hidden rounded-xl border shadow-xl",
-        isLight
-          ? "border-border bg-gradient-to-br from-primary/5 to-accent/5"
-          : "border-violet-500/20 bg-gradient-to-br from-violet-950/30 to-purple-950/30"
+        "overflow-hidden rounded-xl",
+        "glass" // Use glassmorphic class from globals.css
       )}
       initial={{ opacity: 0, y: 10 }}
     >
-      {/* Header */}
+      {/* Compact Header */}
       <div
         className={cn(
-          "flex items-center justify-between border-b px-4 py-3",
-          isLight ? "border-border" : "border-violet-500/20"
+          "flex cursor-pointer items-center justify-between px-3 py-2",
+          "hover:bg-primary/5 transition-colors"
         )}
+        onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-3">
-          <div className={cn("rounded-xl p-2", config.icon.bgColor)}>
-            <Search className={cn("h-5 w-5", config.icon.color)} />
+        <div className="flex items-center gap-2">
+          <div className={cn("rounded-lg p-1.5", config.icon.bgColor)}>
+            <Search className={cn("h-4 w-4", config.icon.color)} />
           </div>
-          <div>
-            <span
-              className={cn(
-                "font-semibold text-sm",
-                isLight ? "text-foreground" : "text-slate-200"
-              )}
-            >
-              {config.displayName}
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">
+              {query ? `"${query.slice(0, 30)}${query.length > 30 ? "..." : ""}"` : "Web Search"}
             </span>
-            <p
-              className={cn(
-                "text-xs",
-                isLight ? "text-muted-foreground" : "text-slate-500"
-              )}
-            >
-              Web search results
-            </p>
+            {hasResults && status === "completed" && (
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs",
+                  isLight ? "bg-primary/10 text-primary" : "bg-primary/20 text-primary-foreground"
+                )}
+              >
+                {searchResults.length} results
+              </span>
+            )}
           </div>
         </div>
         <ToolStatusBadge status={status} />
       </div>
 
-      {/* Query Section */}
-      <div
-        className={cn(
-          "border-b",
-          isLight ? "border-border/50" : "border-violet-500/10"
-        )}
-      >
-        <button
-          className={cn(
-            "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
-            isLight
-              ? "text-muted-foreground hover:text-foreground"
-              : "text-slate-400 hover:text-slate-300"
-          )}
-          onClick={() => setShowArgs(!showArgs)}
-        >
-          <span className="font-medium uppercase tracking-wider">Query</span>
-          {showArgs ? (
-            <ChevronUp className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5" />
-          )}
-        </button>
-
-        <AnimatePresence>
-          {showArgs && (
-            <motion.div
-              animate={{ height: "auto", opacity: 1 }}
-              className="overflow-hidden"
-              exit={{ height: 0, opacity: 0 }}
-              initial={{ height: 0, opacity: 0 }}
-            >
-              <div className="px-4 pb-3">
-                <div
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg border p-3",
-                    isLight
-                      ? "border-primary/20 bg-primary/5"
-                      : "border-violet-500/20 bg-violet-950/20"
-                  )}
-                >
-                  <Search
-                    className={cn(
-                      "h-4 w-4",
-                      isLight ? "text-primary" : "text-violet-400"
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      "text-sm",
-                      isLight ? "text-foreground" : "text-slate-300"
-                    )}
-                  >
-                    {args.query ||
-                      args.q ||
-                      args.search ||
-                      JSON.stringify(args)}
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Results Section */}
-      <div className="p-4">
-        {isLoading && !result && !error ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-8">
-            <ModernSpinner size="md" />
-            <div className="text-center">
-              <ShimmerText
-                className={cn("text-sm", isLight ? "text-foreground" : "")}
-                text="Searching the web..."
-              />
-              <p
-                className={cn(
-                  "mt-1 text-xs",
-                  isLight ? "text-muted-foreground" : "text-slate-500"
-                )}
-              >
-                Query:{" "}
-                {args.query || args.q || args.search || JSON.stringify(args)}
-              </p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
-            <p className="text-destructive text-sm">{error}</p>
-          </div>
-        ) : searchResults.length > 0 ? (
-          <div className="space-y-3">
-            <p
+      {/* Expandable Content */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            animate={{ height: "auto", opacity: 1 }}
+            className="overflow-hidden"
+            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0, opacity: 0 }}
+          >
+            <div
               className={cn(
-                "font-medium text-xs uppercase tracking-wider",
-                isLight ? "text-muted-foreground" : "text-slate-500"
+                "border-t px-3 py-2",
+                isLight ? "border-border/50" : "border-primary/10"
               )}
             >
-              {searchResults.length} results found
-            </p>
-            {searchResults.map((result, index) => (
-              <motion.div
-                animate={{ opacity: 1, x: 0 }}
-                className={cn(
-                  "group cursor-pointer rounded-lg border p-3 transition-all",
-                  isLight
-                    ? "border-border bg-muted/30 hover:border-primary/30 hover:bg-muted/50"
-                    : "border-slate-700/30 bg-slate-900/30 hover:border-violet-500/30 hover:bg-slate-900/50"
-                )}
-                initial={{ opacity: 0, x: -10 }}
-                key={index}
-                onClick={() => toggleResult(index)}
-                transition={{ delay: index * 0.1 }}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={cn(
-                      "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg",
-                      isLight ? "bg-primary/10" : "bg-violet-500/10"
-                    )}
-                  >
-                    <Globe
+              {/* Loading State */}
+              {isSearching && (
+                <div className="flex items-center justify-center gap-3 py-4">
+                  <ModernSpinner size="sm" />
+                  <ShimmerText
+                    className={cn("text-sm", isLight ? "text-foreground" : "")}
+                    text="Searching..."
+                  />
+                </div>
+              )}
+
+              {/* Error State */}
+              {error && (
+                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-2">
+                  <p className="text-destructive text-xs">{error}</p>
+                </div>
+              )}
+
+              {/* Results Grid - Compact */}
+              {hasResults && (
+                <div className="space-y-1.5">
+                  {searchResults.map((item: SearchResult, index: number) => (
+                    <motion.a
+                      animate={{ opacity: 1, x: 0 }}
                       className={cn(
-                        "h-4 w-4",
-                        isLight ? "text-primary" : "text-violet-400"
-                      )}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4
-                      className={cn(
-                        "line-clamp-1 font-medium text-sm transition-colors",
+                        "group flex items-start gap-2 rounded-lg p-2 transition-all",
                         isLight
-                          ? "text-foreground group-hover:text-primary"
-                          : "text-slate-200 group-hover:text-violet-300"
+                          ? "bg-muted/30 hover:bg-muted/50"
+                          : "bg-background/30 hover:bg-background/50"
                       )}
-                    >
-                      {result.title}
-                    </h4>
-                    <a
-                      className={cn(
-                        "mt-0.5 flex items-center gap-1 text-xs",
-                        isLight
-                          ? "text-primary/70 hover:text-primary"
-                          : "text-violet-400/70 hover:text-violet-400"
-                      )}
-                      href={result.url}
-                      onClick={(e) => e.stopPropagation()}
+                      href={item.url}
+                      initial={{ opacity: 0, x: -10 }}
+                      key={`${item.url}-${index}`}
                       rel="noopener noreferrer"
                       target="_blank"
+                      transition={{ delay: index * 0.05 }}
                     >
-                      {result.url.replace(/^https?:\/\//, "").substring(0, 40)}
-                      {result.url.length > 40 && "..."}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                    <AnimatePresence>
-                      {(expandedResults.has(index) || index === 0) && (
-                        <motion.p
-                          animate={{ height: "auto", opacity: 1 }}
+                      <Globe
+                        className={cn(
+                          "mt-0.5 h-4 w-4 flex-shrink-0",
+                          isLight ? "text-primary" : "text-primary-foreground"
+                        )}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <h4
                           className={cn(
-                            "mt-2 line-clamp-3 text-xs",
-                            isLight ? "text-muted-foreground" : "text-slate-400"
+                            "line-clamp-1 font-medium text-sm",
+                            isLight
+                              ? "text-foreground group-hover:text-primary"
+                              : "text-foreground group-hover:text-primary-foreground"
                           )}
-                          exit={{ height: 0, opacity: 0 }}
-                          initial={{ height: 0, opacity: 0 }}
                         >
-                          {result.snippet}
-                        </motion.p>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  <ChevronDown
-                    className={cn(
-                      "h-4 w-4 transition-transform",
-                      isLight ? "text-muted-foreground" : "text-slate-500",
-                      expandedResults.has(index) && "rotate-180"
-                    )}
-                  />
+                          {item.title}
+                        </h4>
+                        <p
+                          className={cn(
+                            "line-clamp-2 text-xs",
+                            isLight ? "text-muted-foreground" : "text-muted-foreground"
+                          )}
+                        >
+                          {item.snippet}
+                        </p>
+                        <span
+                          className={cn(
+                            "mt-0.5 flex items-center gap-1 text-xs",
+                            isLight
+                              ? "text-primary/60 group-hover:text-primary"
+                              : "text-primary-foreground/60 group-hover:text-primary-foreground"
+                          )}
+                        >
+                          {(() => {
+                            try {
+                              return new URL(item.url).hostname;
+                            } catch {
+                              return item.url.replace(/^https?:\/\//, "").split("/")[0];
+                            }
+                          })()}
+                          <ExternalLink className="h-2.5 w-2.5" />
+                        </span>
+                      </div>
+                    </motion.a>
+                  ))}
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        ) : result ? (
-          <div
-            className={cn(
-              "rounded-lg border p-3",
-              isLight
-                ? "border-border bg-muted/30"
-                : "border-slate-700/30 bg-slate-900/30"
-            )}
-          >
-            <pre
-              className={cn(
-                "whitespace-pre-wrap text-xs",
-                isLight ? "text-muted-foreground" : "text-slate-400"
               )}
-            >
-              {result}
-            </pre>
-          </div>
-        ) : null}
-      </div>
+
+              {/* Fallback: Raw result text (when no parsed results) */}
+              {!isSearching && !error && !hasResults && result && (
+                <div className={cn("rounded-lg p-2", isLight ? "bg-muted/30" : "bg-background/30")}>
+                  <pre className="whitespace-pre-wrap font-mono text-xs">{result}</pre>
+                </div>
+              )}
+
+              {/* No results message */}
+              {!isSearching && !error && !hasResults && !result && status === "completed" && (
+                <p
+                  className={cn(
+                    "py-2 text-center text-sm",
+                    isLight ? "text-muted-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  No results found
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

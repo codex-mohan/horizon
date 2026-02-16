@@ -78,10 +78,7 @@ export class MemoryClient {
       this.embeddingsAvailable = true;
       console.log("[MemoryClient] Using Ollama embeddings");
     } catch (error) {
-      console.error(
-        "[MemoryClient] Failed to initialize Ollama embeddings:",
-        error
-      );
+      console.error("[MemoryClient] Failed to initialize Ollama embeddings:", error);
       this.embeddingsAvailable = false;
     }
   }
@@ -146,9 +143,7 @@ export class MemoryClient {
 
     // Check if privacy mode is enabled
     if (settings.privacy_mode_enabled) {
-      console.log(
-        `[MemoryClient] Privacy mode enabled for user ${user_id}, skipping storage`
-      );
+      console.log(`[MemoryClient] Privacy mode enabled for user ${user_id}, skipping storage`);
       return null;
     }
 
@@ -250,9 +245,7 @@ export class MemoryClient {
 
     // If no embeddings available, return empty results
     if (!this.hasEmbeddings()) {
-      console.warn(
-        "[MemoryClient] Cannot retrieve memories: no embedding provider available"
-      );
+      console.warn("[MemoryClient] Cannot retrieve memories: no embedding provider available");
       return [];
     }
 
@@ -287,17 +280,14 @@ export class MemoryClient {
       return [];
     }
 
-    const queryVector = await this.embeddings?.embedQuery(
-      "recent conversations"
-    );
+    const queryVector = await this.embeddings?.embedQuery("recent conversations");
     const results = await this.store.search(queryVector, query);
 
     return results
       .map((r) => r.entry)
       .sort(
         (a, b) =>
-          new Date(b.metadata.timestamp).getTime() -
-          new Date(a.metadata.timestamp).getTime()
+          new Date(b.metadata.timestamp).getTime() - new Date(a.metadata.timestamp).getTime()
       )
       .slice(0, limit);
   }
@@ -339,9 +329,7 @@ export class MemoryClient {
     }
 
     const lowerContent = content.toLowerCase();
-    return settings.excluded_topics.some((topic) =>
-      lowerContent.includes(topic.toLowerCase())
-    );
+    return settings.excluded_topics.some((topic) => lowerContent.includes(topic.toLowerCase()));
   }
 
   /**
@@ -358,8 +346,7 @@ export class MemoryClient {
       .map((result) => {
         const age = now - new Date(result.entry.metadata.timestamp).getTime();
         const recencyScore = Math.max(0, 1 - age / maxAge);
-        const combinedScore =
-          result.score * (1 - weight) + recencyScore * weight;
+        const combinedScore = result.score * (1 - weight) + recencyScore * weight;
 
         return {
           ...result,

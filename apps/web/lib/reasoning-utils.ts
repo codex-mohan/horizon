@@ -16,9 +16,7 @@ function _isThinkingBlock(content: unknown): content is ThinkingBlock {
   );
 }
 
-export function getReasoningFromMessage(
-  message: AIMessage
-): string | undefined {
+export function getReasoningFromMessage(message: AIMessage): string | undefined {
   type MessageWithExtras = AIMessage & {
     additional_kwargs?: {
       reasoning?: {

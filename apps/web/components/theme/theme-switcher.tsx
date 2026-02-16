@@ -91,9 +91,7 @@ export function ThemeSwitcher() {
 
         {/* Theme Selection */}
         <div className="space-y-1">
-          <span className="px-3 text-muted-foreground text-xs">
-            Color Theme
-          </span>
+          <span className="px-3 text-muted-foreground text-xs">Color Theme</span>
           {themes.map((t) => (
             <DropdownMenuItem
               className={cn(
@@ -103,20 +101,13 @@ export function ThemeSwitcher() {
               key={t.id}
               onClick={() => setTheme(t.id)}
             >
-              <div
-                className={cn(
-                  "size-10 shrink-0 rounded-lg bg-linear-to-br",
-                  t.gradient
-                )}
-              />
+              <div className={cn("size-10 shrink-0 rounded-lg bg-linear-to-br", t.gradient)} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm">{t.name}</span>
                   {theme === t.id && <Check className="size-4 text-primary" />}
                 </div>
-                <p className="line-clamp-1 text-muted-foreground text-xs">
-                  {t.description}
-                </p>
+                <p className="line-clamp-1 text-muted-foreground text-xs">{t.description}</p>
               </div>
             </DropdownMenuItem>
           ))}

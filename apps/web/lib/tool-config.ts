@@ -160,8 +160,8 @@ export const toolUIRegistry: Record<string, ToolUIConfig> = {
     },
   },
 
-  weather: {
-    toolName: "weather",
+  get_weather: {
+    toolName: "get_weather",
     displayName: "Weather",
     description: "Get weather information for a location",
     namespace: "special",

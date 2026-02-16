@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  ChatInput,
-  type AttachedFile as ChatInputAttachedFile,
-} from "./chat-input";
+import { ChatInput, type AttachedFile as ChatInputAttachedFile } from "./chat-input";
 import type { AttachedFile } from "./chat-interface";
 import { FileBadge } from "./file-badge";
 

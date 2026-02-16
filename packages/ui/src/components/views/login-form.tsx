@@ -6,17 +6,11 @@ import {
   FieldSeparator,
 } from "@workspace/ui/components/field";
 import { GlassButton } from "@workspace/ui/components/glass-button";
-import {
-  GlassCard,
-  GlassCardContent,
-} from "@workspace/ui/components/glass-card";
+import { GlassCard, GlassCardContent } from "@workspace/ui/components/glass-card";
 import { Input } from "@workspace/ui/components/input";
 import { cn } from "@workspace/ui/lib/utils";
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <GlassCard className="overflow-hidden p-0" glowEffect>
@@ -31,32 +25,19 @@ export function LoginForm({
               </div>
               <Field>
                 <FieldLabel htmlFor="username">Username</FieldLabel>
-                <Input
-                  id="username"
-                  placeholder="Your username"
-                  required
-                  type="text"
-                />
+                <Input id="username" placeholder="Your username" required type="text" />
               </Field>
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a
-                    className="ml-auto text-sm underline-offset-2 hover:underline"
-                    href="#"
-                  >
+                  <a className="ml-auto text-sm underline-offset-2 hover:underline" href="#">
                     Forgot your password?
                   </a>
                 </div>
                 <Input id="password" required type="password" />
               </Field>
               <Field>
-                <GlassButton
-                  className="w-full"
-                  glowEffect
-                  type="submit"
-                  variant="primary"
-                >
+                <GlassButton className="w-full" glowEffect type="submit" variant="primary">
                   Login
                 </GlassButton>
               </Field>
@@ -98,8 +79,8 @@ export function LoginForm({
         </GlassCardContent>
       </GlassCard>
       <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        By clicking continue, you agree to our <a href="#">Terms of Service</a> and{" "}
+        <a href="#">Privacy Policy</a>.
       </FieldDescription>
     </div>
   );

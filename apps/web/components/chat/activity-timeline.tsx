@@ -29,10 +29,7 @@ interface ActivityTimelineProps {
   isLoading: boolean;
 }
 
-const eventConfig: Record<
-  string,
-  { color: string; glow: string; icon: React.ReactNode }
-> = {
+const eventConfig: Record<string, { color: string; glow: string; icon: React.ReactNode }> = {
   rocket: {
     color: "from-blue-500 to-indigo-500",
     glow: "shadow-blue-500/30",
@@ -80,10 +77,7 @@ const eventConfig: Record<
   },
 };
 
-export function ActivityTimeline({
-  processedEvents,
-  isLoading,
-}: ActivityTimelineProps) {
+export function ActivityTimeline({ processedEvents, isLoading }: ActivityTimelineProps) {
   const [isTimelineCollapsed, setIsTimelineCollapsed] = React.useState(false);
   const { themeMode } = useTheme();
   const isLightTheme = themeMode === "light";
@@ -233,9 +227,7 @@ export function ActivityTimeline({
                         <span
                           className={cn(
                             "text-white",
-                            isLoading &&
-                              index === processedEvents.length - 1 &&
-                              "animate-pulse"
+                            isLoading && index === processedEvents.length - 1 && "animate-pulse"
                           )}
                         >
                           {style.icon}
@@ -255,9 +247,7 @@ export function ActivityTimeline({
                         <p
                           className={cn(
                             "text-xs leading-relaxed transition-colors duration-300",
-                            isLightTheme
-                              ? "text-slate-500"
-                              : "text-muted-foreground"
+                            isLightTheme ? "text-slate-500" : "text-muted-foreground"
                           )}
                         >
                           {eventItem.data}
@@ -297,12 +287,7 @@ export function ActivityTimeline({
                 )}
               </div>
             ) : isLoading ? null : (
-              <div
-                className={cn(
-                  "flex h-20 flex-col items-center justify-center",
-                  "text-center"
-                )}
-              >
+              <div className={cn("flex h-20 flex-col items-center justify-center", "text-center")}>
                 <Activity
                   className={cn(
                     "mb-2 h-5 w-5",

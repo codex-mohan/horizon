@@ -27,9 +27,7 @@ export const FileBadge = memo(function FileBadge({
   const Icon = config.icon;
   const isImage =
     type?.startsWith("image/") ||
-    ["jpg", "jpeg", "png", "gif", "webp"].some((ext) =>
-      name.toLowerCase().endsWith(ext)
-    );
+    ["jpg", "jpeg", "png", "gif", "webp"].some((ext) => name.toLowerCase().endsWith(ext));
 
   // Determine if we show a preview
   const showPreview = isImage && url;
@@ -58,19 +56,14 @@ export const FileBadge = memo(function FileBadge({
 
       {/* Content Area */}
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-        <span
-          className="w-full truncate font-semibold text-foreground/90 text-xs"
-          title={name}
-        >
+        <span className="w-full truncate font-semibold text-foreground/90 text-xs" title={name}>
           {name}
         </span>
 
         <div className="flex items-center gap-2">
           {size && (
             <span className="font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
-              {size < 1024
-                ? `${size} B`
-                : `${(size / 1024).toFixed(size < 1024 * 10 ? 1 : 0)} KB`}
+              {size < 1024 ? `${size} B` : `${(size / 1024).toFixed(size < 1024 * 10 ? 1 : 0)} KB`}
             </span>
           )}
           <span className="font-medium text-[10px] text-muted-foreground/60 uppercase tracking-wider opacity-50">

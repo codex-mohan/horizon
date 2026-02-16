@@ -26,9 +26,7 @@ export class PreferenceExtractor {
     _userId: string,
     messages: Array<{ role: string; content: string }>
   ): Promise<Preference[]> {
-    const conversationText = messages
-      .map((m) => `${m.role}: ${m.content}`)
-      .join("\n");
+    const conversationText = messages.map((m) => `${m.role}: ${m.content}`).join("\n");
 
     const systemPrompt = new SystemMessage(
       `You are a preference extraction assistant. Analyze the conversation and extract any user preferences, habits, or patterns you observe.
@@ -73,10 +71,9 @@ If no clear preferences are found, return an empty array [].`
         return [];
       }
 
-      const preferences: Omit<
-        Preference,
-        "source_message_id" | "extracted_at"
-      >[] = JSON.parse(jsonMatch[0]);
+      const preferences: Omit<Preference, "source_message_id" | "extracted_at">[] = JSON.parse(
+        jsonMatch[0]
+      );
 
       return preferences.map((p) => ({
         ...p,
@@ -84,10 +81,7 @@ If no clear preferences are found, return an empty array [].`
         extracted_at: new Date().toISOString(),
       }));
     } catch (error) {
-      console.error(
-        "[PreferenceExtractor] Failed to extract preferences:",
-        error
-      );
+      console.error("[PreferenceExtractor] Failed to extract preferences:", error);
       return [];
     }
   }
@@ -108,9 +102,7 @@ If no clear preferences are found, return an empty array [].`
       `Create a brief, natural language summary of the user's preferences based on the extracted data.`
     );
 
-    const userPrompt = new HumanMessage(
-      `Summarize these user preferences:\n\n${preferencesText}`
-    );
+    const userPrompt = new HumanMessage(`Summarize these user preferences:\n\n${preferencesText}`);
 
     try {
       const response = await this.llm.invoke([systemPrompt, userPrompt]);

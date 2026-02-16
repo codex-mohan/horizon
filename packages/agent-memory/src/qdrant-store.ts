@@ -48,9 +48,7 @@ export class QdrantStore {
       );
 
       if (!exists) {
-        console.log(
-          `[Qdrant] Creating collection: ${this.config.collection_name}`
-        );
+        console.log(`[Qdrant] Creating collection: ${this.config.collection_name}`);
         await this.client.createCollection(this.config.collection_name, {
           vectors: {
             size: this.config.embedding_dimension!,
@@ -147,10 +145,7 @@ export class QdrantStore {
   /**
    * Search memories by vector with filters
    */
-  async search(
-    queryVector: number[],
-    query: MemoryQuery
-  ): Promise<MemorySearchResult[]> {
+  async search(queryVector: number[], query: MemoryQuery): Promise<MemorySearchResult[]> {
     await this.initialize();
 
     const topK = query.top_k || this.config.default_top_k!;
@@ -209,11 +204,7 @@ export class QdrantStore {
   /**
    * Get memories by thread ID
    */
-  async getByThread(
-    userId: string,
-    threadId: string,
-    limit = 100
-  ): Promise<MemoryEntry[]> {
+  async getByThread(userId: string, threadId: string, limit = 100): Promise<MemoryEntry[]> {
     await this.initialize();
 
     const results = await this.client.scroll(this.config.collection_name, {

@@ -31,16 +31,12 @@ export async function AgentNode(
 
   const memories = state.metadata?.retrieved_memories;
   if (memories && memories.length > 0) {
-    const memoryContext = memories
-      .map((m: any, i: number) => `${i + 1}. ${m.content}`)
-      .join("\n");
+    const memoryContext = memories.map((m: any, i: number) => `${i + 1}. ${m.content}`).join("\n");
     systemPrompt += `\n\nContext from previous conversations:\n${memoryContext}`;
   }
 
   let messages = state.messages;
-  const hasSystemPrompt = messages.some(
-    (msg: BaseMessage) => msg._getType() === "system"
-  );
+  const hasSystemPrompt = messages.some((msg: BaseMessage) => msg._getType() === "system");
 
   if (!hasSystemPrompt) {
     messages = [new SystemMessage(systemPrompt), ...messages];
@@ -49,9 +45,7 @@ export async function AgentNode(
   const sanitizedMessages = messages.map((msg) => {
     if (Array.isArray(msg.content)) {
       const textContent = msg.content
-        .map((c: any) =>
-          typeof c === "string" ? c : c.type === "text" ? c.text : ""
-        )
+        .map((c: any) => (typeof c === "string" ? c : c.type === "text" ? c.text : ""))
         .join("\n");
       const newMsg = Object.create(Object.getPrototypeOf(msg));
       Object.assign(newMsg, msg);

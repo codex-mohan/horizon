@@ -42,7 +42,7 @@ function renderGenerativeUI(toolCall: ToolCall, isLoading: boolean): React.React
     case "fetch_url_content":
       return <FetchUrlTool {...commonProps} />;
 
-    case "weather":
+    case "get_weather":
       return <WeatherTool {...commonProps} />;
 
     default:

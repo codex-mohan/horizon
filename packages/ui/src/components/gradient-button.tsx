@@ -155,11 +155,7 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
       {/* Border gradient for outline variant */}
       {variant === "outline" && (
         <div
-          className={cn(
-            !useThemeGradient && gradientClass,
-            "absolute inset-0",
-            radiusClass
-          )}
+          className={cn(!useThemeGradient && gradientClass, "absolute inset-0", radiusClass)}
           style={{
             padding: "2px",
             ...(useThemeGradient ? gradientStyle : {}),
@@ -194,9 +190,7 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
           width: finalWidthStyle,
           height: finalHeightStyle,
           filter:
-            isHovered && !disabled && variant !== "ghost"
-              ? "brightness(1.1)"
-              : "brightness(1)",
+            isHovered && !disabled && variant !== "ghost" ? "brightness(1.1)" : "brightness(1)",
           transition: "all 300ms ease-in-out",
           ...(useThemeGradient && (variant === "default" || variant === "solid")
             ? gradientStyle

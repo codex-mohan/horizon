@@ -22,10 +22,7 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 // Verify password
-async function verifyPassword(
-  password: string,
-  hash: string
-): Promise<boolean> {
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
 
@@ -39,9 +36,7 @@ async function createToken(userId: string, sessionId: string): Promise<string> {
 }
 
 // Verify JWT token
-async function verifyToken(
-  token: string
-): Promise<{ userId: string; sessionId: string } | null> {
+async function verifyToken(token: string): Promise<{ userId: string; sessionId: string } | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return {

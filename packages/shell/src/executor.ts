@@ -10,12 +10,7 @@
 
 // import { $ } from "bun"; // Removed for cross-runtime support
 import * as child_process from "node:child_process";
-import {
-  ExitError,
-  PermissionError,
-  ShellError,
-  TimeoutError,
-} from "./errors.js";
+import { ExitError, PermissionError, ShellError, TimeoutError } from "./errors.js";
 import { CommandHistory } from "./history.js";
 import { getPlatformInfo, type PlatformInfo } from "./platform.js";
 
@@ -174,15 +169,9 @@ const DEFAULT_DANGEROUS_PATTERNS: RegExp[] = [
  */
 export class ShellExecutor {
   private readonly config: Required<
-    Omit<
-      ShellConfig,
-      "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete"
-    >
+    Omit<ShellConfig, "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete">
   > &
-    Pick<
-      ShellConfig,
-      "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete"
-    >;
+    Pick<ShellConfig, "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete">;
   private readonly history: CommandHistory;
   private readonly platform: PlatformInfo;
 
@@ -235,10 +224,7 @@ export class ShellExecutor {
   /**
    * Request approval for command execution
    */
-  private async requestApproval(
-    command: string,
-    context: ApprovalContext
-  ): Promise<boolean> {
+  private async requestApproval(command: string, context: ApprovalContext): Promise<boolean> {
     const { approvalMode, approvalFn } = this.config;
 
     switch (approvalMode) {
@@ -247,10 +233,7 @@ export class ShellExecutor {
 
       case "always":
         if (!approvalFn) {
-          throw new PermissionError(
-            command,
-            "Approval required but no approval function provided"
-          );
+          throw new PermissionError(command, "Approval required but no approval function provided");
         }
         return approvalFn(command, context);
 
@@ -268,10 +251,7 @@ export class ShellExecutor {
 
       case "custom":
         if (!approvalFn) {
-          throw new PermissionError(
-            command,
-            "Custom approval mode requires approval function"
-          );
+          throw new PermissionError(command, "Custom approval mode requires approval function");
         }
         return approvalFn(command, context);
 
@@ -336,10 +316,7 @@ export class ShellExecutor {
 
     try {
       // Detect runtime
-      const isBun =
-        typeof process !== "undefined" &&
-        !!process.versions &&
-        !!process.versions.bun;
+      const isBun = typeof process !== "undefined" && !!process.versions && !!process.versions.bun;
 
       let execPromise: Promise<{
         stdout: string;
@@ -529,10 +506,7 @@ export class ShellExecutor {
   /**
    * Execute a command and return just the stdout
    */
-  async run(
-    command: string,
-    options?: Parameters<typeof this.execute>[1]
-  ): Promise<string> {
+  async run(command: string, options?: Parameters<typeof this.execute>[1]): Promise<string> {
     const result = await this.execute(command, options);
     return result.stdout.trim();
   }

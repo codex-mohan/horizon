@@ -2,10 +2,7 @@
  * Generate a conversation title from the first user message.
  * Truncates to a reasonable length and adds ellipsis if needed.
  */
-export function generateConversationTitle(
-  message: string,
-  maxLength = 50
-): string {
+export function generateConversationTitle(message: string, maxLength = 50): string {
   // Remove extra whitespace and normalize
   const cleaned = message.trim().replace(/\s+/g, " ");
 

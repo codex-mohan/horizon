@@ -23,10 +23,7 @@ export function middleware(request: NextRequest) {
   }
 
   // If user is authenticated and tries to access auth pages, redirect to chat (or the requested page)
-  if (
-    isAuthenticated &&
-    authRoutes.some((route) => pathname.startsWith(route))
-  ) {
+  if (isAuthenticated && authRoutes.some((route) => pathname.startsWith(route))) {
     const redirectUrl = request.nextUrl.searchParams.get("redirect");
     if (redirectUrl) {
       return NextResponse.redirect(new URL(redirectUrl, request.url));
@@ -36,9 +33,7 @@ export function middleware(request: NextRequest) {
 
   // If user is not authenticated and tries to access protected routes
   if (!isAuthenticated) {
-    const isPublicRoute = publicRoutes.some((route) =>
-      pathname.startsWith(route)
-    );
+    const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
     if (!isPublicRoute && pathname !== "/") {
       const redirectUrl = new URL("/auth", request.url);

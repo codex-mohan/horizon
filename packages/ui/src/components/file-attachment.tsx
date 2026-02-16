@@ -43,10 +43,7 @@ export interface FileAttachmentProps {
  */
 function getFileTypeIcon(type: string, fileName: string) {
   // Image preview takes priority - this function is for non-image files
-  if (
-    type.startsWith("image/") ||
-    /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/i.test(fileName)
-  ) {
+  if (type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/i.test(fileName)) {
     return <FileImage className="size-5 text-emerald-500" />;
   }
 
@@ -160,18 +157,12 @@ function getFileTypeIcon(type: string, fileName: string) {
   }
 
   // Audio
-  if (
-    type.startsWith("audio/") ||
-    /\.(mp3|wav|ogg|flac|aac|m4a|wma|aiff)$/i.test(fileName)
-  ) {
+  if (type.startsWith("audio/") || /\.(mp3|wav|ogg|flac|aac|m4a|wma|aiff)$/i.test(fileName)) {
     return <FileAudio className="size-5 text-purple-500" />;
   }
 
   // Video
-  if (
-    type.startsWith("video/") ||
-    /\.(mp4|webm|mov|avi|mkv|wmv|flv|m4v)$/i.test(fileName)
-  ) {
+  if (type.startsWith("video/") || /\.(mp4|webm|mov|avi|mkv|wmv|flv|m4v)$/i.test(fileName)) {
     return <FileVideo className="size-5 text-pink-500" />;
   }
 
@@ -302,10 +293,7 @@ export function FileAttachment({
 
         {/* File Info */}
         <div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden">
-          <span
-            className="truncate font-medium text-foreground text-sm"
-            title={file.name}
-          >
+          <span className="truncate font-medium text-foreground text-sm" title={file.name}>
             {file.name}
           </span>
           <div className="flex items-center gap-2 text-muted-foreground text-xs">
@@ -314,9 +302,7 @@ export function FileAttachment({
                 {fileExtension}
               </span>
             )}
-            {fileSize && (
-              <span className="shrink-0">{formatFileSize(fileSize)}</span>
-            )}
+            {fileSize && <span className="shrink-0">{formatFileSize(fileSize)}</span>}
           </div>
         </div>
 
@@ -355,9 +341,7 @@ export function FileAttachment({
               alt={file.name}
               className={cn(
                 "absolute inset-0 h-full w-full object-cover transition-all duration-500",
-                imageLoading
-                  ? "scale-95 opacity-0 blur-2xl"
-                  : "scale-100 opacity-100 blur-0"
+                imageLoading ? "scale-95 opacity-0 blur-2xl" : "scale-100 opacity-100 blur-0"
               )}
               onError={handleImageError}
               onLoad={handleImageLoad}
@@ -375,8 +359,7 @@ export function FileAttachment({
               className={cn(
                 "rounded-lg p-2",
                 // PDF - Red gradient
-                (file.type === "application/pdf" ||
-                  file.name.endsWith(".pdf")) &&
+                (file.type === "application/pdf" || file.name.endsWith(".pdf")) &&
                   "bg-gradient-to-br from-red-500 to-red-600",
                 // Word/Documents - Blue gradient
                 (file.type.includes("document") ||
@@ -391,57 +374,39 @@ export function FileAttachment({
                 // Code files - language specific colors
                 /\.(js|jsx|ts|tsx|mjs|cjs)$/i.test(file.name) &&
                   "bg-gradient-to-br from-yellow-400 to-yellow-500",
-                /\.(py|pyw)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-blue-400 to-blue-500",
+                /\.(py|pyw)$/i.test(file.name) && "bg-gradient-to-br from-blue-400 to-blue-500",
                 /\.(java|class)$/i.test(file.name) &&
                   "bg-gradient-to-br from-orange-500 to-orange-600",
                 /\.(c|cpp|h|hpp|cxx|hxx)$/i.test(file.name) &&
                   "bg-gradient-to-br from-blue-600 to-blue-700",
                 /\.(rs|rlib)$/i.test(file.name) &&
                   "bg-gradient-to-br from-orange-600 to-orange-700",
-                /\.(go|mod|sum)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-cyan-400 to-cyan-500",
-                /\.(rb|gemspec)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-red-500 to-red-600",
+                /\.(go|mod|sum)$/i.test(file.name) && "bg-gradient-to-br from-cyan-400 to-cyan-500",
+                /\.(rb|gemspec)$/i.test(file.name) && "bg-gradient-to-br from-red-500 to-red-600",
                 /\.(php|phtml|php3|php4|php5)$/i.test(file.name) &&
                   "bg-gradient-to-br from-purple-500 to-purple-600",
-                /\.(swift)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-orange-400 to-orange-500",
-                /\.(kt|kts)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-violet-400 to-violet-500",
+                /\.(swift)$/i.test(file.name) && "bg-gradient-to-br from-orange-400 to-orange-500",
+                /\.(kt|kts)$/i.test(file.name) && "bg-gradient-to-br from-violet-400 to-violet-500",
                 /\.(cs|csx|sln|csproj)$/i.test(file.name) &&
                   "bg-gradient-to-br from-green-500 to-green-600",
-                /\.(scala|sc)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-red-600 to-red-700",
-                /\.(lua)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-blue-500 to-blue-600",
-                /\.(r|R|Rmd)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-blue-400 to-blue-500",
-                /\.(jl)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-purple-600 to-purple-700",
-                /\.(elm)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-cyan-500 to-cyan-600",
-                /\.(ex|exs)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-purple-600 to-purple-700",
-                /\.(hs|lhs)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-purple-500 to-purple-600",
-                /\.(ml|mli)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-orange-400 to-orange-500",
+                /\.(scala|sc)$/i.test(file.name) && "bg-gradient-to-br from-red-600 to-red-700",
+                /\.(lua)$/i.test(file.name) && "bg-gradient-to-br from-blue-500 to-blue-600",
+                /\.(r|R|Rmd)$/i.test(file.name) && "bg-gradient-to-br from-blue-400 to-blue-500",
+                /\.(jl)$/i.test(file.name) && "bg-gradient-to-br from-purple-600 to-purple-700",
+                /\.(elm)$/i.test(file.name) && "bg-gradient-to-br from-cyan-500 to-cyan-600",
+                /\.(ex|exs)$/i.test(file.name) && "bg-gradient-to-br from-purple-600 to-purple-700",
+                /\.(hs|lhs)$/i.test(file.name) && "bg-gradient-to-br from-purple-500 to-purple-600",
+                /\.(ml|mli)$/i.test(file.name) && "bg-gradient-to-br from-orange-400 to-orange-500",
                 /\.(clj|cljs|cljc|edn)$/i.test(file.name) &&
                   "bg-gradient-to-br from-green-500 to-green-600",
-                /\.(zig)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-yellow-500 to-yellow-600",
-                /\.(nim)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-yellow-500 to-yellow-600",
-                /\.(dart)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-cyan-500 to-cyan-600",
-                /\.(sql)$/i.test(file.name) &&
-                  "bg-gradient-to-br from-yellow-600 to-yellow-700",
+                /\.(zig)$/i.test(file.name) && "bg-gradient-to-br from-yellow-500 to-yellow-600",
+                /\.(nim)$/i.test(file.name) && "bg-gradient-to-br from-yellow-500 to-yellow-600",
+                /\.(dart)$/i.test(file.name) && "bg-gradient-to-br from-cyan-500 to-cyan-600",
+                /\.(sql)$/i.test(file.name) && "bg-gradient-to-br from-yellow-600 to-yellow-700",
                 /\.(sh|bash|zsh|fish)$/i.test(file.name) &&
                   "bg-gradient-to-br from-gray-400 to-gray-500",
-                /\.(toml|ini|cfg|conf|config|yaml|yml|json)$/i.test(
-                  file.name
-                ) && "bg-gradient-to-br from-gray-400 to-gray-500",
+                /\.(toml|ini|cfg|conf|config|yaml|yml|json)$/i.test(file.name) &&
+                  "bg-gradient-to-br from-gray-400 to-gray-500",
                 /\.(html|css|scss|sass|less|styl)$/i.test(file.name) &&
                   "bg-gradient-to-br from-pink-500 to-pink-600",
                 /\.(vue|svelte)$/i.test(file.name) &&
@@ -484,10 +449,7 @@ export function FileAttachment({
 
       {/* File Info */}
       <div className="flex flex-col gap-0.5 p-2">
-        <span
-          className="truncate font-medium text-foreground text-xs"
-          title={file.name}
-        >
+        <span className="truncate font-medium text-foreground text-xs" title={file.name}>
           {file.name}
         </span>
         <div className="flex items-center justify-between text-[10px] text-muted-foreground">

@@ -8,11 +8,7 @@ interface DragDropOverlayProps {
   onDragLeave: () => void;
 }
 
-export function DragDropOverlay({
-  isDragging,
-  onDrop,
-  onDragLeave,
-}: DragDropOverlayProps) {
+export function DragDropOverlay({ isDragging, onDrop, onDragLeave }: DragDropOverlayProps) {
   const [mounted, setMounted] = useState(false);
   const dragCounterRef = useRef(0);
 
@@ -65,9 +61,7 @@ export function DragDropOverlay({
           <UploadCloud className="h-16 w-16 text-primary" />
         </div>
         <div className="space-y-2 text-center">
-          <h3 className="font-bold font-display text-2xl text-foreground">
-            Drop files here
-          </h3>
+          <h3 className="font-bold font-display text-2xl text-foreground">Drop files here</h3>
           <p className="max-w-[200px] text-muted-foreground text-sm">
             Add files to your chat context instantly
           </p>

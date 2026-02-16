@@ -52,19 +52,16 @@ interface SignupWizardProps {
   className?: string;
 }
 
-export function SignupWizard({
-  onSwitchToLogin,
-  className,
-}: SignupWizardProps) {
+export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
   const [username, setUsername] = useState("");
-  const [usernameStatus, setUsernameStatus] = useState<
-    "idle" | "checking" | "available" | "taken"
-  >("idle");
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">(
+    "idle"
+  );
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -103,9 +100,7 @@ export function SignupWizard({
       return false;
     }
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      toast.error(
-        "Username can only contain letters, numbers, and underscores"
-      );
+      toast.error("Username can only contain letters, numbers, and underscores");
       return false;
     }
     if (usernameStatus === "taken") {
@@ -147,11 +142,7 @@ export function SignupWizard({
   const handleComplete = useCallback(async () => {
     setIsSubmitting(true);
     try {
-      const result = await register(
-        username,
-        password,
-        displayName || undefined
-      );
+      const result = await register(username, password, displayName || undefined);
 
       if (result.success) {
         setCompletedSteps((prev) => [...prev, currentStep]);
@@ -237,10 +228,7 @@ export function SignupWizard({
             variants={slideVariants}
           >
             <div className="space-y-2">
-              <Label
-                className="flex items-center gap-2 text-base"
-                htmlFor="username"
-              >
+              <Label className="flex items-center gap-2 text-base" htmlFor="username">
                 <User className="size-4" />
                 Username
               </Label>
@@ -258,12 +246,8 @@ export function SignupWizard({
                   {usernameStatus === "checking" && (
                     <Loader2 className="size-5 animate-spin text-muted-foreground" />
                   )}
-                  {usernameStatus === "available" && (
-                    <Check className="size-5 text-emerald-500" />
-                  )}
-                  {usernameStatus === "taken" && (
-                    <X className="size-5 text-destructive" />
-                  )}
+                  {usernameStatus === "available" && <Check className="size-5 text-emerald-500" />}
+                  {usernameStatus === "taken" && <X className="size-5 text-destructive" />}
                 </div>
               </div>
               <p className="text-muted-foreground text-sm">
@@ -286,10 +270,7 @@ export function SignupWizard({
             variants={slideVariants}
           >
             <div className="space-y-2">
-              <Label
-                className="flex items-center gap-2 text-base"
-                htmlFor="password"
-              >
+              <Label className="flex items-center gap-2 text-base" htmlFor="password">
                 <Lock className="size-4" />
                 Password
               </Label>
@@ -308,11 +289,7 @@ export function SignupWizard({
                   onClick={() => setShowPassword(!showPassword)}
                   type="button"
                 >
-                  {showPassword ? (
-                    <EyeOff className="size-5" />
-                  ) : (
-                    <Eye className="size-5" />
-                  )}
+                  {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                 </button>
               </div>
 
@@ -358,9 +335,7 @@ export function SignupWizard({
                 <Input
                   className={cn(
                     "h-12 pr-10 text-lg",
-                    confirmPassword &&
-                      password !== confirmPassword &&
-                      "border-destructive"
+                    confirmPassword && password !== confirmPassword && "border-destructive"
                   )}
                   id="confirmPassword"
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -373,17 +348,11 @@ export function SignupWizard({
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   type="button"
                 >
-                  {showConfirmPassword ? (
-                    <EyeOff className="size-5" />
-                  ) : (
-                    <Eye className="size-5" />
-                  )}
+                  {showConfirmPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                 </button>
               </div>
               {confirmPassword && password !== confirmPassword && (
-                <p className="text-destructive text-sm">
-                  Passwords do not match
-                </p>
+                <p className="text-destructive text-sm">Passwords do not match</p>
               )}
             </div>
           </motion.div>
@@ -402,15 +371,10 @@ export function SignupWizard({
             variants={slideVariants}
           >
             <div className="space-y-2">
-              <Label
-                className="flex items-center gap-2 text-base"
-                htmlFor="displayName"
-              >
+              <Label className="flex items-center gap-2 text-base" htmlFor="displayName">
                 <Sparkles className="size-4" />
                 Display Name
-                <span className="text-muted-foreground text-sm">
-                  (optional)
-                </span>
+                <span className="text-muted-foreground text-sm">(optional)</span>
               </Label>
               <Input
                 autoFocus
@@ -460,14 +424,10 @@ export function SignupWizard({
               initial={{ opacity: 0, y: 20 }}
               transition={{ delay: 0.4 }}
             >
-              <h3 className="font-bold font-display text-2xl tracking-tight">
-                Almost There!
-              </h3>
+              <h3 className="font-bold font-display text-2xl tracking-tight">Almost There!</h3>
               <p className="font-body text-muted-foreground">
                 You're about to join Horizon as{" "}
-                <span className="font-semibold text-foreground">
-                  @{username}
-                </span>
+                <span className="font-semibold text-foreground">@{username}</span>
               </p>
             </motion.div>
 
@@ -522,9 +482,7 @@ export function SignupWizard({
               <span className="text-muted-foreground text-sm">
                 Step {currentStep + 1} of {wizardSteps.length}
               </span>
-              <span className="font-medium text-sm">
-                {wizardSteps[currentStep]?.title}
-              </span>
+              <span className="font-medium text-sm">{wizardSteps[currentStep]?.title}</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <motion.div
@@ -544,9 +502,7 @@ export function SignupWizard({
               {wizardSteps[currentStep]?.title}
             </h2>
             {wizardSteps[currentStep]?.description && (
-              <p className="text-muted-foreground">
-                {wizardSteps[currentStep].description}
-              </p>
+              <p className="text-muted-foreground">{wizardSteps[currentStep].description}</p>
             )}
           </div>
 
@@ -569,11 +525,7 @@ export function SignupWizard({
                   Back
                 </Button>
               ) : (
-                <Button
-                  className="text-muted-foreground"
-                  onClick={onSwitchToLogin}
-                  variant="ghost"
-                >
+                <Button className="text-muted-foreground" onClick={onSwitchToLogin} variant="ghost">
                   Already have an account?
                 </Button>
               )}
@@ -584,12 +536,9 @@ export function SignupWizard({
                 <GradientButton
                   className="gap-2"
                   disabled={
-                    (currentStep === 0 &&
-                      (username.length < 3 || usernameStatus === "taken")) ||
+                    (currentStep === 0 && (username.length < 3 || usernameStatus === "taken")) ||
                     (currentStep === 1 &&
-                      (!password ||
-                        password !== confirmPassword ||
-                        password.length < 6))
+                      (!password || password !== confirmPassword || password.length < 6))
                   }
                   glowIntensity="medium"
                   onClick={handleNext}

@@ -19,10 +19,7 @@ const Spinner = () => (
   </svg>
 );
 
-const SmartLink: React.FC<{ href: string; children: React.ReactNode }> = ({
-  href,
-  children,
-}) => {
+const SmartLink: React.FC<{ href: string; children: React.ReactNode }> = ({ href, children }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState<string | null>(null);
@@ -32,9 +29,7 @@ const SmartLink: React.FC<{ href: string; children: React.ReactNode }> = ({
     const fetchTitle = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `/api/get-title?url=${encodeURIComponent(href)}`
-        );
+        const response = await fetch(`/api/get-title?url=${encodeURIComponent(href)}`);
         // We don't throw an error here, just proceed. If it fails, we'll fallback.
         if (response.ok) {
           const data = await response.json();
@@ -92,9 +87,7 @@ const SmartLink: React.FC<{ href: string; children: React.ReactNode }> = ({
           ) : (
             <div>
               <p className="font-semibold text-foreground">{title}</p>
-              <p className="mt-1 max-w-full truncate text-muted-foreground text-xs">
-                {href}
-              </p>
+              <p className="mt-1 max-w-full truncate text-muted-foreground text-xs">{href}</p>
             </div>
           )}
         </div>

@@ -135,7 +135,7 @@ export const ChatBubble = React.memo(
           className={cn(
             "flex flex-col gap-2",
             isUser ? "items-end" : "items-start",
-            isEditing ? "w-full max-w-full" : "max-w-[85%]"
+            isEditing ? "w-full max-w-full" : "max-w-[95%]"
           )}
         >
           {/* File Attachments */}
@@ -189,12 +189,12 @@ export const ChatBubble = React.memo(
             <>
               <div
                 className={cn(
-                  "wrap-break-word relative rounded-xl p-4 font-body leading-relaxed",
+                  "relative min-w-[120px] break-words rounded-xl p-4 font-body leading-relaxed",
                   isUser
                     ? cn(
-                        isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
-                        "text-foreground"
-                      )
+                      isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
+                      "text-foreground"
+                    )
                     : "w-full text-foreground"
                 )}
               >

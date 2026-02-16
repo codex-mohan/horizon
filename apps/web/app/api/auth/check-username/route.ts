@@ -6,10 +6,7 @@ export async function GET(request: NextRequest) {
     const username = request.nextUrl.searchParams.get("username");
 
     if (!username) {
-      return NextResponse.json(
-        { error: "Username is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Username is required" }, { status: 400 });
     }
 
     // Validate username format
@@ -25,9 +22,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ available });
   } catch (error) {
     console.error("Check username API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

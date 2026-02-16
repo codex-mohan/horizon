@@ -121,10 +121,7 @@ export function isImageFile(file: File | AttachedFile): boolean {
 /**
  * Checks if a file type is supported
  */
-export function isSupportedFileType(
-  fileName: string,
-  allowedExtensions?: string[]
-): boolean {
+export function isSupportedFileType(fileName: string, allowedExtensions?: string[]): boolean {
   if (!allowedExtensions || allowedExtensions.length === 0) {
     return true;
   }

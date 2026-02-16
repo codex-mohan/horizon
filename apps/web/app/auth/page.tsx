@@ -71,9 +71,7 @@ export default function AuthPage() {
         <div className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text font-bold font-display text-2xl text-transparent tracking-tight">
           Horizon
         </div>
-        <div className="font-accent text-muted-foreground text-xs italic">
-          by Singularity.ai
-        </div>
+        <div className="font-accent text-muted-foreground text-xs italic">by Singularity.ai</div>
       </motion.div>
 
       {/* Main content */}

@@ -59,15 +59,11 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
                 value={temperature}
               />
               <p className="text-muted-foreground text-xs">
-                Controls randomness. Lower values make the output more focused
-                and deterministic.
+                Controls randomness. Lower values make the output more focused and deterministic.
               </p>
             </div>
 
-            <div
-              className="stagger-item space-y-2"
-              style={{ animationDelay: "0.05s" }}
-            >
+            <div className="stagger-item space-y-2" style={{ animationDelay: "0.05s" }}>
               <Label className="font-display" htmlFor="max-tokens">
                 Max Tokens: {maxTokens[0]}
               </Label>
@@ -86,10 +82,7 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
               </p>
             </div>
 
-            <div
-              className="stagger-item space-y-2"
-              style={{ animationDelay: "0.1s" }}
-            >
+            <div className="stagger-item space-y-2" style={{ animationDelay: "0.1s" }}>
               <Label className="font-display" htmlFor="top-p">
                 Top P: {topP[0]}
               </Label>
@@ -108,10 +101,7 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
               </p>
             </div>
 
-            <div
-              className="stagger-item space-y-2"
-              style={{ animationDelay: "0.15s" }}
-            >
+            <div className="stagger-item space-y-2" style={{ animationDelay: "0.15s" }}>
               <Label className="font-display" htmlFor="frequency-penalty">
                 Frequency Penalty: {frequencyPenalty[0]}
               </Label>
@@ -130,10 +120,7 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
               </p>
             </div>
 
-            <div
-              className="stagger-item space-y-2"
-              style={{ animationDelay: "0.2s" }}
-            >
+            <div className="stagger-item space-y-2" style={{ animationDelay: "0.2s" }}>
               <Label className="font-display" htmlFor="presence-penalty">
                 Presence Penalty: {presencePenalty[0]}
               </Label>
@@ -152,10 +139,7 @@ export function SettingsSidebar({ isOpen, onClose }: SettingsSidebarProps) {
               </p>
             </div>
 
-            <div
-              className="stagger-item space-y-2"
-              style={{ animationDelay: "0.25s" }}
-            >
+            <div className="stagger-item space-y-2" style={{ animationDelay: "0.25s" }}>
               <Label className="font-display" htmlFor="system-prompt">
                 System Prompt
               </Label>

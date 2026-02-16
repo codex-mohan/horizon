@@ -22,7 +22,7 @@ export const toolComponents: Record<string, ComponentType<ToolProps>> = {
   shell_execute: ShellTool,
   search_web: WebSearchTool,
   fetch_url_content: FetchUrlTool,
-  weather: WeatherTool,
+  get_weather: WeatherTool,
 };
 
 export function getToolComponent(name: string): ComponentType<ToolProps> {

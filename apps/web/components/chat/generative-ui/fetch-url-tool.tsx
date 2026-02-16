@@ -2,13 +2,7 @@
 
 import { cn } from "@workspace/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
-  FileText,
-  Globe,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, FileText, Globe } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
 import { getToolUIConfig } from "@/lib/tool-config";
@@ -50,9 +44,7 @@ export function FetchUrlTool({
   const previewLength = 300;
   const shouldTruncate = result && result.length > previewLength;
   const displayResult =
-    shouldTruncate && !isExpanded
-      ? `${result.slice(0, previewLength)}...`
-      : result;
+    shouldTruncate && !isExpanded ? `${result.slice(0, previewLength)}...` : result;
 
   return (
     <motion.div
@@ -85,12 +77,7 @@ export function FetchUrlTool({
             >
               {config.displayName}
             </span>
-            <p
-              className={cn(
-                "text-xs",
-                isLight ? "text-muted-foreground" : "text-slate-500"
-              )}
-            >
+            <p className={cn("text-xs", isLight ? "text-muted-foreground" : "text-slate-500")}>
               Web page content
             </p>
           </div>
@@ -99,12 +86,7 @@ export function FetchUrlTool({
       </div>
 
       {/* URL Section */}
-      <div
-        className={cn(
-          "border-b",
-          isLight ? "border-border/50" : "border-cyan-500/10"
-        )}
-      >
+      <div className={cn("border-b", isLight ? "border-border/50" : "border-cyan-500/10")}>
         <button
           className={cn(
             "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
@@ -142,12 +124,7 @@ export function FetchUrlTool({
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  <Globe
-                    className={cn(
-                      "h-4 w-4",
-                      isLight ? "text-primary" : "text-cyan-400"
-                    )}
-                  />
+                  <Globe className={cn("h-4 w-4", isLight ? "text-primary" : "text-cyan-400")} />
                   <span
                     className={cn(
                       "flex-1 truncate text-sm",
@@ -182,10 +159,7 @@ export function FetchUrlTool({
                 text="Fetching content..."
               />
               <p
-                className={cn(
-                  "mt-1 text-xs",
-                  isLight ? "text-muted-foreground" : "text-slate-500"
-                )}
+                className={cn("mt-1 text-xs", isLight ? "text-muted-foreground" : "text-slate-500")}
               >
                 Loading page
               </p>
@@ -195,21 +169,14 @@ export function FetchUrlTool({
           <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
             <div className="mb-2 flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-destructive" />
-              <span className="font-medium text-destructive text-sm">
-                Failed to fetch
-              </span>
+              <span className="font-medium text-destructive text-sm">Failed to fetch</span>
             </div>
             <p className="text-destructive/80 text-xs">{error}</p>
           </div>
         ) : result ? (
           <div>
             <div className="mb-3 flex items-center gap-2">
-              <FileText
-                className={cn(
-                  "h-4 w-4",
-                  isLight ? "text-primary" : "text-cyan-400"
-                )}
-              />
+              <FileText className={cn("h-4 w-4", isLight ? "text-primary" : "text-cyan-400")} />
               <span
                 className={cn(
                   "font-medium text-xs uppercase tracking-wider",
@@ -222,9 +189,7 @@ export function FetchUrlTool({
             <div
               className={cn(
                 "relative rounded-lg border p-4",
-                isLight
-                  ? "border-border bg-muted/30"
-                  : "border-slate-700/30 bg-slate-900/30",
+                isLight ? "border-border bg-muted/30" : "border-slate-700/30 bg-slate-900/30",
                 !isExpanded && shouldTruncate && "max-h-48 overflow-hidden"
               )}
             >

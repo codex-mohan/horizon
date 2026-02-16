@@ -65,13 +65,7 @@ export function ModernSpinner({ size = "md", className }: ModernSpinnerProps) {
       >
         <svg className="h-full w-full" viewBox="0 0 100 100">
           <defs>
-            <linearGradient
-              id="spinner-gradient"
-              x1="0%"
-              x2="100%"
-              y1="0%"
-              y2="100%"
-            >
+            <linearGradient id="spinner-gradient" x1="0%" x2="100%" y1="0%" y2="100%">
               <stop offset="0%" stopColor="rgba(99, 102, 241, 0.8)" />
               <stop offset="50%" stopColor="rgba(168, 85, 247, 0.8)" />
               <stop offset="100%" stopColor="rgba(236, 72, 153, 0.8)" />
@@ -151,11 +145,7 @@ interface ToolStatusBadgeProps {
 /**
  * Status badge with shimmer effect during loading
  */
-export function ToolStatusBadge({
-  status,
-  text,
-  className,
-}: ToolStatusBadgeProps) {
+export function ToolStatusBadge({ status, text, className }: ToolStatusBadgeProps) {
   const statusConfig = {
     pending: {
       bg: "bg-amber-500/10",
@@ -202,27 +192,12 @@ export function ToolStatusBadge({
         </span>
       )}
       {status === "completed" && (
-        <svg
-          className="h-3 w-3"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            d="M5 13l4 4L19 7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-          />
+        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
         </svg>
       )}
       {status === "failed" && (
-        <svg
-          className="h-3 w-3"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             d="M6 18L18 6M6 6l12 12"
             strokeLinecap="round"
@@ -232,12 +207,7 @@ export function ToolStatusBadge({
         </svg>
       )}
       {status === "pending" && (
-        <svg
-          className="h-3 w-3"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
             strokeLinecap="round"
@@ -246,11 +216,7 @@ export function ToolStatusBadge({
           />
         </svg>
       )}
-      {status === "executing" ? (
-        <ShimmerText text={config.label} />
-      ) : (
-        <span>{config.label}</span>
-      )}
+      {status === "executing" ? <ShimmerText text={config.label} /> : <span>{config.label}</span>}
     </div>
   );
 }

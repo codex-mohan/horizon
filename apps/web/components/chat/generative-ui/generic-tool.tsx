@@ -52,18 +52,14 @@ export function GenericTool({
   const formatJSON = (obj: any) => JSON.stringify(obj, null, 2);
 
   const executionTime =
-    startedAt && completedAt
-      ? Math.round((completedAt - startedAt) / 10) / 100
-      : null;
+    startedAt && completedAt ? Math.round((completedAt - startedAt) / 10) / 100 : null;
 
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
       className={cn(
         "overflow-hidden rounded-xl border shadow-lg",
-        isLight
-          ? "border-border bg-card/95"
-          : "border-slate-700/50 bg-slate-900/60"
+        isLight ? "border-border bg-card/95" : "border-slate-700/50 bg-slate-900/60"
       )}
       initial={{ opacity: 0, y: 10 }}
     >
@@ -88,12 +84,7 @@ export function GenericTool({
               {config.displayName}
             </span>
             {executionTime && (
-              <p
-                className={cn(
-                  "text-xs",
-                  isLight ? "text-muted-foreground" : "text-slate-500"
-                )}
-              >
+              <p className={cn("text-xs", isLight ? "text-muted-foreground" : "text-slate-500")}>
                 {executionTime}s
               </p>
             )}
@@ -103,12 +94,7 @@ export function GenericTool({
       </div>
 
       {/* Arguments Section */}
-      <div
-        className={cn(
-          "border-b",
-          isLight ? "border-border/50" : "border-slate-700/30"
-        )}
-      >
+      <div className={cn("border-b", isLight ? "border-border/50" : "border-slate-700/30")}>
         <button
           className={cn(
             "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
@@ -120,9 +106,7 @@ export function GenericTool({
         >
           <div className="flex items-center gap-2">
             <Code className="h-3.5 w-3.5" />
-            <span className="font-medium uppercase tracking-wider">
-              Arguments
-            </span>
+            <span className="font-medium uppercase tracking-wider">Arguments</span>
           </div>
           {showArgs ? (
             <ChevronUp className="h-3.5 w-3.5" />
@@ -160,11 +144,7 @@ export function GenericTool({
                     )}
                     onClick={() => handleCopy(formatJSON(args))}
                   >
-                    {copied ? (
-                      <Check className="h-3.5 w-3.5" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5" />
-                    )}
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
                 </div>
               </div>

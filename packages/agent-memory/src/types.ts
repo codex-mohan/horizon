@@ -11,12 +11,7 @@ export interface MemoryEntry {
   embedding?: number[];
   metadata: {
     timestamp: string;
-    memory_type:
-      | "conversation"
-      | "fact"
-      | "preference"
-      | "document"
-      | "summary";
+    memory_type: "conversation" | "fact" | "preference" | "document" | "summary";
     importance: number; // 0-1 score
     privacy_level: "public" | "private" | "sensitive";
     source: string;

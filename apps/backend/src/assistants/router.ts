@@ -13,10 +13,7 @@ interface Variables {
       findDefault: (userId: string) => Assistant | undefined;
       findPublic: () => Assistant[];
       create: (assistant: Assistant) => Assistant;
-      update: (
-        id: string,
-        updates: Partial<Assistant>
-      ) => Assistant | undefined;
+      update: (id: string, updates: Partial<Assistant>) => Assistant | undefined;
       delete: (id: string) => boolean;
       setDefault: (userId: string, assistantId: string) => boolean;
     };
@@ -46,9 +43,7 @@ app.get("/", async (c) => {
   const userAssistants = c.var.db.assistants.findByUserId(userId);
 
   if (includePublic) {
-    const publicAssistants = c.var.db.assistants
-      .findPublic()
-      .filter((a) => a.user_id !== userId);
+    const publicAssistants = c.var.db.assistants.findPublic().filter((a) => a.user_id !== userId);
     return c.json([...userAssistants, ...publicAssistants]);
   }
 

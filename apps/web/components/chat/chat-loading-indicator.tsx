@@ -49,25 +49,18 @@ export function ChatLoadingIndicator({
               <>
                 <GenerativeUIRenderer
                   isLoading
-                  toolCalls={currentToolCalls.filter((tc) =>
-                    hasCustomUI(tc.name)
-                  )}
+                  toolCalls={currentToolCalls.filter((tc) => hasCustomUI(tc.name))}
                 />
                 {currentToolCalls.some((tc) => !hasCustomUI(tc.name)) && (
                   <ToolCallMessage
                     isLoading
-                    toolCalls={currentToolCalls.filter(
-                      (tc) => !hasCustomUI(tc.name)
-                    )}
+                    toolCalls={currentToolCalls.filter((tc) => !hasCustomUI(tc.name))}
                   />
                 )}
               </>
             )}
             {showActivityTimeline && hasActivityEvents && (
-              <ActivityTimeline
-                isLoading
-                processedEvents={liveActivityEvents}
-              />
+              <ActivityTimeline isLoading processedEvents={liveActivityEvents} />
             )}
           </div>
         ) : (
@@ -78,9 +71,7 @@ export function ChatLoadingIndicator({
                 isLightTheme ? "text-slate-600" : "text-primary"
               )}
             />
-            <span
-              className={isLightTheme ? "text-slate-600" : "text-foreground"}
-            >
+            <span className={isLightTheme ? "text-slate-600" : "text-foreground"}>
               Processing...
             </span>
           </div>

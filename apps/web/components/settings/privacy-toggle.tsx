@@ -6,14 +6,7 @@ import { Slider } from "@workspace/ui/components/slider";
 import { Switch } from "@workspace/ui/components/switch";
 import { cn } from "@workspace/ui/lib/utils";
 import { motion } from "framer-motion";
-import {
-  AlertTriangle,
-  Clock,
-  Eye,
-  EyeOff,
-  Shield,
-  Trash2,
-} from "lucide-react";
+import { AlertTriangle, Clock, Eye, EyeOff, Shield, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface PrivacySettings {
@@ -28,10 +21,7 @@ interface PrivacyToggleProps {
   apiUrl?: string;
 }
 
-export function PrivacyToggle({
-  userId,
-  apiUrl = "http://localhost:2024",
-}: PrivacyToggleProps) {
+export function PrivacyToggle({ userId, apiUrl = "http://localhost:2024" }: PrivacyToggleProps) {
   const [settings, setSettings] = useState<PrivacySettings>({
     enabled: false,
     autoDetect: true,
@@ -91,9 +81,7 @@ export function PrivacyToggle({
       <div
         className={cn(
           "rounded-lg border p-4 transition-colors",
-          settings.enabled
-            ? "border-destructive/30 bg-destructive/10"
-            : "bg-muted/50"
+          settings.enabled ? "border-destructive/30 bg-destructive/10" : "bg-muted/50"
         )}
       >
         <div className="flex items-center justify-between">
@@ -106,11 +94,7 @@ export function PrivacyToggle({
                   : "bg-primary/10 text-primary"
               )}
             >
-              {settings.enabled ? (
-                <EyeOff className="size-5" />
-              ) : (
-                <Eye className="size-5" />
-              )}
+              {settings.enabled ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
             </div>
             <div>
               <h3 className="font-medium text-sm">
@@ -139,9 +123,8 @@ export function PrivacyToggle({
           >
             <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
             <p className="text-destructive text-xs">
-              When Privacy Mode is enabled, the AI won't remember your
-              preferences or previous conversations. This gives you maximum
-              privacy but reduces personalization.
+              When Privacy Mode is enabled, the AI won't remember your preferences or previous
+              conversations. This gives you maximum privacy but reduces personalization.
             </p>
           </motion.div>
         )}
@@ -149,11 +132,7 @@ export function PrivacyToggle({
 
       {/* Additional Settings (only shown when privacy is OFF) */}
       {!settings.enabled && (
-        <motion.div
-          animate={{ opacity: 1 }}
-          className="space-y-4"
-          initial={{ opacity: 0 }}
-        >
+        <motion.div animate={{ opacity: 1 }} className="space-y-4" initial={{ opacity: 0 }}>
           <h4 className="flex items-center gap-2 font-medium text-sm">
             <Shield className="size-4" />
             Memory Settings
@@ -198,22 +177,17 @@ export function PrivacyToggle({
                 <Clock className="size-4" />
                 Retention period
               </Label>
-              <span className="font-medium text-sm">
-                {settings.retentionDays} days
-              </span>
+              <span className="font-medium text-sm">{settings.retentionDays} days</span>
             </div>
             <Slider
               max={365}
               min={7}
-              onValueChange={([value]) =>
-                saveSettings({ ...settings, retentionDays: value })
-              }
+              onValueChange={([value]) => saveSettings({ ...settings, retentionDays: value })}
               step={7}
               value={[settings.retentionDays]}
             />
             <p className="text-muted-foreground text-xs">
-              Memories older than {settings.retentionDays} days will be
-              automatically deleted
+              Memories older than {settings.retentionDays} days will be automatically deleted
             </p>
           </div>
 
@@ -226,8 +200,7 @@ export function PrivacyToggle({
                 initial={{ opacity: 0, y: -10 }}
               >
                 <p className="text-center text-muted-foreground text-sm">
-                  Are you sure? This will permanently delete all stored
-                  memories.
+                  Are you sure? This will permanently delete all stored memories.
                 </p>
                 <div className="flex gap-2">
                   <Button

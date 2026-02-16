@@ -220,17 +220,10 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
       return ext;
     }, [langHint]);
 
-    const cmTheme = useMemo(
-      () => createCodeMirrorTheme(themeMode === "dark", false),
-      [themeMode]
-    );
+    const cmTheme = useMemo(() => createCodeMirrorTheme(themeMode === "dark", false), [themeMode]);
 
     const extensions = useMemo(() => {
-      const base = [
-        lineNumbers(),
-        EditorView.editable.of(false),
-        EditorView.lineWrapping,
-      ];
+      const base = [lineNumbers(), EditorView.editable.of(false), EditorView.lineWrapping];
 
       if (languageExt) {
         return [...base, languageExt];
@@ -245,8 +238,7 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
     };
 
     const handleDownload = () => {
-      const extension =
-        languageExtensions[langHint?.toLowerCase() || ""] || "txt";
+      const extension = languageExtensions[langHint?.toLowerCase() || ""] || "txt";
       const filename = `code.${extension}`;
       const blob = new Blob([code], {
         type: `text/${extension};charset=utf-8;`,
@@ -366,15 +358,13 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
 
         // Handle inline code
         return (
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em]">
-            {children}
-          </code>
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em]">{children}</code>
         );
       },
       p: ({ children }: any) => (
-        <span className="mt-3 mb-3 block wrap-break-word font-body text-[1.0625rem] text-foreground/90 leading-relaxed last:mb-0">
+        <p className="my-3 break-words font-body text-[1.0625rem] text-foreground/90 leading-relaxed last:mb-0">
           {children}
-        </span>
+        </p>
       ),
       h1: ({ children }: any) => (
         <h1 className="mt-4 mb-2 font-bold font-display text-foreground/90 text-xl tracking-tight">
@@ -479,12 +469,8 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         );
       },
       thead: (props: any) => <thead className="bg-muted" {...props} />,
-      tr: (props: any) => (
-        <tr className="m-0 p-0 odd:bg-muted/30 even:bg-muted/60" {...props} />
-      ),
-      th: (props: any) => (
-        <th className="px-4 py-2 text-left font-bold" {...props} />
-      ),
+      tr: (props: any) => <tr className="m-0 p-0 odd:bg-muted/30 even:bg-muted/60" {...props} />,
+      th: (props: any) => <th className="px-4 py-2 text-left font-bold" {...props} />,
       td: (props: any) => <td className="px-4 py-2 text-left" {...props} />,
       a: ({ node, href, children, ...props }: any) => {
         const videoId = href ? getYouTubeVideoId(href) : null;

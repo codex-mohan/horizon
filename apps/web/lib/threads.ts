@@ -10,15 +10,9 @@ export interface Thread {
 export interface ThreadsClient {
   listThreads: (userId?: string) => Promise<Thread[]>;
   getThread: (threadId: string) => Promise<Thread | null>;
-  createThread: (
-    userId: string,
-    metadata?: Record<string, unknown>
-  ) => Promise<Thread>;
+  createThread: (userId: string, metadata?: Record<string, unknown>) => Promise<Thread>;
   deleteThread: (threadId: string) => Promise<void>;
-  updateThread: (
-    threadId: string,
-    metadata: Record<string, unknown>
-  ) => Promise<Thread>;
+  updateThread: (threadId: string, metadata: Record<string, unknown>) => Promise<Thread>;
 }
 
 /**
@@ -76,10 +70,7 @@ export function createThreadsClient(apiUrl: string): ThreadsClient {
      * Create a new thread for a user.
      * The user_id is stored in metadata for filtering.
      */
-    async createThread(
-      userId: string,
-      metadata?: Record<string, unknown>
-    ): Promise<Thread> {
+    async createThread(userId: string, metadata?: Record<string, unknown>): Promise<Thread> {
       const thread = await client.threads.create({
         metadata: {
           ...metadata,
@@ -103,10 +94,7 @@ export function createThreadsClient(apiUrl: string): ThreadsClient {
       }
     },
 
-    async updateThread(
-      threadId: string,
-      metadata: Record<string, unknown>
-    ): Promise<Thread> {
+    async updateThread(threadId: string, metadata: Record<string, unknown>): Promise<Thread> {
       // First get existing metadata to merge with new values
       // This ensures we don't lose user_id or other important fields
       let existingMetadata: Record<string, unknown> = {};

@@ -119,10 +119,7 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
           transition={{ delay: 0.4 }}
         >
           <div className="space-y-2">
-            <Label
-              className="flex items-center gap-2"
-              htmlFor="signin-username"
-            >
+            <Label className="flex items-center gap-2" htmlFor="signin-username">
               <User className="size-4" />
               Username
             </Label>
@@ -139,10 +136,7 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label
-              className="flex items-center gap-2"
-              htmlFor="signin-password"
-            >
+            <Label className="flex items-center gap-2" htmlFor="signin-password">
               <Lock className="size-4" />
               Password
             </Label>
@@ -163,11 +157,7 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
                 tabIndex={-1}
                 type="button"
               >
-                {showPassword ? (
-                  <EyeOff className="size-5" />
-                ) : (
-                  <Eye className="size-5" />
-                )}
+                {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
               </button>
             </div>
           </div>
@@ -180,10 +170,7 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
                 id="remember-me"
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
               />
-              <Label
-                className="cursor-pointer font-normal text-sm"
-                htmlFor="remember-me"
-              >
+              <Label className="cursor-pointer font-normal text-sm" htmlFor="remember-me">
                 Remember me for 30 days
               </Label>
             </div>

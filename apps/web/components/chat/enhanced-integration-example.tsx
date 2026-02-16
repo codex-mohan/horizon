@@ -27,8 +27,7 @@ export function EnhancedChatAreaExample() {
     approveInterrupt,
     rejectInterrupt,
   } = useChat({
-    apiUrl:
-      process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
+    apiUrl: process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
     assistantId: "enhanced-agent",
     onError: (err) => {
       toast.error(err.message);
@@ -85,15 +84,11 @@ export function EnhancedChatAreaExample() {
 
         {/* Show status when waiting for interrupt */}
         {isWaitingForInterrupt && (
-          <div className="mt-2 text-amber-500 text-sm">
-            Waiting for tool approval...
-          </div>
+          <div className="mt-2 text-amber-500 text-sm">Waiting for tool approval...</div>
         )}
 
         {isLoading && !isWaitingForInterrupt && (
-          <div className="mt-2 text-muted-foreground text-sm">
-            Agent is thinking...
-          </div>
+          <div className="mt-2 text-muted-foreground text-sm">Agent is thinking...</div>
         )}
       </div>
 

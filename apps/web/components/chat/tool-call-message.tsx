@@ -36,18 +36,10 @@ interface ToolCallMessageProps {
 const JsonViewer: React.FC<{ data: unknown; maxHeight?: string }> = React.memo(
   ({ data, maxHeight = "200px" }) => {
     const { themeMode } = useTheme();
-    const cmTheme = useMemo(
-      () => createCodeMirrorTheme(themeMode === "dark"),
-      [themeMode]
-    );
+    const cmTheme = useMemo(() => createCodeMirrorTheme(themeMode === "dark"), [themeMode]);
 
     const extensions = useMemo(
-      () => [
-        json(),
-        lineNumbers(),
-        EditorView.editable.of(false),
-        EditorView.lineWrapping,
-      ],
+      () => [json(), lineNumbers(), EditorView.editable.of(false), EditorView.lineWrapping],
       []
     );
 
@@ -64,10 +56,7 @@ const JsonViewer: React.FC<{ data: unknown; maxHeight?: string }> = React.memo(
     }, [data]);
 
     return (
-      <div
-        className="overflow-hidden rounded-lg border border-border"
-        style={{ maxHeight }}
-      >
+      <div className="overflow-hidden rounded-lg border border-border" style={{ maxHeight }}>
         <CodeMirror
           basicSetup={{
             foldGutter: true,
@@ -87,11 +76,7 @@ const JsonViewer: React.FC<{ data: unknown; maxHeight?: string }> = React.memo(
 );
 JsonViewer.displayName = "JsonViewer";
 
-export function ToolCallMessage({
-  toolCalls,
-  isLoading = false,
-  className,
-}: ToolCallMessageProps) {
+export function ToolCallMessage({ toolCalls, isLoading = false, className }: ToolCallMessageProps) {
   const [isExpanded, setIsExpanded] = React.useState(true);
   const { themeMode } = useTheme();
   const isLightTheme = themeMode === "light";
@@ -140,10 +125,8 @@ export function ToolCallMessage({
     return null;
   }
 
-  const firstToolConfig =
-    toolCalls.length > 0 ? getToolUIConfig(toolCalls[0].name) : null;
-  const FirstToolIcon =
-    toolCalls.length > 0 ? getToolIcon(toolCalls[0].name) : null;
+  const firstToolConfig = toolCalls.length > 0 ? getToolUIConfig(toolCalls[0].name) : null;
+  const FirstToolIcon = toolCalls.length > 0 ? getToolIcon(toolCalls[0].name) : null;
 
   return (
     <div
@@ -191,9 +174,7 @@ export function ToolCallMessage({
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-[0.95rem]",
-                  isLightTheme
-                    ? "bg-slate-200 text-slate-700"
-                    : "bg-primary/20 text-primary"
+                  isLightTheme ? "bg-slate-200 text-slate-700" : "bg-primary/20 text-primary"
                 )}
               >
                 {toolCalls.length}
@@ -271,19 +252,14 @@ export function ToolCallMessage({
                         "transition-transform duration-300 hover:scale-110"
                       )}
                     >
-                      <span className="text-white">
-                        {getStatusIcon(toolCall.status)}
-                      </span>
+                      <span className="text-white">{getStatusIcon(toolCall.status)}</span>
                     </div>
 
                     <div className="pt-0.5">
                       <div className="mb-1 flex items-center gap-2">
                         {ToolIcon && (
                           <ToolIcon
-                            className={cn(
-                              "h-3.5 w-3.5",
-                              getStatusColor(toolCall.status)
-                            )}
+                            className={cn("h-3.5 w-3.5", getStatusColor(toolCall.status))}
                           />
                         )}
                         <span
@@ -296,22 +272,15 @@ export function ToolCallMessage({
                         </span>
                       </div>
 
-                      {toolCall.arguments &&
-                        Object.keys(toolCall.arguments).length > 0 && (
-                          <div className="ml-5">
-                            <JsonViewer
-                              data={toolCall.arguments}
-                              maxHeight="150px"
-                            />
-                          </div>
-                        )}
+                      {toolCall.arguments && Object.keys(toolCall.arguments).length > 0 && (
+                        <div className="ml-5">
+                          <JsonViewer data={toolCall.arguments} maxHeight="150px" />
+                        </div>
+                      )}
 
                       {toolCall.result && (
                         <div className="mt-2 ml-5">
-                          <JsonViewer
-                            data={toolCall.result}
-                            maxHeight="150px"
-                          />
+                          <JsonViewer data={toolCall.result} maxHeight="150px" />
                         </div>
                       )}
 
@@ -319,9 +288,7 @@ export function ToolCallMessage({
                         <div
                           className={cn(
                             "mt-2 ml-5 rounded p-2 text-xs",
-                            isLightTheme
-                              ? "bg-red-50 text-red-600"
-                              : "bg-red-950/30 text-red-400"
+                            isLightTheme ? "bg-red-50 text-red-600" : "bg-red-950/30 text-red-400"
                           )}
                         >
                           Error: {toolCall.error}

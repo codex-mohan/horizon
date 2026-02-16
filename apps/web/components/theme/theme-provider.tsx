@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 
 type Theme = "horizon" | "nebula" | "aurora";
 type ThemeMode = "light" | "dark";
@@ -31,9 +25,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     const savedTheme = localStorage.getItem("horizon-theme") as Theme | null;
-    const savedMode = localStorage.getItem(
-      "horizon-theme-mode"
-    ) as ThemeMode | null;
+    const savedMode = localStorage.getItem("horizon-theme-mode") as ThemeMode | null;
 
     if (savedTheme) {
       setTheme(savedTheme);

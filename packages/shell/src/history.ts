@@ -136,8 +136,7 @@ export class CommandHistory {
    * Search history by command pattern
    */
   search(pattern: string | RegExp): HistoryEntry[] {
-    const regex =
-      typeof pattern === "string" ? new RegExp(pattern, "i") : pattern;
+    const regex = typeof pattern === "string" ? new RegExp(pattern, "i") : pattern;
     return this.entries.filter((e) => regex.test(e.command));
   }
 
@@ -162,12 +161,10 @@ export class CommandHistory {
     return {
       total: this.entries.length,
       successful: this.entries.filter((e) => e.success).length,
-      failed: this.entries.filter((e) => !e.success && e.exitCode !== undefined)
-        .length,
+      failed: this.entries.filter((e) => !e.success && e.exitCode !== undefined).length,
       averageDuration:
         completed.length > 0
-          ? completed.reduce((sum, e) => sum + (e.duration ?? 0), 0) /
-            completed.length
+          ? completed.reduce((sum, e) => sum + (e.duration ?? 0), 0) / completed.length
           : 0,
     };
   }

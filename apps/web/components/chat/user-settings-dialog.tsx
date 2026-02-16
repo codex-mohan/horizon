@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
@@ -22,10 +18,7 @@ interface UserSettingsDialogProps {
 
 type SettingsTab = "profile" | "security" | "notifications" | "appearance";
 
-export function UserSettingsDialog({
-  isOpen,
-  onClose,
-}: UserSettingsDialogProps) {
+export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps) {
   const { user, logout, updateProfile } = useAuthStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -135,9 +128,7 @@ export function UserSettingsDialog({
                 onClick={handleLogout}
                 variant="ghost"
               >
-                <LogOut
-                  className={cn("size-4", isLoggingOut && "animate-spin")}
-                />
+                <LogOut className={cn("size-4", isLoggingOut && "animate-spin")} />
                 {isLoggingOut ? "Signing out..." : "Sign Out"}
               </Button>
             </div>
@@ -164,17 +155,12 @@ export function UserSettingsDialog({
                     <Avatar className="size-20 ring-4 ring-primary/10">
                       <AvatarImage src={user?.avatarUrl || undefined} />
                       <AvatarFallback className="bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] font-display text-2xl text-white">
-                        {user?.displayName?.substring(0, 2).toUpperCase() ||
-                          "U"}
+                        {user?.displayName?.substring(0, 2).toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h4 className="font-medium text-lg">
-                        {user?.displayName}
-                      </h4>
-                      <p className="text-muted-foreground text-sm">
-                        @{user?.username}
-                      </p>
+                      <h4 className="font-medium text-lg">{user?.displayName}</h4>
+                      <p className="text-muted-foreground text-sm">@{user?.username}</p>
                     </div>
                   </div>
 
@@ -189,15 +175,8 @@ export function UserSettingsDialog({
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="username">Username</Label>
-                      <Input
-                        className="bg-muted/50"
-                        disabled
-                        id="username"
-                        value={username}
-                      />
-                      <p className="text-muted-foreground text-xs">
-                        Username cannot be changed.
-                      </p>
+                      <Input className="bg-muted/50" disabled id="username" value={username} />
+                      <p className="text-muted-foreground text-xs">Username cannot be changed.</p>
                     </div>
                     <Button disabled={isLoading} onClick={handleUpdateProfile}>
                       {isLoading ? "Saving..." : "Save Changes"}
@@ -236,9 +215,7 @@ export function UserSettingsDialog({
                   <Separator />
 
                   <div className="space-y-4">
-                    <h4 className="font-medium text-destructive">
-                      Danger Zone
-                    </h4>
+                    <h4 className="font-medium text-destructive">Danger Zone</h4>
                     <Button variant="destructive">Delete Account</Button>
                   </div>
                 </div>

@@ -3,10 +3,7 @@ import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 
-export function createCodeMirrorTheme(
-  isDark: boolean,
-  _isEditable = true
-): Extension {
+export function createCodeMirrorTheme(isDark: boolean, _isEditable = true): Extension {
   const editorTheme = EditorView.theme(
     {
       "&": {
@@ -57,10 +54,9 @@ export function createCodeMirrorTheme(
       ".cm-activeLineGutter": {
         backgroundColor: "transparent",
       },
-      ".cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection":
-        {
-          backgroundColor: "var(--cm-selection)",
-        },
+      ".cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection": {
+        backgroundColor: "var(--cm-selection)",
+      },
       ".cm-searchMatch": {
         backgroundColor: "var(--cm-selection)",
         outline: "1px solid var(--cm-caret)",
@@ -85,11 +81,7 @@ export function createCodeMirrorTheme(
     },
     { tag: [t.propertyName], color: "var(--cm-property)" },
     {
-      tag: [
-        t.function(t.variableName),
-        t.function(t.propertyName),
-        t.labelName,
-      ],
+      tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName],
       color: "var(--cm-function)",
     },
     {
@@ -112,15 +104,7 @@ export function createCodeMirrorTheme(
     },
     { tag: [t.number], color: "var(--cm-number)" },
     {
-      tag: [
-        t.operator,
-        t.operatorKeyword,
-        t.url,
-        t.escape,
-        t.regexp,
-        t.link,
-        t.special(t.string),
-      ],
+      tag: [t.operator, t.operatorKeyword, t.url, t.escape, t.regexp, t.link, t.special(t.string)],
       color: "var(--cm-operator)",
     },
     { tag: [t.regexp], color: "var(--cm-regexp)" },

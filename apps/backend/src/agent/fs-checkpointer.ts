@@ -1,11 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { RunnableConfig } from "@langchain/core/runnables";
-import {
-  BaseCheckpointSaver,
-  type Checkpoint,
-  type CheckpointTuple,
-} from "@langchain/langgraph";
+import { BaseCheckpointSaver, type Checkpoint, type CheckpointTuple } from "@langchain/langgraph";
 
 /**
  * A simple file-system based checkpointer for development.
@@ -34,10 +30,7 @@ export class FileSystemCheckpointer extends BaseCheckpointSaver {
 
   private save() {
     try {
-      fs.writeFileSync(
-        this.filePath,
-        JSON.stringify(this.checkpoints, null, 2)
-      );
+      fs.writeFileSync(this.filePath, JSON.stringify(this.checkpoints, null, 2));
     } catch (e) {
       console.error("Failed to save checkpoints:", e);
     }
@@ -56,9 +49,7 @@ export class FileSystemCheckpointer extends BaseCheckpointSaver {
     const threadChecks = this.checkpoints[thread_id] || [];
 
     if (checkpoint_id) {
-      const found = threadChecks.find(
-        (c: any) => c.checkpoint.id === checkpoint_id
-      );
+      const found = threadChecks.find((c: any) => c.checkpoint.id === checkpoint_id);
       if (found) {
         return {
           config: { configurable: { thread_id, checkpoint_id } },
@@ -85,10 +76,7 @@ export class FileSystemCheckpointer extends BaseCheckpointSaver {
     return undefined;
   }
 
-  async *list(
-    config: RunnableConfig,
-    _options?: any
-  ): AsyncGenerator<CheckpointTuple> {
+  async *list(config: RunnableConfig, _options?: any): AsyncGenerator<CheckpointTuple> {
     const thread_id = config.configurable?.thread_id;
     if (!thread_id) {
       return;
@@ -140,11 +128,7 @@ export class FileSystemCheckpointer extends BaseCheckpointSaver {
   }
 
   // Not implementing writes as they are deprecated/handled differently in newer versions or unused for basic chat
-  async putWrites(
-    _config: RunnableConfig,
-    _writes: any[],
-    _taskId: string
-  ): Promise<void> {
+  async putWrites(_config: RunnableConfig, _writes: any[], _taskId: string): Promise<void> {
     // No-op for simple dev persistence
   }
 }

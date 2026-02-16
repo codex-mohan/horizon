@@ -22,9 +22,7 @@ export interface ProcessedMessageResult {
  *
  * Returns both the filtered messages and a map of messageId -> combined tool calls
  */
-export function combineToolMessages(
-  messages: Message[]
-): ProcessedMessageResult {
+export function combineToolMessages(messages: Message[]): ProcessedMessageResult {
   const result: Message[] = [];
   const toolCallsMap = new Map<string, CombinedToolCall[]>();
   const processedToolMessageIndices = new Set<number>();
@@ -70,9 +68,7 @@ export function combineToolMessages(
 
         if (next.type === "tool") {
           const toolMessageContent =
-            typeof next.content === "string"
-              ? next.content
-              : JSON.stringify(next.content);
+            typeof next.content === "string" ? next.content : JSON.stringify(next.content);
 
           const toolName = next.name || "unknown";
           const toolCallId = next.tool_call_id;
@@ -85,16 +81,13 @@ export function combineToolMessages(
           } else {
             // Fallback: match by name if only one tool call exists
             matchedCall = combinedCalls.find(
-              (tc) =>
-                tc.name.toLowerCase() === toolName.toLowerCase() && !tc.result
+              (tc) => tc.name.toLowerCase() === toolName.toLowerCase() && !tc.result
             );
           }
 
           if (matchedCall) {
             matchedCall.result = toolMessageContent;
-            matchedCall.status = toolMessageContent
-              .toLowerCase()
-              .includes("error")
+            matchedCall.status = toolMessageContent.toLowerCase().includes("error")
               ? "error"
               : "completed";
             processedToolMessageIndices.add(j);
@@ -167,14 +160,10 @@ export function debugToolMessages(messages: Message[]): void {
     const msg = messages[i];
     const msgData = msg as unknown as Record<string, unknown>;
 
-    const toolCallCount = msgData.tool_calls
-      ? (msgData.tool_calls as unknown[]).length
-      : 0;
+    const toolCallCount = msgData.tool_calls ? (msgData.tool_calls as unknown[]).length : 0;
 
     const contentPreview =
-      typeof msg.content === "string"
-        ? msg.content
-        : JSON.stringify(msg.content);
+      typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
 
     console.log(
       `[${i}] type:${msg.type}, id:${msg.id?.slice(0, 8) || "N/A"}, ` +
@@ -183,9 +172,7 @@ export function debugToolMessages(messages: Message[]): void {
     console.log(`    content: ${contentPreview}`);
 
     if (msg.type === "tool") {
-      console.log(
-        `    └─ tool_name:${msg.name}, tool_call_id:${msg.tool_call_id}`
-      );
+      console.log(`    └─ tool_name:${msg.name}, tool_call_id:${msg.tool_call_id}`);
     }
   }
   console.groupEnd();

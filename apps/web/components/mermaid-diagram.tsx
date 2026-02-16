@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  defaultHighlightStyle,
-  syntaxHighlighting,
-} from "@codemirror/language";
+import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { tokyoNight } from "@uiw/codemirror-themes-all";
 import { mermaid as mermaidLanguage } from "codemirror-lang-mermaid";
@@ -79,8 +76,7 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
       } catch (e) {
         console.error("Mermaid rendering failed:", e);
         // Ensure the error message is clean and can be displayed
-        let message =
-          e instanceof Error ? e.message : "An unknown error occurred.";
+        let message = e instanceof Error ? e.message : "An unknown error occurred.";
         // Sanitize newlines but also potentially break up very long error messages
         message = message.replace(/[\r\n]+/g, " ").replace(/(.{80})/g, "$1\n"); // Add newline every 80 chars as a soft break hint
         setRenderError(message);
@@ -177,10 +173,7 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
                   onClick={handleReRender}
                   title="Re-render Diagram"
                 >
-                  <RefreshCw
-                    className={isRendering ? "animate-spin" : ""}
-                    size={16}
-                  />
+                  <RefreshCw className={isRendering ? "animate-spin" : ""} size={16} />
                 </button>
                 <div className="mx-1 h-5 w-px bg-border" />
                 <button
@@ -211,16 +204,12 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
               >
                 <div className="flex flex-col items-center justify-center p-4">
                   {isRendering && (
-                    <div className="animate-pulse text-muted-foreground">
-                      Rendering diagram...
-                    </div>
+                    <div className="animate-pulse text-muted-foreground">Rendering diagram...</div>
                   )}
                   {renderError && !isRendering && (
                     <div className="p-4 text-center text-red-500">
                       <div className="mb-2 font-semibold">Rendering Error</div>
-                      <div className="mermaid-error-message font-mono text-sm">
-                        {renderError}
-                      </div>{" "}
+                      <div className="mermaid-error-message font-mono text-sm">{renderError}</div>{" "}
                       {/* Added mermaid-error-message class */}
                       <button
                         className="mt-2 rounded bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600"
@@ -237,9 +226,7 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
                     />
                   )}
                   {!(isRendering || renderError || svg) && hasContent && (
-                    <div className="text-muted-foreground">
-                      Preparing diagram...
-                    </div>
+                    <div className="text-muted-foreground">Preparing diagram...</div>
                   )}
                   {!hasContent && (
                     <div className="text-muted-foreground/70 text-sm">

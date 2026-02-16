@@ -64,16 +64,8 @@ interface AssistantsState {
     id: string,
     data: Partial<CreateAssistantData>
   ) => Promise<void>;
-  deleteAssistant: (
-    apiUrl: string,
-    userId: string,
-    id: string
-  ) => Promise<void>;
-  setDefaultAssistant: (
-    apiUrl: string,
-    userId: string,
-    id: string
-  ) => Promise<void>;
+  deleteAssistant: (apiUrl: string, userId: string, id: string) => Promise<void>;
+  setDefaultAssistant: (apiUrl: string, userId: string, id: string) => Promise<void>;
   selectAssistant: (assistant: Assistant | null) => void;
   setViewMode: (mode: AssistantViewMode) => void;
   setSortBy: (sort: AssistantSortBy) => void;
@@ -106,11 +98,7 @@ export const useAssistantsStore = create<AssistantsState>()(
         }
       },
 
-      createAssistant: async (
-        apiUrl: string,
-        userId: string,
-        data: CreateAssistantData
-      ) => {
+      createAssistant: async (apiUrl: string, userId: string, data: CreateAssistantData) => {
         const response = await fetch(`${apiUrl}/assistants?user_id=${userId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -130,14 +118,11 @@ export const useAssistantsStore = create<AssistantsState>()(
         id: string,
         data: Partial<CreateAssistantData>
       ) => {
-        const response = await fetch(
-          `${apiUrl}/assistants/${id}?user_id=${userId}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          }
-        );
+        const response = await fetch(`${apiUrl}/assistants/${id}?user_id=${userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
         if (!response.ok) {
           throw new Error("Failed to update assistant");
         }
@@ -148,33 +133,22 @@ export const useAssistantsStore = create<AssistantsState>()(
       },
 
       deleteAssistant: async (apiUrl: string, userId: string, id: string) => {
-        const response = await fetch(
-          `${apiUrl}/assistants/${id}?user_id=${userId}`,
-          {
-            method: "DELETE",
-          }
-        );
+        const response = await fetch(`${apiUrl}/assistants/${id}?user_id=${userId}`, {
+          method: "DELETE",
+        });
         if (!response.ok) {
           throw new Error("Failed to delete assistant");
         }
         set((state) => ({
           assistants: state.assistants.filter((a) => a.id !== id),
-          selectedAssistant:
-            state.selectedAssistant?.id === id ? null : state.selectedAssistant,
+          selectedAssistant: state.selectedAssistant?.id === id ? null : state.selectedAssistant,
         }));
       },
 
-      setDefaultAssistant: async (
-        apiUrl: string,
-        userId: string,
-        id: string
-      ) => {
-        const response = await fetch(
-          `${apiUrl}/assistants/${id}/default?user_id=${userId}`,
-          {
-            method: "POST",
-          }
-        );
+      setDefaultAssistant: async (apiUrl: string, userId: string, id: string) => {
+        const response = await fetch(`${apiUrl}/assistants/${id}/default?user_id=${userId}`, {
+          method: "POST",
+        });
         if (!response.ok) {
           throw new Error("Failed to set default assistant");
         }

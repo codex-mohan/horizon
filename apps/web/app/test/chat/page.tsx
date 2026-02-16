@@ -104,10 +104,7 @@ export default function ChatPage() {
                   <button
                     className="text-muted-foreground text-xs transition-colors hover:text-primary"
                     onClick={() => {
-                      const newContent = prompt(
-                        "Edit message:",
-                        message.content as string
-                      );
+                      const newContent = prompt("Edit message:", message.content as string);
                       if (newContent) {
                         stream.submit(
                           {
@@ -126,9 +123,7 @@ export default function ChatPage() {
                 {!isUser && (
                   <button
                     className="text-muted-foreground text-xs transition-colors hover:text-primary"
-                    onClick={() =>
-                      stream.submit(undefined, { checkpoint: parentCheckpoint })
-                    }
+                    onClick={() => stream.submit(undefined, { checkpoint: parentCheckpoint })}
                   >
                     Regenerate
                   </button>
@@ -146,10 +141,7 @@ export default function ChatPage() {
         })}
       </div>
 
-      <form
-        className="mx-auto flex w-full max-w-4xl gap-3"
-        onSubmit={handleSubmit}
-      >
+      <form className="mx-auto flex w-full max-w-4xl gap-3" onSubmit={handleSubmit}>
         <input
           className="flex-1 rounded-xl border border-input bg-background p-3 transition-shadow focus:outline-none focus:ring-2 focus:ring-ring"
           onChange={(e) => setInput(e.target.value)}

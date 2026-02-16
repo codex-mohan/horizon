@@ -1,13 +1,7 @@
 "use client";
 
 import { cn } from "@workspace/ui/lib/utils";
-import {
-  AlertTriangle,
-  Download,
-  Link as LinkIcon,
-  Loader,
-  X,
-} from "lucide-react";
+import { AlertTriangle, Download, Link as LinkIcon, Loader, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -141,11 +135,7 @@ const ZoomableImageWithLoader = ({
               </button>
             </div>
             {/* Standard <img> tag for the modal image */}
-            <img
-              alt={alt}
-              className="max-h-[90vh] max-w-[90vw] rounded-lg"
-              src={src}
-            />
+            <img alt={alt} className="max-h-[90vh] max-w-[90vw] rounded-lg" src={src} />
           </div>
         </div>
       )}

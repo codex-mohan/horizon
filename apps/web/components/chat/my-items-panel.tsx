@@ -8,12 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@workspace/ui/components/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { cn } from "@workspace/ui/lib/utils";
 import { FileText, Grid3x3, ImageIcon, List, SortAsc } from "lucide-react";
 import { useState } from "react";
@@ -41,11 +36,7 @@ export function MyItemsPanel() {
                 size="icon-sm"
                 variant="ghost"
               >
-                {viewMode === "grid" ? (
-                  <Grid3x3 className="size-4" />
-                ) : (
-                  <List className="size-4" />
-                )}
+                {viewMode === "grid" ? <Grid3x3 className="size-4" /> : <List className="size-4" />}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="animate-scale-in">
@@ -71,12 +62,8 @@ export function MyItemsPanel() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="animate-scale-in">
-              <DropdownMenuItem onClick={() => setSortBy("name")}>
-                Sort by Name
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy("date")}>
-                Sort by Date
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("name")}>Sort by Name</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("date")}>Sort by Date</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -91,18 +78,13 @@ export function MyItemsPanel() {
         <TabsContent className="mt-0 flex-1" value="uploaded">
           <ScrollArea className="h-full">
             <div
-              className={cn(
-                "p-4",
-                viewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-2"
-              )}
+              className={cn("p-4", viewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-2")}
             >
               {[1, 2, 3, 4].map((i) => (
                 <div
                   className={cn(
                     "glass hover-lift stagger-item cursor-pointer overflow-hidden rounded-lg transition-all duration-200 hover:bg-primary/20",
-                    viewMode === "grid"
-                      ? "hover-glow aspect-square"
-                      : "flex items-center gap-3 p-3"
+                    viewMode === "grid" ? "hover-glow aspect-square" : "flex items-center gap-3 p-3"
                   )}
                   key={i}
                 >
@@ -114,12 +96,8 @@ export function MyItemsPanel() {
                     <>
                       <FileText className="size-6 text-muted-foreground" />
                       <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-sm">
-                          Document {i}.pdf
-                        </div>
-                        <div className="text-muted-foreground text-xs">
-                          2.4 MB
-                        </div>
+                        <div className="truncate font-medium text-sm">Document {i}.pdf</div>
+                        <div className="text-muted-foreground text-xs">2.4 MB</div>
                       </div>
                     </>
                   )}
@@ -132,18 +110,13 @@ export function MyItemsPanel() {
         <TabsContent className="mt-0 flex-1" value="generated">
           <ScrollArea className="h-full">
             <div
-              className={cn(
-                "p-4",
-                viewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-2"
-              )}
+              className={cn("p-4", viewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-2")}
             >
               {[1, 2, 3].map((i) => (
                 <div
                   className={cn(
                     "glass hover-lift stagger-item cursor-pointer overflow-hidden rounded-lg transition-all duration-200 hover:bg-primary/20",
-                    viewMode === "grid"
-                      ? "hover-glow aspect-square"
-                      : "flex items-center gap-3 p-3"
+                    viewMode === "grid" ? "hover-glow aspect-square" : "flex items-center gap-3 p-3"
                   )}
                   key={i}
                 >
@@ -155,12 +128,8 @@ export function MyItemsPanel() {
                     <>
                       <ImageIcon className="size-6 text-muted-foreground" />
                       <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-sm">
-                          Generated {i}.png
-                        </div>
-                        <div className="text-muted-foreground text-xs">
-                          1.2 MB
-                        </div>
+                        <div className="truncate font-medium text-sm">Generated {i}.png</div>
+                        <div className="text-muted-foreground text-xs">1.2 MB</div>
                       </div>
                     </>
                   )}
