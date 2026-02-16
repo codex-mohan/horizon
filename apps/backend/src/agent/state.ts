@@ -59,42 +59,6 @@ export interface ToolCall {
 }
 
 /**
- * Interrupt Status
- */
-export type InterruptStatus = "idle" | "waiting_approval" | "approved" | "rejected" | "error";
-
-/**
- * Interrupt Data
- */
-export interface InterruptData {
-  type: "tool_approval" | "user_input" | "error";
-  tool_call_id?: string;
-  tool_name?: string;
-  tool_args?: Record<string, any>;
-  message: string;
-  requested_at: string;
-}
-
-/**
- * Reasoning Step (ReAct Pattern)
- */
-export interface ReasoningStep {
-  step: number;
-  thought: string;
-  timestamp: number;
-}
-
-/**
- * Action Step (ReAct Pattern)
- */
-export interface ActionStep {
-  step: number;
-  action: "tool_call" | "response" | "error";
-  tool_calls?: ToolCall[];
-  timestamp: number;
-}
-
-/**
  * Middleware Metrics
  */
 export interface MiddlewareMetrics {
@@ -107,13 +71,14 @@ export interface MiddlewareMetrics {
 }
 
 /**
- * Agent State Definition
- * Enhanced version supporting:
- * - Human-in-the-Loop with interrupts
- * - Tool tracking and approval
- * - Middleware metrics
- * - ReAct pattern (reasoning + action)
- * - Execution metadata
+ * Agent State Definition (Simplified)
+ *
+ * Core state for the agent graph:
+ * - Message history
+ * - Model/tool tracking
+ * - Execution metrics
+ * - UI streaming
+ * - Routing flags
  */
 export const AgentStateAnnotation = Annotation.Root({
   // Core messages - MUST be visible in LangSmith
@@ -138,46 +103,14 @@ export const AgentStateAnnotation = Annotation.Root({
     default: () => ({ input: 0, output: 0, total: 0 }),
   }),
 
-  // Metadata
+  // Metadata (for memory context, etc.)
   metadata: Annotation<Record<string, any>>({
     reducer: (x, y) => ({ ...x, ...y }),
     default: () => ({}),
   }),
 
-  // Interrupt handling
-  interrupt_status: Annotation<InterruptStatus>({
-    reducer: (x, y) => y ?? x ?? "idle",
-    default: () => "idle",
-  }),
-
-  interrupt_data: Annotation<InterruptData | null>({
-    reducer: (x, y) => y ?? x ?? null,
-    default: () => null,
-  }),
-
-  // Tool tracking
-  pending_tool_calls: Annotation<ToolCall[]>({
-    reducer: (x, y) => y ?? x ?? [],
-    default: () => [],
-  }),
-
+  // Tool tracking (for logging/debugging)
   executed_tool_calls: Annotation<ToolCall[]>({
-    reducer: (x, y) => [...(x ?? []), ...(y ?? [])],
-    default: () => [],
-  }),
-
-  rejected_tool_calls: Annotation<ToolCall[]>({
-    reducer: (x, y) => [...(x ?? []), ...(y ?? [])],
-    default: () => [],
-  }),
-
-  // ReAct tracking
-  reasoning_steps: Annotation<ReasoningStep[]>({
-    reducer: (x, y) => [...(x ?? []), ...(y ?? [])],
-    default: () => [],
-  }),
-
-  action_steps: Annotation<ActionStep[]>({
     reducer: (x, y) => [...(x ?? []), ...(y ?? [])],
     default: () => [],
   }),
@@ -193,6 +126,7 @@ export const AgentStateAnnotation = Annotation.Root({
     default: () => 0,
   }),
 
+  // Middleware metrics
   middleware_metrics: Annotation<MiddlewareMetrics>({
     reducer: (x, y) => ({
       token_usage: {
@@ -226,6 +160,12 @@ export const AgentStateAnnotation = Annotation.Root({
   ui: Annotation<UIMessage[]>({
     reducer: uiMessageReducer,
     default: () => [],
+  }),
+
+  // Tool rejection flag for routing decisions
+  tools_rejected: Annotation<boolean>({
+    reducer: (_, y) => y ?? false,
+    default: () => false,
   }),
 });
 

@@ -1,7 +1,9 @@
 import { webTools } from "@horizon/agent-web";
 import { ShellExecutor } from "@horizon/shell";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import type { ToolApprovalConfig } from "../state.js";
 
 const shellExecutor = new ShellExecutor();
 
@@ -21,6 +23,71 @@ export function getToolRiskLevel(toolName: string): ToolRiskLevel {
 
 export function isDangerousTool(toolName: string): boolean {
   return getToolRiskLevel(toolName) === "dangerous";
+}
+
+/**
+ * Default tool approval configuration
+ */
+export const DEFAULT_TOOL_APPROVAL_CONFIG: ToolApprovalConfig = {
+  mode: "dangerous_only",
+  auto_approve_tools: [],
+  never_approve_tools: [],
+};
+
+/**
+ * Extract tool approval configuration from RunnableConfig
+ */
+export function getToolApprovalConfig(config: RunnableConfig): ToolApprovalConfig {
+  const configurable = config.configurable as Record<string, unknown> | undefined;
+  return (configurable?.tool_approval as ToolApprovalConfig) ?? DEFAULT_TOOL_APPROVAL_CONFIG;
+}
+
+/**
+ * Check if a tool needs approval based on the approval configuration
+ */
+export function needsApproval(toolName: string, approvalConfig: ToolApprovalConfig): boolean {
+  const { mode, auto_approve_tools, never_approve_tools } = approvalConfig;
+
+  // Explicitly auto-approved tools never need approval
+  if (auto_approve_tools.includes(toolName)) {
+    return false;
+  }
+
+  // Explicitly never-approve tools always need approval
+  if (never_approve_tools.includes(toolName)) {
+    return true;
+  }
+
+  // Check mode
+  switch (mode) {
+    case "never_ask":
+      return false;
+    case "always_ask":
+      return true;
+    case "dangerous_only":
+    default:
+      return isDangerousTool(toolName);
+  }
+}
+
+/**
+ * Check if any tool calls need approval
+ */
+export function anyNeedsApproval(
+  toolCalls: Array<{ name: string }>,
+  approvalConfig: ToolApprovalConfig
+): boolean {
+  return toolCalls.some((tc) => needsApproval(tc.name, approvalConfig));
+}
+
+/**
+ * Filter tool calls that need approval
+ */
+export function filterToolsNeedingApproval(
+  toolCalls: Array<{ name: string; id?: string; args?: Record<string, unknown> }>,
+  approvalConfig: ToolApprovalConfig
+): Array<{ name: string; id?: string; args?: Record<string, unknown> }> {
+  return toolCalls.filter((tc) => needsApproval(tc.name, approvalConfig));
 }
 
 /**

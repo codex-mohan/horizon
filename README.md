@@ -14,41 +14,41 @@ Built for local privacy, styled with glassmorphism.
 
 <p>
   <a href="https://nextjs.org">
-    <img src="https://img.shields.io/badge/NEXT.JS-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white&labelColor=0D0D0D" alt="Next.js" />
+    <img src="https://img.shields.io/badge/NEXT.JS-16-a855f7?style=for-the-badge&logo=nextdotjs&logoColor=white&labelColor=18181b" alt="Next.js" />
   </a>
   <a href="https://react.dev">
-    <img src="https://img.shields.io/badge/REACT-19-61DAFB?style=for-the-badge&logo=react&logoColor=white&labelColor=0D0D0D" alt="React" />
+    <img src="https://img.shields.io/badge/REACT-19-8b5cf6?style=for-the-badge&logo=react&logoColor=white&labelColor=18181b" alt="React" />
   </a>
   <a href="https://www.typescriptlang.org">
-    <img src="https://img.shields.io/badge/TYPESCRIPT-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white&labelColor=0D0D0D" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/TYPESCRIPT-5.7-6366f1?style=for-the-badge&logo=typescript&logoColor=white&labelColor=18181b" alt="TypeScript" />
   </a>
   <a href="https://tailwindcss.com">
-    <img src="https://img.shields.io/badge/TAILWIND-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white&labelColor=0D0D0D" alt="Tailwind CSS" />
+    <img src="https://img.shields.io/badge/TAILWIND-4-0ea5e9?style=for-the-badge&logo=tailwindcss&logoColor=white&labelColor=18181b" alt="Tailwind CSS" />
   </a>
   <a href="https://ui.shadcn.com">
-    <img src="https://img.shields.io/badge/SHADCN-UI-000000?style=for-the-badge&logo=shadcnui&logoColor=white&labelColor=0D0D0D" alt="Shadcn UI" />
+    <img src="https://img.shields.io/badge/SHADCN_UI-a855f7?style=for-the-badge&logo=shadcnui&logoColor=white&labelColor=18181b" alt="Shadcn UI" />
   </a>
   <br />
   <a href="https://langchain.com">
-    <img src="https://img.shields.io/badge/LANGGRAPH-TypeScript-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white&labelColor=0D0D0D" alt="LangGraph" />
+    <img src="https://img.shields.io/badge/LANGGRAPH-TypeScript-8b5cf6?style=for-the-badge&logo=langchain&logoColor=white&labelColor=18181b" alt="LangGraph" />
   </a>
   <a href="https://hono.dev">
-    <img src="https://img.shields.io/badge/HONO-E69635?style=for-the-badge&logo=hono&logoColor=white&labelColor=0D0D0D" alt="Hono" />
+    <img src="https://img.shields.io/badge/HONO-4.7-6366f1?style=for-the-badge&logo=hono&logoColor=white&labelColor=18181b" alt="Hono" />
   </a>
   <a href="https://www.docker.com">
-    <img src="https://img.shields.io/badge/DOCKER-2496ED?style=for-the-badge&logo=docker&logoColor=white&labelColor=0D0D0D" alt="Docker" />
+    <img src="https://img.shields.io/badge/DOCKER-0ea5e9?style=for-the-badge&logo=docker&logoColor=white&labelColor=18181b" alt="Docker" />
   </a>
   <a href="https://bun.sh">
-    <img src="https://img.shields.io/badge/BUN-1.3-FBF0DF?style=for-the-badge&logo=bun&logoColor=black&labelColor=0D0D0D" alt="Bun" />
+    <img src="https://img.shields.io/badge/BUN-1.3-a855f7?style=for-the-badge&logo=bun&logoColor=white&labelColor=18181b" alt="Bun" />
   </a>
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/OPENAI-412991?style=for-the-badge&logo=openai&logoColor=white&labelColor=0D0D0D" alt="OpenAI" />
-  <img src="https://img.shields.io/badge/ANTHROPIC-191919?style=for-the-badge&logo=anthropic&logoColor=white&labelColor=0D0D0D" alt="Anthropic" />
-  <img src="https://img.shields.io/badge/GROQ-F55036?style=for-the-badge&logo=groq&logoColor=white&labelColor=0D0D0D" alt="Groq" />
-  <img src="https://img.shields.io/badge/OLLAMA-000000?style=for-the-badge&logo=ollama&logoColor=white&labelColor=0D0D0D" alt="Ollama" />
-  <img src="https://img.shields.io/badge/GOOGLE-4285F4?style=for-the-badge&logo=googlegemini&logoColor=white&labelColor=0D0D0D" alt="Google Gemini" />
+  <img src="https://img.shields.io/badge/OPENAI-8b5cf6?style=for-the-badge&logo=openai&logoColor=white&labelColor=18181b" alt="OpenAI" />
+  <img src="https://img.shields.io/badge/ANTHROPIC-a855f7?style=for-the-badge&logo=anthropic&logoColor=white&labelColor=18181b" alt="Anthropic" />
+  <img src="https://img.shields.io/badge/GROQ-6366f1?style=for-the-badge&logo=groq&logoColor=white&labelColor=18181b" alt="Groq" />
+  <img src="https://img.shields.io/badge/OLLAMA-0ea5e9?style=for-the-badge&logo=ollama&logoColor=white&labelColor=18181b" alt="Ollama" />
+  <img src="https://img.shields.io/badge/GEMINI-8b5cf6?style=for-the-badge&logo=googlegemini&logoColor=white&labelColor=18181b" alt="Google Gemini" />
 </p>
 
 </div>
@@ -83,12 +83,12 @@ Built with a modern monorepo architecture using **Turborepo** and **Bun**, Horiz
 
 ### 🖥️ User Experience
 
-- **Glassmorphic UI**: Modern design system with dark-mode-first approach using Ein UI and Tailwind CSS 4
-- **Full Voice Mode**: Hands-free interaction capabilities (extensible architecture)
-- **Advanced Code Editor**: Integrated CodeMirror with syntax highlighting for 10+ languages
-- **Interactive Chat**: ChatGPT-like interface with real-time streaming, markdown support, and code blocks
-- **Authentication**: Secure user authentication with JWT and bcrypt
-- **Responsive Design**: Optimized for desktop with mobile-ready architecture
+- **Glassmorphic UI**: Beautiful design with multiple stunning color themes
+- **Smart Conversations**: Edit messages, explore alternative paths, attach files
+- **Custom Assistants**: Create personalized AI helpers for different tasks
+- **Safe Execution**: Review and approve actions before they run
+- **Real-time Streaming**: Instant responses with rich markdown and code support
+- **Authentication**: Secure user accounts with encrypted sessions
 
 ### 🛠️ Agent Capabilities
 
@@ -101,15 +101,15 @@ Built with a modern monorepo architecture using **Turborepo** and **Bun**, Horiz
 
 ## 🛠️ Technology Stack
 
-| Component            | Technologies                                                                                                                                                                                                                                                                                                                                                                      |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Frontend**         | ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=nextdotjs) ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript) ![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4?style=flat-square&logo=tailwindcss) |
-| **UI Components**    | ![Shadcn](https://img.shields.io/badge/shadcn-ui-black?style=flat-square&logo=shadcnui) ![Radix](https://img.shields.io/badge/Radix_UI-2.1-181717?style=flat-square) ![Framer](https://img.shields.io/badge/Framer_Motion-12-E69635?style=flat-square&logo=framer)                                                                                                                |
-| **State Management** | ![Zustand](https://img.shields.io/badge/Zustand-5-181717?style=flat-square)                                                                                                                                                                                                                                                                                                       |
-| **Backend**          | ![LangGraph](https://img.shields.io/badge/LangGraph-TypeScript-1C3C3C?style=flat-square&logo=langchain) ![Hono](https://img.shields.io/badge/Hono-4.7-E69635?style=flat-square)                                                                                                                                                                                                   |
-| **AI/ML**            | ![OpenAI](https://img.shields.io/badge/OpenAI-API-412991?style=flat-square&logo=openai) ![Anthropic](https://img.shields.io/badge/Anthropic-Claude-191919?style=flat-square)                                                                                                                                                                                                      |
-| **Database**         | ![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=flat-square&logo=sqlite) ![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis)                                                                                                                                                                                                          |
-| **DevOps**           | ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker) ![Bun](https://img.shields.io/badge/Bun-1.3-black?style=flat-square&logo=bun)                                                                                                                                                                                                         |
+| Component            | Technologies                                                                                                                                                                                                                                                                                                                                                                                  |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Frontend**         | ![Next.js](https://img.shields.io/badge/Next.js-16-a855f7?style=flat-square&logo=nextdotjs) ![React](https://img.shields.io/badge/React-19-8b5cf6?style=flat-square&logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-6366f1?style=flat-square&logo=typescript) ![Tailwind](https://img.shields.io/badge/Tailwind-4-0ea5e9?style=flat-square&logo=tailwindcss)             |
+| **UI Components**    | ![Shadcn](https://img.shields.io/badge/shadcn-ui-a855f7?style=flat-square&logo=shadcnui) ![Radix](https://img.shields.io/badge/Radix_UI-2.1-8b5cf6?style=flat-square) ![Framer](https://img.shields.io/badge/Framer_Motion-12-6366f1?style=flat-square&logo=framer)                                                                                                                            |
+| **State Management** | ![Zustand](https://img.shields.io/badge/Zustand-5-0ea5e9?style=flat-square)                                                                                                                                                                                                                                                                                                                   |
+| **Backend**          | ![LangGraph](https://img.shields.io/badge/LangGraph-TypeScript-8b5cf6?style=flat-square&logo=langchain) ![Hono](https://img.shields.io/badge/Hono-4.7-6366f1?style=flat-square)                                                                                                                                                                                                               |
+| **AI/ML**            | ![OpenAI](https://img.shields.io/badge/OpenAI-API-8b5cf6?style=flat-square&logo=openai) ![Anthropic](https://img.shields.io/badge/Anthropic-Claude-a855f7?style=flat-square)                                                                                                                                                                                                                  |
+| **Database**         | ![SQLite](https://img.shields.io/badge/SQLite-3-6366f1?style=flat-square&logo=sqlite) ![Redis](https://img.shields.io/badge/Redis-7-0ea5e9?style=flat-square&logo=redis)                                                                                                                                                                                                                      |
+| **DevOps**           | ![Docker](https://img.shields.io/badge/Docker-Compose-8b5cf6?style=flat-square&logo=docker) ![Bun](https://img.shields.io/badge/Bun-1.3-a855f7?style=flat-square&logo=bun)                                                                                                                                                                                                                    |
 
 ---
 
@@ -182,9 +182,9 @@ docker-compose up --build
 
 **Access Points:**
 
-- **Web Application**: http://localhost:3000
-- **Backend API**: http://localhost:2024
-- **Health Check**: http://localhost:8000/health
+- **Web Application**: <http://localhost:3000>
+- **Backend API**: <http://localhost:2024>
+- **Health Check**: <http://localhost:8000/health>
 
 ### 🔧 Manual Installation (Development)
 
@@ -270,19 +270,6 @@ NEXT_PUBLIC_LANGGRAPH_API_URL=http://localhost:2024
 3. **Ask Questions**: Type naturally—Horizon understands context and can use tools
 4. **Code Execution**: Request code execution for supported languages
 5. **File Operations**: Ask Horizon to read, write, or analyze files
-
-### 🛠️ Available Tools
-
-Horizon agents can use the following tools:
-
-| Tool          | Description            | Example                                 |
-| ------------- | ---------------------- | --------------------------------------- |
-| `file_read`   | Read file contents     | "Read my README.md"                     |
-| `file_write`  | Write to files         | "Create a Python script that..."        |
-| `system_info` | Get system stats       | "What's my CPU usage?"                  |
-| `shell_exec`  | Execute shell commands | "List files in current directory"       |
-| `web_search`  | Search the web         | "Search for latest TypeScript features" |
-| `web_scrape`  | Scrape web pages       | "Get content from example.com"          |
 
 ### 🔌 API Endpoints
 
@@ -384,8 +371,6 @@ bun run clean
 ## ⚠️ Known Limitations
 
 - **Browser Automation**: Requires additional setup for headless browser execution
-- **Voice Mode**: Currently architecture-ready but requires additional integration
-- **Mobile Support**: Optimized for desktop; mobile UI improvements in progress
 - **Sandbox Security**: Code execution sandbox requires Docker for isolation
 
 ---
@@ -420,7 +405,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 **👤 Author**
 
-_[Your Name]_
+Mohana Krishna
 
 <p>
   <a href="mailto:your.email@example.com">
