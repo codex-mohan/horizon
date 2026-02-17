@@ -363,6 +363,13 @@ export function ChatArea({
         ? { type: "human", content }
         : { type: "human", content: text };
 
+      console.log("[handleSubmit] New message:", {
+        hasImages,
+        contentType: typeof newMessage.content,
+        isArray: Array.isArray(newMessage.content),
+        content: newMessage.content,
+      });
+
       // Prepare attachments for optimistic display
       const optimisticAttachments = files.map((f) => ({
         id: f.id,

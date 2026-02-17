@@ -60,13 +60,19 @@ function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[
   // Check for attachments stored directly on the message (optimistic updates)
   const msgWithAttachments = msg as LangGraphMessage & { attachments?: AttachedFile[] };
   if (msgWithAttachments.attachments && Array.isArray(msgWithAttachments.attachments)) {
+    console.log(
+      "[extractAttachments] Found attachments on message object:",
+      msgWithAttachments.attachments.length
+    );
     return msgWithAttachments.attachments;
   }
 
   // Extract from multimodal content array
   if (Array.isArray(content)) {
+    console.log("[extractAttachments] Content is array with", content.length, "blocks");
     let imageIndex = 0;
     for (const block of content) {
+      console.log("[extractAttachments] Block type:", block.type);
       if (block.type === "image_url" && block.image_url) {
         const imageUrl =
           typeof block.image_url === "string" ? block.image_url : block.image_url.url;
@@ -80,8 +86,11 @@ function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[
         }
       }
     }
+  } else {
+    console.log("[extractAttachments] Content is not array, type:", typeof content);
   }
 
+  console.log("[extractAttachments] Extracted attachments:", attachments.length);
   return attachments;
 }
 
@@ -135,7 +144,14 @@ export function groupMessages(
       index: idx,
       id: m.id,
       type: m.type,
-      content: typeof m.content === "string" ? m.content.slice(0, 50) : `[${typeof m.content}]`,
+      contentType: typeof m.content,
+      isArray: Array.isArray(m.content),
+      contentPreview:
+        typeof m.content === "string"
+          ? m.content.slice(0, 50)
+          : Array.isArray(m.content)
+            ? `array[${m.content.length}]: ${m.content.map((b: any) => b.type).join(",")}`
+            : `[${typeof m.content}]`,
       toolCalls: (m as any).tool_calls?.length || 0,
     }))
   );
