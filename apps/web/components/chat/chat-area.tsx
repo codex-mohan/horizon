@@ -330,7 +330,7 @@ export function ChatArea({
           client.updateThread(chat.threadId, {
             title: generateConversationTitle(text),
           });
-        } catch { }
+        } catch {}
       }
     },
     [chat, onAttachedFilesChange]
@@ -403,6 +403,7 @@ export function ChatArea({
                   onDelete={handleDelete}
                   onEdit={handleEdit}
                   onRegenerate={handleRegenerate}
+                  preToolMessage={group.preToolMessage}
                   showToolCalls={settings.showToolCalls}
                   toolCalls={group.toolCalls}
                   userMessage={group.userMessage}

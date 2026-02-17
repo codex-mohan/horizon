@@ -16,6 +16,8 @@ import { getToolUIConfig } from "@/lib/tool-config";
 export interface MessageGroup {
   id: string;
   userMessage: Message | null;
+  /** The AI message content that came BEFORE tool calls (intro text) */
+  preToolMessage: Message | null;
   assistantMessage: Message | null;
   /** ID of the first AI message in this group - used for regeneration */
   firstAssistantMessageId?: string;
@@ -118,6 +120,7 @@ export function groupMessages(
           timestamp: new Date(),
           _originalMessage: msg,
         },
+        preToolMessage: null,
         assistantMessage: null,
         firstAssistantMessageId: undefined,
         toolCalls: [],
@@ -128,6 +131,8 @@ export function groupMessages(
     } else if (msg.type === "ai") {
       // Get tool calls for this AI message
       const toolCalls = extractToolCalls(chat, msg);
+      const hasTextContent = content && content.trim().length > 0;
+      const hasToolCalls = toolCalls.length > 0;
 
       if (currentGroup) {
         // Track the FIRST AI message ID for regeneration purposes
@@ -141,9 +146,20 @@ export function groupMessages(
         const newToolCalls = toolCalls.filter((tc) => !existingToolCallIds.has(tc.id));
         currentGroup.toolCalls = [...currentGroup.toolCalls, ...newToolCalls];
 
-        // Update assistant message - the last AI message with text content wins
-        const hasTextContent = content && content.trim().length > 0;
-        if (hasTextContent) {
+        // Handle the case where AI has BOTH text content AND tool calls
+        // This is the first message that introduces the tool usage
+        if (hasTextContent && hasToolCalls && !currentGroup.preToolMessage) {
+          // Store as pre-tool message (intro text before tools)
+          currentGroup.preToolMessage = {
+            id: msg.id || `msg-${i}`,
+            role: "assistant",
+            content,
+            timestamp: new Date(),
+            _originalMessage: msg,
+            reasoning,
+          };
+        } else if (hasTextContent) {
+          // Plain text content (final response or intermediate text)
           currentGroup.assistantMessage = {
             id: msg.id || `msg-${i}`,
             role: "assistant",
@@ -152,9 +168,9 @@ export function groupMessages(
             _originalMessage: msg,
             reasoning,
           };
-        } else if (!currentGroup.assistantMessage && toolCalls.length > 0) {
-          // AI message with only tool calls, no text - still create placeholder
-          currentGroup.assistantMessage = {
+        } else if (!currentGroup.assistantMessage && !currentGroup.preToolMessage && hasToolCalls) {
+          // AI message with only tool calls, no text - create placeholder
+          currentGroup.preToolMessage = {
             id: msg.id || `msg-${i}`,
             role: "assistant",
             content: "",
@@ -173,6 +189,7 @@ export function groupMessages(
         currentGroup = {
           id: `group-${msg.id || i}`,
           userMessage: null,
+          preToolMessage: null,
           assistantMessage: {
             id: msg.id || `msg-${i}`,
             role: "assistant",

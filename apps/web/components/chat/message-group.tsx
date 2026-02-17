@@ -19,6 +19,8 @@ import { type ToolCall, ToolCallMessage } from "./tool-call-message";
 interface MessageGroupProps {
   id: string;
   userMessage: Message | null;
+  /** AI message content that came BEFORE tool calls (intro text) */
+  preToolMessage: Message | null;
   assistantMessage: Message | null;
   /** ID of the first AI message in this group - used for regeneration */
   firstAssistantMessageId?: string;
@@ -46,6 +48,7 @@ interface MessageGroupProps {
 export function MessageGroup({
   id,
   userMessage,
+  preToolMessage,
   assistantMessage,
   firstAssistantMessageId,
   toolCalls,
@@ -79,7 +82,7 @@ export function MessageGroup({
       )}
 
       {/* Assistant Group */}
-      {(assistantMessage || toolCalls.length > 0) && (
+      {(assistantMessage || preToolMessage || toolCalls.length > 0) && (
         <div className="group flex items-start gap-4">
           {/* Assistant Avatar - Always at top of group, before all content */}
           <div
@@ -92,7 +95,20 @@ export function MessageGroup({
           </div>
 
           <div className="flex-1 min-w-0 space-y-2">
-            {/* Tool Calls - Render first (AI decides to use tools before responding) */}
+            {/* Pre-Tool Message - Intro text before tool calls */}
+            {preToolMessage && preToolMessage.content && (
+              <ChatBubble
+                isLastGroup={isLastGroup}
+                isLastInGroup={false}
+                isLastMessage={false}
+                isLoading={false}
+                message={preToolMessage}
+                showActions={false}
+                showAvatar={false}
+              />
+            )}
+
+            {/* Tool Calls - Render after pre-tool message */}
             {toolCalls.length > 0 && showToolCalls && (
               <div className="space-y-2">
                 {/* Custom Tool UIs */}
@@ -111,7 +127,7 @@ export function MessageGroup({
               </div>
             )}
 
-            {/* Assistant Text Message - Render after tool calls */}
+            {/* Assistant Text Message - Final response after tools */}
             {assistantMessage && (assistantMessage.content || assistantMessage.reasoning) && (
               <ChatBubble
                 isLastGroup={isLastGroup}
