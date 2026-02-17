@@ -8,6 +8,7 @@ import { useTheme } from "@/components/theme/theme-provider";
 import {
   type ChatError,
   type ProcessedEvent as ChatProcessedEvent,
+  type ContentBlock,
   type UseChatOptions,
   useChat,
 } from "@/lib/chat";
@@ -302,8 +303,74 @@ export function ChatArea({
   );
 
   const handleSubmit = useCallback(
-    async (text: string, _files: ChatInputAttachedFile[]) => {
-      const newMessage = { type: "human" as const, content: text };
+    async (text: string, files: ChatInputAttachedFile[]) => {
+      // Build multimodal content array
+      const content: ContentBlock[] = [];
+
+      // Add text content
+      if (text.trim()) {
+        content.push({ type: "text", text });
+      }
+
+      // Process images - convert to base64 data URL if needed
+      const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+      const otherFiles = files.filter((f) => !f.type.startsWith("image/"));
+
+      for (const file of imageFiles) {
+        if (file.url) {
+          // If it's a blob URL, we need to convert to base64
+          if (file.url.startsWith("blob:")) {
+            try {
+              const response = await fetch(file.url);
+              const blob = await response.blob();
+              const base64 = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.readAsDataURL(blob);
+              });
+              content.push({
+                type: "image_url",
+                image_url: { url: base64 },
+              });
+            } catch (e) {
+              console.error("[handleSubmit] Failed to convert image to base64:", e);
+            }
+          } else if (file.url.startsWith("data:")) {
+            // Already base64
+            content.push({
+              type: "image_url",
+              image_url: { url: file.url },
+            });
+          }
+        }
+      }
+
+      // For non-image files, add text context about them
+      if (otherFiles.length > 0) {
+        const fileContext = otherFiles
+          .map((f) => `[Attached: ${f.name}${f.size ? ` (${(f.size / 1024).toFixed(1)} KB)` : ""}]`)
+          .join(" ");
+        if (content.length > 0 && content[0].type === "text") {
+          content[0] = { type: "text", text: `${content[0].text}\n\n${fileContext}` };
+        } else {
+          content.push({ type: "text", text: fileContext });
+        }
+      }
+
+      // Determine message format
+      const hasImages = imageFiles.length > 0;
+      const newMessage: { type: "human"; content: string | ContentBlock[] } = hasImages
+        ? { type: "human", content }
+        : { type: "human", content: text };
+
+      // Prepare attachments for optimistic display
+      const optimisticAttachments = files.map((f) => ({
+        id: f.id,
+        name: f.name,
+        type: f.type,
+        url: f.url,
+        size: f.size,
+      }));
 
       const submitOptions: Record<string, any> = {
         optimisticValues: (prev: any) => ({
@@ -313,7 +380,8 @@ export function ChatArea({
             {
               id: `optimistic-${Date.now()}`,
               type: "human",
-              content: text,
+              content: hasImages ? content : text,
+              attachments: optimisticAttachments,
             } as unknown as LangGraphMessage,
           ],
         }),

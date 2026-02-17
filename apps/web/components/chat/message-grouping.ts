@@ -8,7 +8,7 @@
  */
 
 import type { AIMessage, Message as LangGraphMessage } from "@langchain/langgraph-sdk";
-import type { Message } from "@/components/chat/chat-interface";
+import type { AttachedFile, Message } from "@/components/chat/chat-interface";
 import type { ToolCall } from "@/components/chat/tool-call-message";
 import { getReasoningFromMessage } from "@/lib/reasoning-utils";
 import { getToolUIConfig } from "@/lib/tool-config";
@@ -16,6 +16,8 @@ import { getToolUIConfig } from "@/lib/tool-config";
 export interface MessageGroup {
   id: string;
   userMessage: Message | null;
+  /** Attachments from the user message (images, files) */
+  userAttachments: AttachedFile[];
   /** The AI message content that came BEFORE tool calls (intro text) */
   preToolMessage: Message | null;
   assistantMessage: Message | null;
@@ -28,6 +30,60 @@ export interface MessageGroup {
 }
 
 export type ChatHook = ReturnType<typeof import("@/lib/chat").useChat>;
+
+/**
+ * Extract text content from multimodal message content
+ */
+function extractTextContent(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .filter(
+        (block): block is { type: "text"; text: string } =>
+          block.type === "text" && typeof block.text === "string"
+      )
+      .map((block) => block.text)
+      .join("\n");
+  }
+  return "";
+}
+
+/**
+ * Extract attachments from multimodal message content
+ */
+function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[] {
+  if (msg.type !== "human") return [];
+
+  const content = msg.content;
+  const attachments: AttachedFile[] = [];
+
+  // Check for attachments stored directly on the message (optimistic updates)
+  const msgWithAttachments = msg as LangGraphMessage & { attachments?: AttachedFile[] };
+  if (msgWithAttachments.attachments && Array.isArray(msgWithAttachments.attachments)) {
+    return msgWithAttachments.attachments;
+  }
+
+  // Extract from multimodal content array
+  if (Array.isArray(content)) {
+    let imageIndex = 0;
+    for (const block of content) {
+      if (block.type === "image_url" && block.image_url) {
+        const imageUrl =
+          typeof block.image_url === "string" ? block.image_url : block.image_url.url;
+        if (imageUrl) {
+          attachments.push({
+            id: `attachment-${msgId}-${imageIndex++}`,
+            name: "Image",
+            type: "image",
+            url: imageUrl,
+          });
+        }
+      }
+    }
+  }
+
+  return attachments;
+}
 
 function extractToolCalls(chat: ChatHook, msg: unknown): ToolCall[] {
   const toolCalls = chat.getToolCalls(msg);
@@ -101,7 +157,7 @@ export function groupMessages(
       typeof msg.content === "string"
         ? msg.content
         : Array.isArray(msg.content)
-          ? msg.content.map((c: Record<string, unknown>) => (c.text as string) || "").join("")
+          ? extractTextContent(msg.content)
           : JSON.stringify(msg.content);
 
     if (msg.type === "human") {
@@ -109,6 +165,9 @@ export function groupMessages(
       if (currentGroup) {
         groups.push(currentGroup);
       }
+
+      // Extract attachments from multimodal content
+      const userAttachments = extractAttachments(msg, msg.id || `msg-${i}`);
 
       // Start new group for this user turn
       currentGroup = {
@@ -119,7 +178,9 @@ export function groupMessages(
           content,
           timestamp: new Date(),
           _originalMessage: msg,
+          attachments: userAttachments,
         },
+        userAttachments,
         preToolMessage: null,
         assistantMessage: null,
         firstAssistantMessageId: undefined,
@@ -189,6 +250,7 @@ export function groupMessages(
         currentGroup = {
           id: `group-${msg.id || i}`,
           userMessage: null,
+          userAttachments: [],
           preToolMessage: null,
           assistantMessage: {
             id: msg.id || `msg-${i}`,

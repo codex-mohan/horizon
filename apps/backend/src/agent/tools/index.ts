@@ -3,9 +3,16 @@ import { ShellExecutor } from "@horizon/shell";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import { getHorizonConfig, resolveWorkspacePath } from "../../lib/config-loader.js";
 import type { ToolApprovalConfig } from "../state.js";
 
-const shellExecutor = new ShellExecutor();
+// Initialize shell executor with workspace from config
+const horizonConfig = getHorizonConfig();
+const workspacePath = resolveWorkspacePath(horizonConfig);
+
+const shellExecutor = new ShellExecutor({
+  cwd: workspacePath,
+});
 
 export const TOOL_CATEGORIES = {
   safe: ["web_search", "fetch_url_content", "duckduckgo_search", "get_weather"],

@@ -12,6 +12,7 @@ import { assistantsDb } from "./assistants/db.js";
 import assistantsRouter from "./assistants/router.js";
 import type { Assistant } from "./assistants/types.js";
 import { agentConfig } from "./lib/config.js";
+import { getHorizonConfig, resolveWorkspacePath } from "./lib/config-loader.js";
 
 interface Variables {
   db: {
@@ -419,8 +420,13 @@ app.use("/assistants/*", async (c, next) => {
 });
 app.route("/assistants", assistantsRouter);
 
+// Log workspace configuration
+const horizonConfig = getHorizonConfig();
+const workspacePath = resolveWorkspacePath(horizonConfig);
+
 console.log(`Server running on port ${agentConfig.PORT}`);
 console.log("Assistants API: /assistants");
+console.log(`Workspace: ${workspacePath}`);
 console.log("Enhanced Agent Features:");
 console.log("  - ReAct Pattern: Enabled");
 console.log("  - Human-in-the-Loop: Enabled");

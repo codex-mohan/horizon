@@ -97,7 +97,7 @@ export interface UseChatReturn {
   isWaitingForInterrupt: boolean;
   isResuming: boolean;
   submit: (
-    input: { messages: Array<{ type: string; content: string }> } | undefined,
+    input: { messages: Array<{ type: string; content: string | ContentBlock[] }> } | undefined,
     options?: SubmitOptions
   ) => void;
   stop: () => void;
@@ -109,6 +109,10 @@ export interface UseChatReturn {
   processEvent: (event: Record<string, unknown>) => ProcessedEvent | null;
   stream: unknown;
 }
+
+export type ContentBlock =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
 
 function classifyError(error: unknown): ChatError {
   if (error instanceof Error) {
@@ -531,7 +535,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
   const submit = useCallback(
     async (
-      input: { messages: Array<{ type: string; content: string }> } | undefined,
+      input: { messages: Array<{ type: string; content: string | ContentBlock[] }> } | undefined,
       options?: SubmitOptions
     ) => {
       const submitOptions: Record<string, unknown> = {};
