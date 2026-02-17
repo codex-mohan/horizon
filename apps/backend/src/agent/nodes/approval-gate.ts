@@ -6,6 +6,7 @@ import {
     filterToolsNeedingApproval,
     getToolApprovalConfig,
     getToolRiskLevel,
+    needsApproval,
 } from "../tools/index.js";
 
 interface ActionRequest {
@@ -36,10 +37,16 @@ interface HitlDecision {
 /**
  * ApprovalGate Node
  *
- * Handles human-in-the-loop approval for tool calls.
- * Uses LangGraph's interrupt() for pausing execution.
+ * Central gate for ALL tool calls. Handles:
+ * 1. Auto-approval for tools that don't need user confirmation
+ * 2. Human-in-the-loop approval for tools that need it
+ * 3. Returns ToolMessage for rejected tools so LLM can respond
  *
- * Note: This node is only reached when tools need approval (filtered by routeAfterAgent).
+ * Flow:
+ * - All tool calls from AgentNode come here
+ * - Tools are auto-approved or need user approval based on config
+ * - Rejected tools get ToolMessage feedback for LLM
+ * - Approved tools proceed to ToolExecution
  */
 export async function ApprovalGate(
     state: AgentState,
@@ -47,37 +54,44 @@ export async function ApprovalGate(
 ): Promise<Partial<AgentState>> {
     const lastMessage = state.messages.at(-1);
 
-    // Safety check - should not happen due to routing, but handle gracefully
     if (!lastMessage || lastMessage._getType() !== "ai") {
         console.log("[ApprovalGate] No AI message found, skipping");
-        return {};
+        return { tools_rejected: false };
     }
 
     const aiMessage = lastMessage as AIMessage;
     const toolCalls = aiMessage.tool_calls || [];
 
-    // Safety check - should not happen due to routing
     if (toolCalls.length === 0) {
         console.log("[ApprovalGate] No tool calls found, skipping");
-        return {};
+        return { tools_rejected: false };
     }
 
-    // Get tools that need approval (using shared utility)
     const approvalConfig = getToolApprovalConfig(config);
-    const toolsNeedingApproval = filterToolsNeedingApproval(toolCalls, approvalConfig);
 
-    // Should not happen due to routing, but handle gracefully
-    if (toolsNeedingApproval.length === 0) {
-        console.log("[ApprovalGate] All tools auto-approved (unexpected routing)");
-        return {};
+    // Separate tools into auto-approved and need-approval
+    const autoApprovedTools: typeof toolCalls = [];
+    const toolsNeedingApproval: typeof toolCalls = [];
+
+    for (const tc of toolCalls) {
+        if (needsApproval(tc.name, approvalConfig)) {
+            toolsNeedingApproval.push(tc);
+        } else {
+            autoApprovedTools.push(tc);
+        }
     }
 
     console.log(
-        `[ApprovalGate] ${toolsNeedingApproval.length} tool(s) need approval:`,
-        toolsNeedingApproval.map((t) => t.name)
+        `[ApprovalGate] ${toolCalls.length} tool(s): ${autoApprovedTools.length} auto-approved, ${toolsNeedingApproval.length} need approval`
     );
 
-    // Build HITL request format matching LangGraph's expected structure
+    // If no tools need approval, proceed directly
+    if (toolsNeedingApproval.length === 0) {
+        console.log("[ApprovalGate] All tools auto-approved");
+        return { tools_rejected: false };
+    }
+
+    // Build HITL request for tools needing approval
     const hitlRequest: HitlRequest = {
         action_requests: toolsNeedingApproval.map((tc) => ({
             name: tc.name,
@@ -90,66 +104,83 @@ export async function ApprovalGate(
         })),
     };
 
-    console.log("[ApprovalGate] Calling interrupt() with HITL request");
+    console.log("[ApprovalGate] Calling interrupt() for user approval");
 
-    // Use LangGraph's interrupt() - this pauses execution and returns decisions when resumed
+    // Use LangGraph's interrupt() - pauses execution until user responds
     const decisions = interrupt(hitlRequest);
 
     console.log("[ApprovalGate] interrupt() returned:", typeof decisions, Array.isArray(decisions));
-    console.log("[ApprovalGate] decisions value:", JSON.stringify(decisions));
 
-    // If we get here, we've been resumed with decisions
-    if (!decisions) {
-        console.log("[ApprovalGate] No decisions received (null/undefined), returning empty");
-        return {};
+    if (!decisions || !Array.isArray(decisions)) {
+        console.log("[ApprovalGate] Invalid decisions, treating as rejection");
+        // Return ToolMessage for all tools needing approval
+        const toolMessages = toolsNeedingApproval.map(
+            (tc) =>
+                new ToolMessage({
+                    content: "Tool execution rejected: No valid approval received",
+                    tool_call_id: tc.id || `unknown_${Date.now()}`,
+                    name: tc.name,
+                })
+        );
+        return {
+            messages: toolMessages,
+            tools_rejected: true,
+        };
     }
 
-    if (!Array.isArray(decisions)) {
-        console.log("[ApprovalGate] Decisions is not an array:", typeof decisions);
-        return {};
-    }
-
-    // Process decisions and handle rejections
-    const newMessages: Array<ToolMessage | AIMessage> = [];
+    // Process decisions
+    const toolMessages: ToolMessage[] = [];
     const rejectedToolNames: string[] = [];
+    const approvedToolIds = new Set<string>();
 
     for (let i = 0; i < toolsNeedingApproval.length; i++) {
         const tc = toolsNeedingApproval[i];
         if (!tc) continue;
 
         const decision = decisions[i] as HitlDecision | undefined;
-        if (!decision) continue;
 
-        console.log(`[ApprovalGate] Processing decision ${i}:`, decision.type);
-
-        if (decision.type === "reject") {
+        if (!decision || decision.type === "reject") {
             console.log("[ApprovalGate] Tool rejected:", tc.name);
             rejectedToolNames.push(tc.name);
 
-            newMessages.push(
+            // Return ToolMessage so LLM knows the tool was rejected
+            toolMessages.push(
                 new ToolMessage({
-                    content: `Tool execution rejected: User declined`,
+                    content: `Tool execution rejected by user. ${decision?.message || "User declined to execute this tool."}`,
                     tool_call_id: tc.id || `unknown_${Date.now()}_${i}`,
                     name: tc.name,
                 })
             );
         } else if (decision.type === "approve") {
             console.log("[ApprovalGate] Tool approved:", tc.name);
+            if (tc.id) {
+                approvedToolIds.add(tc.id);
+            }
         }
     }
 
-    // If any tools were rejected, set the rejection flag and add explanation
-    if (rejectedToolNames.length > 0) {
-        const rejectionMessage = new AIMessage({
-            content: `I was unable to execute the following tool(s) because they were rejected: ${rejectedToolNames.join(", ")}.`,
-        });
-
+    // If all tools needing approval were rejected
+    if (rejectedToolNames.length === toolsNeedingApproval.length) {
+        console.log("[ApprovalGate] All tools rejected, returning to AgentNode with feedback");
         return {
-            messages: [...newMessages, rejectionMessage],
+            messages: toolMessages,
             tools_rejected: true,
-        } as Partial<AgentState>;
+        };
     }
 
-    console.log("[ApprovalGate] All tools approved, continuing to ToolExecution");
+    // If some tools were rejected but others approved
+    if (rejectedToolNames.length > 0) {
+        console.log(
+            `[ApprovalGate] Partial rejection: ${rejectedToolNames.length} rejected, proceeding with approved tools`
+        );
+        // Return ToolMessages for rejected tools, but allow approved ones to proceed
+        return {
+            messages: toolMessages,
+            tools_rejected: false, // Allow approved tools to execute
+        };
+    }
+
+    // All tools approved
+    console.log("[ApprovalGate] All tools approved, proceeding to ToolExecution");
     return { tools_rejected: false };
 }

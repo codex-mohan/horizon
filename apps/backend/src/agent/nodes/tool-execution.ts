@@ -16,22 +16,47 @@ async function emitUIEvent(config: RunnableConfig, uiMessage: UIMessage): Promis
     console.log(`[UI Event] ${uiMessage.name}: ${uiMessage.props.status}`);
 }
 
+/**
+ * ToolExecution Node
+ *
+ * Executes approved tool calls. Works with ApprovalGate:
+ * - ApprovalGate may have already added ToolMessages for rejected tools
+ * - This node only executes tools that don't have ToolMessage responses yet
+ * - Finds the AI message with tool calls and executes tools not already handled
+ */
 export async function ToolExecution(
     state: AgentState,
     config: RunnableConfig
 ): Promise<Partial<AgentState>> {
-    const lastMessage = state.messages.at(-1);
+    // Find the last AI message with tool calls
+    const aiMessage = [...state.messages]
+        .reverse()
+        .find((msg) => msg._getType() === "ai" && (msg as AIMessage).tool_calls?.length);
 
-    if (!lastMessage || lastMessage._getType() !== "ai") {
-        console.log("[ToolExecution] No AI message found, skipping");
+    if (!aiMessage) {
+        console.log("[ToolExecution] No AI message with tool calls found, skipping");
         return {};
     }
 
-    const aiMessage = lastMessage as AIMessage;
-    const toolCalls = aiMessage.tool_calls || [];
+    const toolCalls = (aiMessage as AIMessage).tool_calls || [];
 
     if (toolCalls.length === 0) {
         console.log("[ToolExecution] No tool calls found, skipping");
+        return {};
+    }
+
+    // Get tool_call_ids that already have ToolMessage responses (from ApprovalGate rejections)
+    const existingToolCallIds = new Set(
+        state.messages
+            .filter((msg) => msg._getType() === "tool")
+            .map((msg) => (msg as ToolMessage).tool_call_id)
+    );
+
+    // Filter out tools that already have responses (were rejected)
+    const toolsToExecute = toolCalls.filter((tc) => !existingToolCallIds.has(tc.id || ""));
+
+    if (toolsToExecute.length === 0) {
+        console.log("[ToolExecution] All tools already have responses, skipping");
         return {};
     }
 
@@ -39,9 +64,9 @@ export async function ToolExecution(
     const uiMessages: UIMessage[] = [];
     let totalRetries = 0;
 
-    console.log(`[ToolExecution] Executing ${toolCalls.length} tool(s)`);
+    console.log(`[ToolExecution] Executing ${toolsToExecute.length} tool(s)`);
 
-    for (const toolCall of toolCalls) {
+    for (const toolCall of toolsToExecute) {
         const toolName = toolCall.name;
         const toolArgs = toolCall.args || {};
         const toolCallId = toolCall.id || uuidv4();

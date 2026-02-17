@@ -9,17 +9,13 @@ import { initializeMemory, MemoryRetrieval } from "./nodes/memory-retrieval.js";
 import { StartMiddleware } from "./nodes/start-middleware.js";
 import { ToolExecution } from "./nodes/tool-execution.js";
 import { type AgentState, AgentStateAnnotation } from "./state.js";
-import { anyNeedsApproval, getToolApprovalConfig } from "./tools/index.js";
 
 initializeMemory();
 
 /**
- * Route after AgentNode based on tool calls and approval requirements
+ * Route after AgentNode: tool calls always go to ApprovalGate
  */
-const routeAfterAgent = (
-  state: AgentState,
-  config: RunnableConfig
-): "ApprovalGate" | "ToolExecution" | "EndMiddleware" => {
+const routeAfterAgent = (state: AgentState): "ApprovalGate" | "EndMiddleware" => {
   const lastMessage = state.messages.at(-1);
 
   // No message or not AI message -> end
@@ -35,20 +31,29 @@ const routeAfterAgent = (
     return "EndMiddleware";
   }
 
-  // Check if any tools need approval
-  const approvalConfig = getToolApprovalConfig(config);
+  // All tool calls go through ApprovalGate
+  console.log("[Graph] Routing to ApprovalGate for tool processing");
+  return "ApprovalGate";
+};
 
-  if (anyNeedsApproval(toolCalls, approvalConfig)) {
-    console.log("[Graph] Routing to ApprovalGate for tool approval");
-    return "ApprovalGate";
+/**
+ * Route after ApprovalGate:
+ * - If tools were rejected -> AgentNode (with ToolMessage feedback)
+ * - If tools approved -> ToolExecution
+ */
+const routeAfterApproval = (state: AgentState): "ToolExecution" | "AgentNode" => {
+  // If tools were rejected, route back to AgentNode with feedback
+  if (state.tools_rejected) {
+    console.log("[Graph] Tools rejected, routing to AgentNode with feedback");
+    return "AgentNode";
   }
 
-  console.log("[Graph] All tools auto-approved, routing to ToolExecution");
+  // Tools approved, execute them
   return "ToolExecution";
 };
 
 /**
- * Check if we should continue the agent loop
+ * Check if we should continue the agent loop after ToolExecution
  */
 const shouldContinue = (state: AgentState): "AgentNode" | "EndMiddleware" => {
   const maxCalls = state.metadata?.max_model_calls || 10;
@@ -59,20 +64,6 @@ const shouldContinue = (state: AgentState): "AgentNode" | "EndMiddleware" => {
   }
 
   return "AgentNode";
-};
-
-/**
- * Route after ApprovalGate based on whether tools were rejected
- * Uses state.tools_rejected flag instead of fragile string matching
- */
-const routeAfterApproval = (state: AgentState): "ToolExecution" | "EndMiddleware" => {
-  // Check the rejection flag set by ApprovalGate
-  if (state.tools_rejected) {
-    console.log("[Graph] Tools rejected, ending");
-    return "EndMiddleware";
-  }
-
-  return "ToolExecution";
 };
 
 export const graph = new StateGraph(AgentStateAnnotation)
@@ -87,17 +78,19 @@ export const graph = new StateGraph(AgentStateAnnotation)
   .addEdge("StartMiddleware", "MemoryRetrieval")
   .addEdge("MemoryRetrieval", "AgentNode")
 
+  // AgentNode -> ApprovalGate (if tools) or EndMiddleware (if no tools)
   .addConditionalEdges("AgentNode", routeAfterAgent, {
     ApprovalGate: "ApprovalGate",
-    ToolExecution: "ToolExecution",
     EndMiddleware: "EndMiddleware",
   })
 
+  // ApprovalGate -> ToolExecution (approved) or AgentNode (rejected with feedback)
   .addConditionalEdges("ApprovalGate", routeAfterApproval, {
     ToolExecution: "ToolExecution",
-    EndMiddleware: "EndMiddleware",
+    AgentNode: "AgentNode",
   })
 
+  // ToolExecution -> AgentNode (continue) or EndMiddleware (max calls)
   .addConditionalEdges("ToolExecution", shouldContinue, {
     AgentNode: "AgentNode",
     EndMiddleware: "EndMiddleware",
@@ -107,8 +100,7 @@ export const graph = new StateGraph(AgentStateAnnotation)
 
   .compile({ checkpointer: new FileSystemCheckpointer() });
 
-console.log("[Graph] Multi-node graph compiled:");
-console.log(
-  "  Nodes: StartMiddleware → MemoryRetrieval → AgentNode → ApprovalGate/ToolExecution → EndMiddleware"
-);
-console.log("  Flow: START → Start → Memory → Agent → [Approval → Tools → Agent loop] → End → END");
+console.log("[Graph] Simplified graph compiled:");
+console.log("  Flow: START → Start → Memory → Agent → ApprovalGate → [Tools | Agent] → End → END");
+console.log("  - All tool calls go through ApprovalGate");
+console.log("  - Rejected tools return to AgentNode with ToolMessage feedback");

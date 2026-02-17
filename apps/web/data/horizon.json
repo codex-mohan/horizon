@@ -105,6 +105,14 @@
       "expiresAt": "2026-02-16T20:23:08.496Z",
       "rememberMe": false,
       "createdAt": "2026-02-15T20:23:08.500Z"
+    },
+    {
+      "id": "dd0e0804-6a6f-4ba7-b211-aff13170b054",
+      "userId": "cfae84e8-b7bf-494f-9763-2e2871eeb523",
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJjZmFlODRlOC1iN2JmLTQ5NGYtOTc2My0yZTI4NzFlZWI1MjMiLCJzZXNzaW9uSWQiOiJkZDBlMDgwNC02YTZmLTRiYTctYjIxMS1hZmYxMzE3MGIwNTQiLCJpYXQiOjE3NzEzMzAzNTgsImV4cCI6MTc3MzkyMjM1OH0.TjXCdqgQy1bAwdc4-yvYEm1kyJ8m4DuxMhiE5Q7ZxAQ",
+      "expiresAt": "2026-03-19T12:12:38.795Z",
+      "rememberMe": true,
+      "createdAt": "2026-02-17T12:12:38.813Z"
     }
   ],
   "assistants": []
