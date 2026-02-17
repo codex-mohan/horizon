@@ -70,7 +70,7 @@ export function WebSearchTool({
   error,
   isLoading,
 }: WebSearchToolProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const config = getToolUIConfig(toolName);
   const { themeMode } = useTheme();
   const isLight = themeMode === "light";

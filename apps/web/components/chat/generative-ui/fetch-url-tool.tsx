@@ -34,7 +34,7 @@ export function FetchUrlTool({
   error,
   isLoading,
 }: FetchUrlToolProps) {
-  const [showArgs, setShowArgs] = useState(true);
+  const [showArgs, setShowArgs] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const config = getToolUIConfig(toolName);
   const { themeMode } = useTheme();
