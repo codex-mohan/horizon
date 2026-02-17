@@ -330,7 +330,7 @@ export function ChatArea({
           client.updateThread(chat.threadId, {
             title: generateConversationTitle(text),
           });
-        } catch {}
+        } catch { }
       }
     },
     [chat, onAttachedFilesChange]
@@ -394,6 +394,7 @@ export function ChatArea({
                   assistantMessage={group.assistantMessage}
                   branch={group.branch}
                   branchOptions={group.branchOptions}
+                  firstAssistantMessageId={group.firstAssistantMessageId}
                   id={group.id}
                   isLastGroup={isLastGroup}
                   isLoading={chat.isLoading}

@@ -17,6 +17,8 @@ export interface MessageGroup {
   id: string;
   userMessage: Message | null;
   assistantMessage: Message | null;
+  /** ID of the first AI message in this group - used for regeneration */
+  firstAssistantMessageId?: string;
   toolCalls: ToolCall[];
   isLastGroup: boolean;
   branch?: string;
@@ -117,6 +119,7 @@ export function groupMessages(
           _originalMessage: msg,
         },
         assistantMessage: null,
+        firstAssistantMessageId: undefined,
         toolCalls: [],
         isLastGroup: false,
         branch: metadata?.branch,
@@ -127,6 +130,12 @@ export function groupMessages(
       const toolCalls = extractToolCalls(chat, msg);
 
       if (currentGroup) {
+        // Track the FIRST AI message ID for regeneration purposes
+        // This is crucial for regenerating from the start of the group
+        if (!currentGroup.firstAssistantMessageId) {
+          currentGroup.firstAssistantMessageId = msg.id || `msg-${i}`;
+        }
+
         // Merge tool calls, deduplicating by ID and preferring ones with results
         const existingToolCallIds = new Set(currentGroup.toolCalls.map((tc) => tc.id));
         const newToolCalls = toolCalls.filter((tc) => !existingToolCallIds.has(tc.id));
@@ -172,6 +181,7 @@ export function groupMessages(
             _originalMessage: msg,
             reasoning,
           },
+          firstAssistantMessageId: msg.id || `msg-${i}`,
           toolCalls,
           isLastGroup: false,
           branch: metadata?.branch,

@@ -3,17 +3,17 @@
 import { cn } from "@workspace/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertCircle,
+  AlertTriangle,
   Check,
   ChevronDown,
   ChevronUp,
-  Copy,
-  Terminal,
-  AlertCircle,
   Clock,
+  Copy,
   FolderOpen,
-  AlertTriangle,
+  Terminal,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ModernSpinner, ShimmerText } from "./loading-effects";
 
 /**
@@ -69,8 +69,8 @@ const ANSI_COLORS: Record<string, string> = {
 function parseAnsiColors(text: string): React.ReactNode[] {
   const ansiRegex = /\x1b\[([0-9;]+)m/g;
   const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let key = 0;
+  const lastIndex = 0;
+  const key = 0;
 
   // Reset tracking
   const resetAll = "\x1b[0m";
@@ -115,7 +115,9 @@ function parseAnsiColors(text: string): React.ReactNode[] {
           currentCodes.push("font-bold");
         } else if (ANSI_COLORS[code]) {
           // Replace any existing color
-          currentCodes = currentCodes.filter((c) => !ANSI_COLORS[c.replace("text-", "").replace("-500", "").replace("-400", "")]);
+          currentCodes = currentCodes.filter(
+            (c) => !ANSI_COLORS[c.replace("text-", "").replace("-500", "").replace("-400", "")]
+          );
           currentCodes.push(ANSI_COLORS[code]);
         }
       }
@@ -183,10 +185,7 @@ function parseResult(result?: string): ShellResult | null {
 
   try {
     const parsed = JSON.parse(result);
-    if (
-      typeof parsed.command === "string" &&
-      typeof parsed.exitCode === "number"
-    ) {
+    if (typeof parsed.command === "string" && typeof parsed.exitCode === "number") {
       return parsed as ShellResult;
     }
   } catch {
@@ -200,15 +199,8 @@ function parseResult(result?: string): ShellResult | null {
  * Shell Tool Component
  * Compact, glassmorphic design matching web search and weather tools
  */
-export function ShellTool({
-  toolName,
-  status,
-  args,
-  result,
-  error,
-  isLoading,
-}: ShellToolProps) {
-  const [showOutput, setShowOutput] = useState(true);
+export function ShellTool({ toolName, status, args, result, error, isLoading }: ShellToolProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Parse the result
@@ -263,9 +255,7 @@ export function ShellTool({
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-white/90">
-                Shell Execute
-              </span>
+              <span className="text-sm font-medium text-white/90">Shell Execute</span>
               <ModernSpinner size="sm" />
             </div>
             <ShimmerText className="mt-1 text-xs text-white/50" text={command} />
@@ -285,14 +275,7 @@ export function ShellTool({
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           {/* Icon with status color */}
-          <div
-            className={cn(
-              "rounded-lg p-2",
-              isSuccess
-                ? "bg-emerald-500/20"
-                : "bg-red-500/20"
-            )}
-          >
+          <div className={cn("rounded-lg p-2", isSuccess ? "bg-emerald-500/20" : "bg-red-500/20")}>
             {isSuccess ? (
               <Check className="h-4 w-4 text-emerald-400" />
             ) : (
@@ -302,16 +285,12 @@ export function ShellTool({
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-white/90">
-                Shell Execute
-              </span>
+              <span className="text-sm font-medium text-white/90">Shell Execute</span>
               {/* Exit code badge */}
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-medium",
-                  isSuccess
-                    ? "bg-emerald-500/20 text-emerald-400"
-                    : "bg-red-500/20 text-red-400"
+                  isSuccess ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
                 )}
               >
                 Exit {shellResult?.exitCode ?? (error ? 1 : 0)}
@@ -334,99 +313,95 @@ export function ShellTool({
         )}
       </div>
 
-      {/* Command */}
-      <div className="border-t border-white/5 px-4 py-2">
-        <div className="group relative">
-          <code className="block rounded-lg bg-black/30 p-2 font-mono text-sm">
-            <span className="text-white/40">$ </span>
-            <span className="text-emerald-400">{command}</span>
-          </code>
-          <button
-            className="absolute right-2 top-2 rounded bg-white/10 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
-            onClick={() => handleCopy(command)}
-          >
-            {copied ? (
-              <Check className="h-3 w-3 text-emerald-400" />
-            ) : (
-              <Copy className="h-3 w-3 text-white/60" />
-            )}
-          </button>
-        </div>
-      </div>
+      {/* Expandable details section - collapsed by default */}
+      <div className="border-t border-white/5">
+        <button
+          className="flex w-full items-center justify-between px-4 py-2 text-xs text-white/50 transition-colors hover:text-white/70"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <span className="font-medium uppercase tracking-wider">Details</span>
+          {isExpanded ? (
+            <ChevronUp className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5" />
+          )}
+        </button>
 
-      {/* Truncation warning */}
-      {isTruncated && (
-        <div className="flex items-center gap-2 border-t border-white/5 bg-amber-500/10 px-4 py-2">
-          <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-          <span className="text-xs text-amber-400">
-            Output was truncated (too large)
-          </span>
-        </div>
-      )}
-
-      {/* Output section */}
-      {(stdout || stderr) && (
-        <div className="border-t border-white/5">
-          <button
-            className="flex w-full items-center justify-between px-4 py-2 text-xs text-white/50 transition-colors hover:text-white/70"
-            onClick={() => setShowOutput(!showOutput)}
-          >
-            <span className="font-medium uppercase tracking-wider">
-              {stderr && !stdout ? "Error Output" : "Output"}
-            </span>
-            {showOutput ? (
-              <ChevronUp className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" />
-            )}
-          </button>
-
-          <AnimatePresence>
-            {showOutput && (
-              <motion.div
-                animate={{ height: "auto", opacity: 1 }}
-                className="overflow-hidden"
-                exit={{ height: 0, opacity: 0 }}
-                initial={{ height: 0, opacity: 0 }}
-              >
-                <div className="px-4 pb-3">
-                  {/* Stderr (errors) */}
-                  {stderr && (
-                    <div className="mb-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2">
-                      <div className="mb-1 flex items-center gap-1 text-xs font-medium text-red-400">
-                        <AlertCircle className="h-3 w-3" />
-                        stderr
-                      </div>
-                      <pre className="overflow-auto font-mono text-xs text-red-300">
-                        {parseAnsiColors(stderr)}
-                      </pre>
-                    </div>
-                  )}
-
-                  {/* Stdout */}
-                  {stdout && (
-                    <div className="group relative">
-                      <pre className="max-h-64 overflow-auto rounded-lg bg-black/30 p-2 font-mono text-xs text-white/80">
-                        {parseAnsiColors(stdout)}
-                      </pre>
-                      <button
-                        className="absolute right-2 top-2 rounded bg-white/10 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
-                        onClick={() => handleCopy(stdout)}
-                      >
-                        {copied ? (
-                          <Check className="h-3 w-3 text-emerald-400" />
-                        ) : (
-                          <Copy className="h-3 w-3 text-white/60" />
-                        )}
-                      </button>
-                    </div>
-                  )}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              animate={{ height: "auto", opacity: 1 }}
+              className="overflow-hidden"
+              exit={{ height: 0, opacity: 0 }}
+              initial={{ height: 0, opacity: 0 }}
+            >
+              <div className="px-4 pb-3">
+                {/* Command */}
+                <div className="group relative mb-2">
+                  <div className="mb-1 flex items-center gap-1 text-xs font-medium text-white/60">
+                    <Terminal className="h-3 w-3" />
+                    Command
+                  </div>
+                  <code className="block rounded-lg bg-black/30 p-2 font-mono text-sm">
+                    <span className="text-white/40">$ </span>
+                    <span className="text-emerald-400">{command}</span>
+                  </code>
+                  <button
+                    className="absolute right-2 top-6 rounded bg-white/10 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+                    onClick={() => handleCopy(command)}
+                  >
+                    {copied ? (
+                      <Check className="h-3 w-3 text-emerald-400" />
+                    ) : (
+                      <Copy className="h-3 w-3 text-white/60" />
+                    )}
+                  </button>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
+
+                {/* Truncation warning */}
+                {isTruncated && (
+                  <div className="mb-2 flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                    <span className="text-xs text-amber-400">Output was truncated (too large)</span>
+                  </div>
+                )}
+
+                {/* Stderr (errors) */}
+                {stderr && (
+                  <div className="mb-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2">
+                    <div className="mb-1 flex items-center gap-1 text-xs font-medium text-red-400">
+                      <AlertCircle className="h-3 w-3" />
+                      stderr
+                    </div>
+                    <pre className="overflow-auto font-mono text-xs text-red-300">
+                      {parseAnsiColors(stderr)}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Stdout */}
+                {stdout && (
+                  <div className="group relative">
+                    <pre className="max-h-64 overflow-auto rounded-lg bg-black/30 p-2 font-mono text-xs text-white/80">
+                      {parseAnsiColors(stdout)}
+                    </pre>
+                    <button
+                      className="absolute right-2 top-2 rounded bg-white/10 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={() => handleCopy(stdout)}
+                    >
+                      {copied ? (
+                        <Check className="h-3 w-3 text-emerald-400" />
+                      ) : (
+                        <Copy className="h-3 w-3 text-white/60" />
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 }

@@ -20,6 +20,8 @@ interface MessageGroupProps {
   id: string;
   userMessage: Message | null;
   assistantMessage: Message | null;
+  /** ID of the first AI message in this group - used for regeneration */
+  firstAssistantMessageId?: string;
   toolCalls: ToolCall[];
   isLastGroup: boolean;
   branch?: string;
@@ -45,6 +47,7 @@ export function MessageGroup({
   id,
   userMessage,
   assistantMessage,
+  firstAssistantMessageId,
   toolCalls,
   isLastGroup,
   branch,
@@ -140,7 +143,9 @@ export function MessageGroup({
                       <Button
                         className="transition-all duration-200 hover:scale-110"
                         disabled={isLoading}
-                        onClick={() => onRegenerate(assistantMessage.id, isLastGroup)}
+                        onClick={() =>
+                          onRegenerate(firstAssistantMessageId ?? assistantMessage.id, isLastGroup)
+                        }
                         size="icon-sm"
                         variant="ghost"
                       >
