@@ -7,12 +7,20 @@
 
 import mammoth from "mammoth";
 import Papa from "papaparse";
-import * as pdfjs from "pdfjs-dist";
 import * as XLSX from "xlsx";
 
-// Configure PDF.js worker
-if (typeof window !== "undefined") {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Dynamic import for PDF.js to avoid SSR issues
+let pdfjsLib: typeof import("pdfjs-dist") | null = null;
+
+async function getPdfLib() {
+  if (!pdfjsLib) {
+    pdfjsLib = await import("pdfjs-dist");
+    // Configure worker
+    if (typeof window !== "undefined") {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+    }
+  }
+  return pdfjsLib;
 }
 
 export interface ExtractedContent {
@@ -24,6 +32,7 @@ export interface ExtractedContent {
     sheets?: string[];
     rows?: number;
     columns?: number;
+    dataUrl?: string;
   };
 }
 
@@ -32,8 +41,17 @@ export interface ExtractedContent {
  */
 async function extractPdfContent(file: File): Promise<ExtractedContent> {
   try {
+    const pdfjs = await getPdfLib();
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+
+    console.log("[extractPdfContent] Loading PDF, size:", arrayBuffer.byteLength);
+
+    const pdf = await pdfjs.getDocument({
+      data: arrayBuffer,
+      useSystemFonts: true,
+    }).promise;
+
+    console.log("[extractPdfContent] PDF loaded, pages:", pdf.numPages);
 
     let fullText = "";
     const numPages = pdf.numPages;
@@ -44,6 +62,8 @@ async function extractPdfContent(file: File): Promise<ExtractedContent> {
       const pageText = textContent.items.map((item: any) => item.str).join(" ");
       fullText += `--- Page ${i} ---\n${pageText}\n\n`;
     }
+
+    console.log("[extractPdfContent] Extracted text length:", fullText.length);
 
     return {
       text: fullText.trim(),
@@ -143,7 +163,7 @@ async function extractCsvContent(file: File): Promise<ExtractedContent> {
             },
           });
         },
-        error: (error) => {
+        error: (error: Error) => {
           resolve({
             text: "",
             success: false,
