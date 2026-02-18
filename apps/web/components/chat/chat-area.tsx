@@ -12,6 +12,7 @@ import {
   type UseChatOptions,
   useChat,
 } from "@/lib/chat";
+import { extractFileContent, getFileCategory } from "@/lib/file-loader";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useChatSettings } from "@/lib/stores/chat-settings";
 import { useConversationStore } from "@/lib/stores/conversation";
@@ -312,13 +313,31 @@ export function ChatArea({
         content.push({ type: "text", text });
       }
 
-      // Process images - convert to base64 data URL if needed
+      // Separate files by type
       const imageFiles = files.filter((f) => f.type.startsWith("image/"));
-      const otherFiles = files.filter((f) => !f.type.startsWith("image/"));
+      const documentFiles = files.filter((f) => !f.type.startsWith("image/"));
 
+      // Extract content from non-image files
+      let extractedContent = "";
+      const extractionResults: Array<{ name: string; success: boolean; error?: string }> = [];
+
+      for (const file of documentFiles) {
+        if (file.file) {
+          const result = await extractFileContent(file.file);
+          extractionResults.push({ name: file.name, success: result.success, error: result.error });
+
+          if (result.success && result.text) {
+            extractedContent += `\n\n--- File: ${file.name} ---\n${result.text}`;
+          }
+        }
+      }
+
+      // Log extraction results
+      console.log("[handleSubmit] File extraction results:", extractionResults);
+
+      // Process images - convert to base64 for multimodal
       for (const file of imageFiles) {
         if (file.url) {
-          // If it's a blob URL, we need to convert to base64
           if (file.url.startsWith("blob:")) {
             try {
               const response = await fetch(file.url);
@@ -336,7 +355,6 @@ export function ChatArea({
               console.error("[handleSubmit] Failed to convert image to base64:", e);
             }
           } else if (file.url.startsWith("data:")) {
-            // Already base64
             content.push({
               type: "image_url",
               image_url: { url: file.url },
@@ -345,39 +363,58 @@ export function ChatArea({
         }
       }
 
-      // For non-image files, add text context about them
-      if (otherFiles.length > 0) {
-        const fileContext = otherFiles
-          .map((f) => `[Attached: ${f.name}${f.size ? ` (${(f.size / 1024).toFixed(1)} KB)` : ""}]`)
-          .join(" ");
-        if (content.length > 0 && content[0].type === "text") {
-          content[0] = { type: "text", text: `${content[0].text}\n\n${fileContext}` };
+      // Append extracted document content to the text (hidden from UI but sent to AI)
+      if (extractedContent) {
+        const textBlock = content.find((b) => b.type === "text");
+        if (textBlock && "text" in textBlock) {
+          textBlock.text = `${textBlock.text}\n\n[Attached File Contents]${extractedContent}`;
         } else {
-          content.push({ type: "text", text: fileContext });
+          content.unshift({ type: "text", text: `[Attached File Contents]${extractedContent}` });
         }
       }
 
       // Determine message format
       const hasImages = imageFiles.length > 0;
-      const newMessage: { type: "human"; content: string | ContentBlock[] } = hasImages
-        ? { type: "human", content }
-        : { type: "human", content: text };
+      const hasFiles = files.length > 0;
 
-      console.log("[handleSubmit] New message:", {
-        hasImages,
-        contentType: typeof newMessage.content,
-        isArray: Array.isArray(newMessage.content),
-        content: newMessage.content,
-      });
-
-      // Prepare attachments for optimistic display
-      const optimisticAttachments = files.map((f) => ({
+      // Prepare file metadata for additional_kwargs (persists with message for UI display)
+      const fileMetadata = files.map((f) => ({
         id: f.id,
         name: f.name,
         type: f.type,
         url: f.url,
         size: f.size,
+        category: getFileCategory(f.file || new File([], f.name, { type: f.type })),
       }));
+
+      // Build the message content
+      // For messages with images: use multimodal array
+      // For text-only messages: use simple string
+      const messageContent = hasImages
+        ? content
+        : content[0]?.type === "text"
+          ? content[0].text
+          : text;
+
+      // Build message with additional_kwargs for file metadata
+      const newMessage: {
+        type: "human";
+        content: string | ContentBlock[];
+        additional_kwargs?: { file_metadata: typeof fileMetadata };
+      } = {
+        type: "human",
+        content: messageContent,
+        ...(hasFiles && { additional_kwargs: { file_metadata: fileMetadata } }),
+      };
+
+      console.log("[handleSubmit] New message:", {
+        hasImages,
+        hasFiles,
+        contentType: typeof newMessage.content,
+        isArray: Array.isArray(newMessage.content),
+        fileMetadata: fileMetadata.length,
+        extractedContentLength: extractedContent.length,
+      });
 
       const submitOptions: Record<string, any> = {
         optimisticValues: (prev: any) => ({
@@ -387,8 +424,8 @@ export function ChatArea({
             {
               id: `optimistic-${Date.now()}`,
               type: "human",
-              content: hasImages ? content : text,
-              attachments: optimisticAttachments,
+              content: messageContent,
+              additional_kwargs: { file_metadata: fileMetadata },
             } as unknown as LangGraphMessage,
           ],
         }),
@@ -396,6 +433,14 @@ export function ChatArea({
 
       chat.submit({ messages: [newMessage] }, submitOptions);
       onAttachedFilesChange([]);
+
+      // Show extraction errors as toast
+      const failedFiles = extractionResults.filter((r) => !r.success);
+      if (failedFiles.length > 0) {
+        toast.warning(
+          `Could not extract content from: ${failedFiles.map((f) => f.name).join(", ")}`
+        );
+      }
 
       if (chat.threadId && chat.messages.filter((m) => m.type !== "system").length === 0) {
         try {

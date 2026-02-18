@@ -49,15 +49,31 @@ function extractTextContent(content: unknown): string {
 }
 
 /**
- * Extract attachments from multimodal message content
+ * Extract attachments from message's additional_kwargs
+ * This persists with the message through LangGraph's checkpointer
  */
 function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[] {
   if (msg.type !== "human") return [];
 
-  const content = msg.content;
   const attachments: AttachedFile[] = [];
 
-  // Check for attachments stored directly on the message (optimistic updates)
+  // Primary: Extract from additional_kwargs.file_metadata (persists with message)
+  const additionalKwargs = (msg as any).additional_kwargs;
+  if (additionalKwargs?.file_metadata && Array.isArray(additionalKwargs.file_metadata)) {
+    console.log(
+      "[extractAttachments] Found file_metadata in additional_kwargs:",
+      additionalKwargs.file_metadata.length
+    );
+    return additionalKwargs.file_metadata.map((f: any, i: number) => ({
+      id: f.id || `attachment-${msgId}-${i}`,
+      name: f.name || "File",
+      type: f.type || "file",
+      url: f.url || "",
+      size: f.size,
+    }));
+  }
+
+  // Fallback: Check for attachments stored directly on the message (legacy optimistic updates)
   const msgWithAttachments = msg as LangGraphMessage & { attachments?: AttachedFile[] };
   if (msgWithAttachments.attachments && Array.isArray(msgWithAttachments.attachments)) {
     console.log(
@@ -67,12 +83,12 @@ function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[
     return msgWithAttachments.attachments;
   }
 
-  // Extract from multimodal content array
+  // Fallback: Extract from multimodal content array (for vision models)
+  const content = msg.content;
   if (Array.isArray(content)) {
     console.log("[extractAttachments] Content is array with", content.length, "blocks");
     let imageIndex = 0;
     for (const block of content) {
-      console.log("[extractAttachments] Block type:", block.type);
       if (block.type === "image_url" && block.image_url) {
         const imageUrl =
           typeof block.image_url === "string" ? block.image_url : block.image_url.url;
@@ -86,12 +102,14 @@ function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[
         }
       }
     }
-  } else {
-    console.log("[extractAttachments] Content is not array, type:", typeof content);
+    if (attachments.length > 0) {
+      console.log("[extractAttachments] Extracted from multimodal content:", attachments.length);
+      return attachments;
+    }
   }
 
-  console.log("[extractAttachments] Extracted attachments:", attachments.length);
-  return attachments;
+  console.log("[extractAttachments] No attachments found for message:", msgId);
+  return [];
 }
 
 function extractToolCalls(chat: ChatHook, msg: unknown): ToolCall[] {
