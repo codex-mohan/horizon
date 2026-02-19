@@ -397,33 +397,37 @@ export function ChatArea({
           ? humanContent[0].text
           : text;
 
-      // Build the human message
+      // Message 1: user's text + images + file metadata for the UI badges.
       const humanMessage: {
         type: "human";
         content: string | ContentBlock[];
-        additional_kwargs?: { file_metadata: typeof fileMetadata };
+        additional_kwargs?: Record<string, unknown>;
       } = {
         type: "human",
         content: humanMessageContent,
         ...(hasFiles && { additional_kwargs: { file_metadata: fileMetadata } }),
       };
 
-      // Build the messages array to submit.
-      // If there is extracted document content, append it as a system message
-      // immediately after the human message so the LLM has full context but
-      // the user bubble stays clean (no raw doc dump visible in the UI).
+      // Build messages to submit.
+      // If document content was extracted, append a second human message carrying
+      // the raw text for the LLM. Tagged with is_document_context: true so the
+      // UI (message-grouping.ts) can filter it out of the rendered bubble list.
+      // A human message is used (not system) to avoid the "system must be first"
+      // 400 error on OpenAI-compatible APIs like NVIDIA NIM.
       const messagesToSubmit: Array<{
-        type: "human" | "system";
+        type: "human";
         content: string | ContentBlock[];
-        additional_kwargs?: { file_metadata: typeof fileMetadata };
+        additional_kwargs?: Record<string, unknown>;
       }> = [humanMessage];
 
       if (extractedContent) {
         messagesToSubmit.push({
-          type: "system",
+          type: "human",
           content: `[Attached Document Contents]${extractedContent}`,
+          additional_kwargs: { is_document_context: true },
         });
       }
+
 
       console.log("[handleSubmit] Submitting messages:", {
         count: messagesToSubmit.length,

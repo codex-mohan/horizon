@@ -180,8 +180,15 @@ export function groupMessages(
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
 
-    // Skip system and tool messages (tool results come from AI message's tool_calls)
+    // Skip system and tool messages (tool results come from AI message's tool_calls).
+    // Also skip human messages that are purely document context injected for the LLM —
+    // these are tagged with is_document_context: true in additional_kwargs.
     if (msg.type === "system" || msg.type === "tool") continue;
+    if (
+      msg.type === "human" &&
+      (msg as any).additional_kwargs?.is_document_context === true
+    ) continue;
+
     if (msg.id && hiddenMessageIds.has(msg.id)) continue;
 
     const metadata = chat.getMessagesMetadata(msg);
