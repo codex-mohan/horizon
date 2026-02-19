@@ -74,6 +74,9 @@ export function ChatArea({
   const [currentToolCalls, setCurrentToolCalls] = useState<ToolCall[]>([]);
   const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
 
+  // Holds the generated title for the current first message until chat.threadId arrives
+  const pendingTitleRef = useRef<string | null>(null);
+
   // Thread ID handler
   const handleThreadId = useCallback(
     (newId: string) => {
@@ -163,6 +166,23 @@ export function ChatArea({
       triggerThreadRefresh();
     }
   }, [chat.threadId, threadId, triggerThreadRefresh]);
+
+  // Apply pending title once the thread ID becomes available.
+  // For new chats, chat.threadId is null when handleSubmit runs; it's only
+  // assigned after chat.submit() initiates the stream. We store the desired
+  // title in pendingTitleRef and flush it here as soon as the ID arrives.
+  useEffect(() => {
+    if (!chat.threadId || !pendingTitleRef.current) return;
+    const title = pendingTitleRef.current;
+    pendingTitleRef.current = null; // consume immediately to avoid re-runs
+    const client = createThreadsClient(
+      process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024"
+    );
+    client
+      .updateThread(chat.threadId, { title })
+      .then(() => triggerThreadRefresh())
+      .catch(() => {/* non-critical */ });
+  }, [chat.threadId, triggerThreadRefresh]);
 
   // Group messages
   const messageGroups = useMemo(() => {
@@ -305,19 +325,11 @@ export function ChatArea({
 
   const handleSubmit = useCallback(
     async (text: string, files: ChatInputAttachedFile[]) => {
-      // Build multimodal content array
-      const content: ContentBlock[] = [];
-
-      // Add text content
-      if (text.trim()) {
-        content.push({ type: "text", text });
-      }
-
-      // Separate files by type
+      // Separate files by type upfront
       const imageFiles = files.filter((f) => f.type.startsWith("image/"));
       const documentFiles = files.filter((f) => !f.type.startsWith("image/"));
 
-      // Extract content from non-image files
+      // --- Extract content from document files (pdf, docx, xlsx, etc.) ---
       let extractedContent = "";
       const extractionResults: Array<{ name: string; success: boolean; error?: string }> = [];
 
@@ -332,8 +344,14 @@ export function ChatArea({
         }
       }
 
-      // Log extraction results
       console.log("[handleSubmit] File extraction results:", extractionResults);
+
+      // --- Build the human message content (text + images only, NO extracted doc text) ---
+      const humanContent: ContentBlock[] = [];
+
+      if (text.trim()) {
+        humanContent.push({ type: "text", text });
+      }
 
       // Process images - convert to base64 for multimodal
       for (const file of imageFiles) {
@@ -347,33 +365,16 @@ export function ChatArea({
                 reader.onloadend = () => resolve(reader.result as string);
                 reader.readAsDataURL(blob);
               });
-              content.push({
-                type: "image_url",
-                image_url: { url: base64 },
-              });
+              humanContent.push({ type: "image_url", image_url: { url: base64 } });
             } catch (e) {
               console.error("[handleSubmit] Failed to convert image to base64:", e);
             }
           } else if (file.url.startsWith("data:")) {
-            content.push({
-              type: "image_url",
-              image_url: { url: file.url },
-            });
+            humanContent.push({ type: "image_url", image_url: { url: file.url } });
           }
         }
       }
 
-      // Append extracted document content to the text (hidden from UI but sent to AI)
-      if (extractedContent) {
-        const textBlock = content.find((b) => b.type === "text");
-        if (textBlock && "text" in textBlock) {
-          textBlock.text = `${textBlock.text}\n\n[Attached File Contents]${extractedContent}`;
-        } else {
-          content.unshift({ type: "text", text: `[Attached File Contents]${extractedContent}` });
-        }
-      }
-
-      // Determine message format
       const hasImages = imageFiles.length > 0;
       const hasFiles = files.length > 0;
 
@@ -387,35 +388,54 @@ export function ChatArea({
         category: getFileCategory(f.file || new File([], f.name, { type: f.type })),
       }));
 
-      // Build the message content
-      // For messages with images: use multimodal array
-      // For text-only messages: use simple string
-      const messageContent = hasImages
-        ? content
-        : content[0]?.type === "text"
-          ? content[0].text
+      // Resolve the human message content format:
+      // - Multimodal array when images are present
+      // - Plain string for text-only
+      const humanMessageContent: string | ContentBlock[] = hasImages
+        ? humanContent
+        : humanContent[0]?.type === "text"
+          ? humanContent[0].text
           : text;
 
-      // Build message with additional_kwargs for file metadata
-      const newMessage: {
+      // Build the human message
+      const humanMessage: {
         type: "human";
         content: string | ContentBlock[];
         additional_kwargs?: { file_metadata: typeof fileMetadata };
       } = {
         type: "human",
-        content: messageContent,
+        content: humanMessageContent,
         ...(hasFiles && { additional_kwargs: { file_metadata: fileMetadata } }),
       };
 
-      console.log("[handleSubmit] New message:", {
+      // Build the messages array to submit.
+      // If there is extracted document content, append it as a system message
+      // immediately after the human message so the LLM has full context but
+      // the user bubble stays clean (no raw doc dump visible in the UI).
+      const messagesToSubmit: Array<{
+        type: "human" | "system";
+        content: string | ContentBlock[];
+        additional_kwargs?: { file_metadata: typeof fileMetadata };
+      }> = [humanMessage];
+
+      if (extractedContent) {
+        messagesToSubmit.push({
+          type: "system",
+          content: `[Attached Document Contents]${extractedContent}`,
+        });
+      }
+
+      console.log("[handleSubmit] Submitting messages:", {
+        count: messagesToSubmit.length,
         hasImages,
         hasFiles,
-        contentType: typeof newMessage.content,
-        isArray: Array.isArray(newMessage.content),
-        fileMetadata: fileMetadata.length,
+        hasExtractedContent: !!extractedContent,
         extractedContentLength: extractedContent.length,
+        fileMetadataCount: fileMetadata.length,
       });
 
+      // Optimistic update uses the CLEAN human message content only (no doc dump)
+      // so the user bubble never shows extracted document text.
       const submitOptions: Record<string, any> = {
         optimisticValues: (prev: any) => ({
           ...prev,
@@ -424,14 +444,14 @@ export function ChatArea({
             {
               id: `optimistic-${Date.now()}`,
               type: "human",
-              content: messageContent,
+              content: humanMessageContent,
               additional_kwargs: { file_metadata: fileMetadata },
             } as unknown as LangGraphMessage,
           ],
         }),
       };
 
-      chat.submit({ messages: [newMessage] }, submitOptions);
+      chat.submit({ messages: messagesToSubmit as any }, submitOptions);
       onAttachedFilesChange([]);
 
       // Show extraction errors as toast
@@ -442,16 +462,15 @@ export function ChatArea({
         );
       }
 
-      if (chat.threadId && chat.messages.filter((m) => m.type !== "system").length === 0) {
-        try {
-          const client = createThreadsClient(
-            process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024"
-          );
-          client.updateThread(chat.threadId, {
-            title: generateConversationTitle(text),
-          });
-        } catch {}
+      // If this is the first user message, store a pending title.
+      // We cannot call updateThread here because chat.threadId is still null
+      // for brand-new chats — the ID only arrives after chat.submit() begins
+      // streaming. The useEffect above watches chat.threadId and flushes it.
+      const isFirstMessage = !chat.messages.some((m) => m.type === "human");
+      if (isFirstMessage) {
+        pendingTitleRef.current = generateConversationTitle(text);
       }
+
     },
     [chat, onAttachedFilesChange]
   );

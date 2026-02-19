@@ -10,8 +10,8 @@ const EnvSchema = z.object({
   API_KEY: z.string().optional(),
 
   // Model Configuration
-  MODEL_PROVIDER: z.enum(["openai", "anthropic", "google", "ollama", "groq"]).default("groq"),
-  MODEL_NAME: z.string().default("meta-llama/llama-4-scout-17b-16e-instruct"),
+  MODEL_PROVIDER: z.enum(["openai", "anthropic", "google", "ollama", "groq", "nvidia_nim"]).default("nvidia_nim"),
+  MODEL_NAME: z.string().default("qwen/qwen3.5-397b-a17b"),
   TEMPERATURE: z.string().default("0.7").transform(Number),
   MAX_TOKENS: z.string().default("4096").transform(Number),
   BASE_URL: z.string().optional(),
@@ -21,6 +21,7 @@ const EnvSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   GOOGLE_API_KEY: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
+  NVIDIA_NIM_API_KEY: z.string().optional(),
 
   // Feature Flags (Middleware)
   ENABLE_MEMORY: z

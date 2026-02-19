@@ -61,6 +61,20 @@ export async function createLLM(config: AgentConfig = agentConfig): Promise<Base
         apiKey: config.GROQ_API_KEY,
       });
 
+    case "nvidia_nim":
+      if (!config.NVIDIA_NIM_API_KEY) {
+        throw new Error("NVIDIA_NIM_API_KEY is required for the nvidia_nim provider");
+      }
+      return new ChatOpenAI({
+        modelName: MODEL_NAME,
+        temperature: TEMPERATURE,
+        maxTokens: MAX_TOKENS,
+        openAIApiKey: config.NVIDIA_NIM_API_KEY,
+        configuration: {
+          baseURL: "https://integrate.api.nvidia.com/v1",
+        },
+      });
+
     default:
       throw new Error(`Unsupported model provider: ${MODEL_PROVIDER}`);
   }

@@ -40,6 +40,45 @@ const ensureKatexCSS = () => {
     link.crossOrigin = "anonymous";
     document.head.appendChild(link);
   }
+
+  // Inject display/inline math layout fixes
+  const styleId = "katex-layout-fixes";
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      /* Display math: centered block with vertical breathing room */
+      .katex-display {
+        display: block !important;
+        text-align: center !important;
+        margin: 1.25em auto !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+      /* Prevent the wrapping <p> from collapsing display math */
+      .katex-display > .katex {
+        display: inline-block;
+        white-space: nowrap;
+      }
+      /* Reset KaTeX's own line-height so sub/superscripts don't clip */
+      .katex {
+        line-height: normal;
+        font-size: 1.0em;
+      }
+      /* Give paragraphs and list items containing math enough room
+         so subscripts/superscripts don't overlap adjacent lines */
+      p:has(.katex),
+      li:has(.katex) {
+        line-height: 2.4 !important;
+      }
+      /* Inline math baseline alignment */
+      .katex:not(.katex-display > .katex) {
+        display: inline-block !important;
+        vertical-align: middle;
+      }
+    `;
+    document.head.appendChild(style);
+  }
 };
 
 // FIXED: Use direct language extensions instead of langs object
@@ -532,7 +571,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
   return (
     <ReactMarkdown
       components={components}
-      rehypePlugins={[rehypeKatex]}
+      rehypePlugins={[[rehypeKatex, { output: "htmlAndMathml", throwOnError: false }]]}
       remarkPlugins={[remarkGfm, remarkMath]}
     >
       {text}

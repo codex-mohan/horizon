@@ -158,7 +158,7 @@ export const searchWeb = tool(
       query: z.string().describe("The search query to look up."),
       fetchContent: z
         .boolean()
-        .optional()
+        .nullable()
         .default(true)
         .describe(
           "Whether to fetch and include content from top results. Set to false for faster results with just links and snippets."

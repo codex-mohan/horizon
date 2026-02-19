@@ -69,10 +69,18 @@ export interface ChatInputProps {
 }
 
 const modelGroups = {
-  OpenAI: ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
-  Anthropic: ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
-  Google: ["gemini-pro", "gemini-pro-vision"],
-  Local: ["ollama/llama2", "vllm/mistral"],
+  "NVIDIA NIM": [
+    "qwen/qwen3.5-397b-a17b",
+    "meta/llama-3.1-70b-instruct",
+    "meta/llama-3.3-70b-instruct",
+    "nvidia/llama-3.1-nemotron-70b-instruct",
+    "mistralai/mixtral-8x7b-instruct-v0.1",
+  ],
+  OpenAI: ["gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
+  Anthropic: ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-haiku-20240307"],
+  Google: ["gemini-1.5-pro", "gemini-1.5-flash"],
+  Groq: ["llama-3.3-70b-versatile", "mixtral-8x7b-32768"],
+  Local: ["ollama/llama3", "ollama/mistral"],
 } as const;
 
 const APPROVAL_MODE_CONFIG: Record<
@@ -126,7 +134,7 @@ export const ChatInput = memo(function ChatInput({
   placeholder = "Ask me anything...",
 }: ChatInputProps) {
   const [text, setText] = useState("");
-  const [selectedModel, setSelectedModel] = useState("gpt-4");
+  const [selectedModel, setSelectedModel] = useState("qwen/qwen3.5-397b-a17b");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -146,7 +154,7 @@ export const ChatInput = memo(function ChatInput({
       const newHeight = Math.min(el.scrollHeight, 120);
       el.style.height = `${newHeight}px`;
     }
-  }, []);
+  }, [text]);
 
   const handleSubmit = useCallback(() => {
     const trimmed = text.trim();
@@ -199,7 +207,7 @@ export const ChatInput = memo(function ChatInput({
   return (
     <div className="flex flex-col gap-3">
       <Textarea
-        className="max-h-[120px] min-h-[44px] resize-none overflow-y-auto overflow-x-hidden border-0 bg-transparent py-3 focus-visible:ring-0"
+        className="custom-scrollbar max-h-[120px] min-h-[44px] resize-none overflow-y-auto overflow-x-hidden border-0 bg-transparent py-3 focus-visible:ring-0"
         disabled={disabled}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
