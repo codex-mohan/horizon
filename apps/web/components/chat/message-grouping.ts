@@ -4,6 +4,7 @@
  * Groups messages by conversation turns:
  * - User message starts a new turn
  * - All AI messages + tool calls in that turn are ONE group
+ * - Tool rounds are tracked in-order via `toolSteps[]`
  * - Controls only appear at the end of the group
  */
 
@@ -13,17 +14,32 @@ import type { ToolCall } from "@/components/chat/tool-call-message";
 import { getReasoningFromMessage } from "@/lib/reasoning-utils";
 import { getToolUIConfig } from "@/lib/tool-config";
 
+/**
+ * A single tool-call round inside a group.
+ * An agent may call tools multiple times sequentially before giving a final
+ * answer. Each such round becomes one ToolStep.
+ */
+export interface ToolStep {
+  /** The AI message that initiated this tool round (may have intro text) */
+  introMessage: Message | null;
+  /** All tool calls that belong to this round */
+  toolCalls: ToolCall[];
+}
+
 export interface MessageGroup {
   id: string;
   userMessage: Message | null;
   /** Attachments from the user message (images, files) */
   userAttachments: AttachedFile[];
-  /** The AI message content that came BEFORE tool calls (intro text) */
-  preToolMessage: Message | null;
+  /**
+   * Ordered list of tool-call rounds. Each entry is one AI → tool(s) cycle.
+   * Rendered in order so the conversation flow is preserved.
+   */
+  toolSteps: ToolStep[];
+  /** The final AI text response (no tool_calls). */
   assistantMessage: Message | null;
   /** ID of the first AI message in this group - used for regeneration */
   firstAssistantMessageId?: string;
-  toolCalls: ToolCall[];
   isLastGroup: boolean;
   branch?: string;
   branchOptions?: string[];
@@ -222,10 +238,9 @@ export function groupMessages(
           attachments: userAttachments,
         },
         userAttachments,
-        preToolMessage: null,
+        toolSteps: [],
         assistantMessage: null,
         firstAssistantMessageId: undefined,
-        toolCalls: [],
         isLastGroup: false,
         branch: metadata?.branch,
         branchOptions: metadata?.branchOptions,
@@ -238,48 +253,59 @@ export function groupMessages(
 
       if (currentGroup) {
         // Track the FIRST AI message ID for regeneration purposes
-        // This is crucial for regenerating from the start of the group
         if (!currentGroup.firstAssistantMessageId) {
           currentGroup.firstAssistantMessageId = msg.id || `msg-${i}`;
         }
 
-        // Merge tool calls, deduplicating by ID and preferring ones with results
-        const existingToolCallIds = new Set(currentGroup.toolCalls.map((tc) => tc.id));
-        const newToolCalls = toolCalls.filter((tc) => !existingToolCallIds.has(tc.id));
-        currentGroup.toolCalls = [...currentGroup.toolCalls, ...newToolCalls];
+        const aiMessage: Message = {
+          id: msg.id || `msg-${i}`,
+          role: "assistant",
+          content,
+          timestamp: new Date(),
+          _originalMessage: msg,
+          reasoning,
+        };
 
-        // Handle the case where AI has BOTH text content AND tool calls
-        // This is the first message that introduces the tool usage
-        if (hasTextContent && hasToolCalls && !currentGroup.preToolMessage) {
-          // Store as pre-tool message (intro text before tools)
-          currentGroup.preToolMessage = {
-            id: msg.id || `msg-${i}`,
-            role: "assistant",
-            content,
-            timestamp: new Date(),
-            _originalMessage: msg,
-            reasoning,
-          };
+        if (hasToolCalls) {
+          // This AI message starts (or continues) a tool-call round.
+          // Each distinct AI message with tool_calls is its own step — this
+          // preserves multi-round ordering (no merging by ID dedup here).
+          const introMessage: Message | null = hasTextContent
+            ? { ...aiMessage }
+            : null;
+
+          // Deduplicate tool calls against ALL previous steps to be safe
+          const seenIds = new Set(
+            currentGroup.toolSteps.flatMap((s) => s.toolCalls.map((tc) => tc.id))
+          );
+          const newToolCalls = toolCalls.filter((tc) => !seenIds.has(tc.id));
+
+          if (newToolCalls.length > 0 || introMessage) {
+            currentGroup.toolSteps.push({ introMessage, toolCalls: newToolCalls });
+          } else if (newToolCalls.length === 0 && currentGroup.toolSteps.length > 0) {
+            // All tool calls already seen — this is an update to existing calls
+            // (e.g. result messages); merge results into the last step's tool calls
+            const lastStep = currentGroup.toolSteps[currentGroup.toolSteps.length - 1];
+            const lastStepIds = new Set(lastStep.toolCalls.map((tc) => tc.id));
+            for (const tc of toolCalls) {
+              if (lastStepIds.has(tc.id)) {
+                const existing = lastStep.toolCalls.find((e) => e.id === tc.id);
+                if (existing) {
+                  existing.result = tc.result || existing.result;
+                  existing.status = tc.status;
+                }
+              }
+            }
+          }
         } else if (hasTextContent) {
-          // Plain text content (final response or intermediate text)
-          currentGroup.assistantMessage = {
-            id: msg.id || `msg-${i}`,
-            role: "assistant",
-            content,
-            timestamp: new Date(),
-            _originalMessage: msg,
-            reasoning,
-          };
-        } else if (!currentGroup.assistantMessage && !currentGroup.preToolMessage && hasToolCalls) {
-          // AI message with only tool calls, no text - create placeholder
-          currentGroup.preToolMessage = {
-            id: msg.id || `msg-${i}`,
-            role: "assistant",
-            content: "",
-            timestamp: new Date(),
-            _originalMessage: msg,
-            reasoning,
-          };
+          // Plain text content with no tool calls → this is the final assistant response
+          currentGroup.assistantMessage = aiMessage;
+        } else {
+          // Edge case: AI message with no content and no tool_calls
+          // Could be an empty streaming tick — ignore unless it's the only AI message
+          if (!currentGroup.assistantMessage && currentGroup.toolSteps.length === 0) {
+            currentGroup.assistantMessage = aiMessage;
+          }
         }
 
         // Update branch metadata
@@ -288,21 +314,26 @@ export function groupMessages(
           currentGroup.branchOptions = metadata.branchOptions;
       } else {
         // AI message without preceding user (edge case)
+        const aiMessage: Message = {
+          id: msg.id || `msg-${i}`,
+          role: "assistant",
+          content,
+          timestamp: new Date(),
+          _originalMessage: msg,
+          reasoning,
+        };
+
+        const introMessage: Message | null = hasTextContent && hasToolCalls ? { ...aiMessage } : null;
+
         currentGroup = {
           id: `group-${msg.id || i}`,
           userMessage: null,
           userAttachments: [],
-          preToolMessage: null,
-          assistantMessage: {
-            id: msg.id || `msg-${i}`,
-            role: "assistant",
-            content,
-            timestamp: new Date(),
-            _originalMessage: msg,
-            reasoning,
-          },
+          toolSteps: hasToolCalls
+            ? [{ introMessage, toolCalls }]
+            : [],
+          assistantMessage: hasToolCalls ? null : aiMessage,
           firstAssistantMessageId: msg.id || `msg-${i}`,
-          toolCalls,
           isLastGroup: false,
           branch: metadata?.branch,
           branchOptions: metadata?.branchOptions,
@@ -330,9 +361,11 @@ export function groupMessages(
       userContent: g.userMessage?.content?.slice(0, 50),
       hasAssistant: !!g.assistantMessage,
       assistantContent: g.assistantMessage?.content?.slice(0, 50),
-      assistantId: g.assistantMessage?.id,
-      toolCallsCount: g.toolCalls.length,
-      toolCalls: g.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, status: tc.status })),
+      toolStepsCount: g.toolSteps.length,
+      toolSteps: g.toolSteps.map((s) => ({
+        hasIntro: !!s.introMessage,
+        toolCalls: s.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, status: tc.status })),
+      })),
       branch: g.branch,
       isLastGroup: g.isLastGroup,
     }))

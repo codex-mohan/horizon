@@ -2,7 +2,7 @@
 
 import { cn } from "@workspace/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, ChevronUp, Code, Copy } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
 import { getToolIcon, getToolUIConfig } from "@/lib/tool-config";
@@ -21,9 +21,8 @@ interface GenericToolProps {
 
 /**
  * Generic Tool Component
- * Default UI for tools without custom components
- * Features expandable JSON viewer with syntax highlighting
- * Theme-aware - works in both light and dark modes
+ * Compact card with clickable header to expand args + result.
+ * No separate "Arguments" / "Details" label row — the header IS the toggle.
  */
 export function GenericTool({
   toolName,
@@ -35,24 +34,33 @@ export function GenericTool({
   error,
   isLoading,
 }: GenericToolProps) {
-  const [showArgs, setShowArgs] = useState(false);
-  const [showResult, setShowResult] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [copiedArgs, setCopiedArgs] = useState(false);
+  const [copiedResult, setCopiedResult] = useState(false);
   const config = getToolUIConfig(toolName);
   const Icon = getToolIcon(toolName);
   const { themeMode } = useTheme();
   const isLight = themeMode === "light";
 
-  const handleCopy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyArgs = async () => {
+    await navigator.clipboard.writeText(JSON.stringify(args, null, 2));
+    setCopiedArgs(true);
+    setTimeout(() => setCopiedArgs(false), 2000);
+  };
+
+  const handleCopyResult = async () => {
+    if (!result) return;
+    await navigator.clipboard.writeText(result);
+    setCopiedResult(true);
+    setTimeout(() => setCopiedResult(false), 2000);
   };
 
   const formatJSON = (obj: any) => JSON.stringify(obj, null, 2);
 
   const executionTime =
     startedAt && completedAt ? Math.round((completedAt - startedAt) / 10) / 100 : null;
+
+  const hasExpandable = !!(result || error || isLoading || Object.keys(args).length > 0);
 
   return (
     <motion.div
@@ -63,12 +71,14 @@ export function GenericTool({
       )}
       initial={{ opacity: 0, y: 10 }}
     >
-      {/* Header */}
-      <div
+      {/* Header — click to expand/collapse */}
+      <button
         className={cn(
-          "flex items-center justify-between border-b px-4 py-3",
-          isLight ? "border-border" : "border-slate-700/50"
+          "flex w-full items-center justify-between px-4 py-3 text-left transition-colors",
+          isLight ? "hover:bg-muted/30" : "hover:bg-white/5"
         )}
+        onClick={() => hasExpandable && setExpanded(!expanded)}
+        style={{ cursor: hasExpandable ? "pointer" : "default" }}
       >
         <div className="flex items-center gap-3">
           <div className={cn("rounded-xl p-2", config.icon.bgColor)}>
@@ -90,108 +100,75 @@ export function GenericTool({
             )}
           </div>
         </div>
-        <ToolStatusBadge status={status} />
-      </div>
 
-      {/* Arguments Section */}
-      <div className={cn("border-b", isLight ? "border-border/50" : "border-slate-700/30")}>
-        <button
-          className={cn(
-            "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
-            isLight
-              ? "text-muted-foreground hover:text-foreground"
-              : "text-slate-400 hover:text-slate-300"
+        <div className="flex items-center gap-2">
+          <ToolStatusBadge status={status} />
+          {hasExpandable && (
+            expanded
+              ? <ChevronUp className={cn("h-3.5 w-3.5", isLight ? "text-muted-foreground" : "text-slate-500")} />
+              : <ChevronDown className={cn("h-3.5 w-3.5", isLight ? "text-muted-foreground" : "text-slate-500")} />
           )}
-          onClick={() => setShowArgs(!showArgs)}
-        >
-          <div className="flex items-center gap-2">
-            <Code className="h-3.5 w-3.5" />
-            <span className="font-medium uppercase tracking-wider">Arguments</span>
-          </div>
-          {showArgs ? (
-            <ChevronUp className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5" />
-          )}
-        </button>
+        </div>
+      </button>
 
-        <AnimatePresence>
-          {showArgs && (
-            <motion.div
-              animate={{ height: "auto", opacity: 1 }}
-              className="overflow-hidden"
-              exit={{ height: 0, opacity: 0 }}
-              initial={{ height: 0, opacity: 0 }}
-            >
-              <div className="px-4 pb-3">
-                <div className="group relative">
-                  <pre
-                    className={cn(
-                      "max-h-40 overflow-auto rounded-lg border p-3 font-mono text-xs",
-                      isLight
-                        ? "border-border bg-muted/50 text-foreground"
-                        : "border-slate-800/50 bg-slate-950/50 text-slate-300"
-                    )}
-                  >
-                    <code>{formatJSON(args)}</code>
-                  </pre>
-                  <button
-                    className={cn(
-                      "absolute top-2 right-2 rounded-md p-1.5 opacity-0 transition-opacity group-hover:opacity-100",
-                      isLight
-                        ? "bg-muted text-muted-foreground hover:text-foreground"
-                        : "bg-slate-800/50 text-slate-400 hover:text-slate-200"
-                    )}
-                    onClick={() => handleCopy(formatJSON(args))}
-                  >
-                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Result Section */}
-      {(result || error || isLoading) && (
-        <div>
-          <button
-            className={cn(
-              "flex w-full items-center justify-between px-4 py-2.5 text-xs transition-colors",
-              isLight
-                ? "text-muted-foreground hover:text-foreground"
-                : "text-slate-400 hover:text-slate-300"
-            )}
-            onClick={() => setShowResult(!showResult)}
+      {/* Expandable body */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            animate={{ height: "auto", opacity: 1 }}
+            className="overflow-hidden"
+            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0, opacity: 0 }}
           >
-            <span className="font-medium uppercase tracking-wider">
-              {error ? "Error" : "Result"}
-            </span>
-            {showResult ? (
-              <ChevronUp className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" />
-            )}
-          </button>
+            <div
+              className={cn(
+                "space-y-3 border-t px-4 py-3",
+                isLight ? "border-border/50" : "border-slate-700/30"
+              )}
+            >
+              {/* Arguments */}
+              {Object.keys(args).length > 0 && (
+                <div>
+                  <p className={cn("mb-1.5 text-xs font-medium uppercase tracking-wider", isLight ? "text-muted-foreground" : "text-slate-500")}>
+                    Arguments
+                  </p>
+                  <div className="group relative">
+                    <pre
+                      className={cn(
+                        "max-h-40 overflow-auto rounded-lg border p-3 font-mono text-xs",
+                        isLight
+                          ? "border-border bg-muted/50 text-foreground"
+                          : "border-slate-800/50 bg-slate-950/50 text-slate-300"
+                      )}
+                    >
+                      <code>{formatJSON(args)}</code>
+                    </pre>
+                    <button
+                      className={cn(
+                        "absolute top-2 right-2 rounded-md p-1.5 opacity-0 transition-opacity group-hover:opacity-100",
+                        isLight
+                          ? "bg-muted text-muted-foreground hover:text-foreground"
+                          : "bg-slate-800/50 text-slate-400 hover:text-slate-200"
+                      )}
+                      onClick={handleCopyArgs}
+                    >
+                      {copiedArgs ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              )}
 
-          <AnimatePresence>
-            {showResult && (
-              <motion.div
-                animate={{ height: "auto", opacity: 1 }}
-                className="overflow-hidden"
-                exit={{ height: 0, opacity: 0 }}
-                initial={{ height: 0, opacity: 0 }}
-              >
-                <div className="px-4 pb-4">
+              {/* Result / Error / Loading */}
+              {(result || error || isLoading) && (
+                <div>
+                  <p className={cn("mb-1.5 text-xs font-medium uppercase tracking-wider", isLight ? "text-muted-foreground" : "text-slate-500")}>
+                    {error ? "Error" : "Result"}
+                  </p>
                   {isLoading && !result && !error ? (
-                    <div className="flex items-center gap-3 p-4">
+                    <div className="flex items-center gap-3 p-3">
                       <ModernSpinner size="sm" />
                       <ShimmerText
-                        className={cn(
-                          "text-sm",
-                          isLight ? "text-muted-foreground" : "text-slate-400"
-                        )}
+                        className={cn("text-sm", isLight ? "text-muted-foreground" : "text-slate-400")}
                         text="Processing..."
                       />
                     </div>
@@ -220,9 +197,9 @@ export function GenericTool({
                             ? "bg-muted text-muted-foreground hover:text-foreground"
                             : "bg-slate-800/50 text-slate-400 hover:text-slate-200"
                         )}
-                        onClick={() => result && handleCopy(result)}
+                        onClick={handleCopyResult}
                       >
-                        {copied ? (
+                        {copiedResult ? (
                           <Check className="h-3.5 w-3.5" />
                         ) : (
                           <Copy className="h-3.5 w-3.5" />
@@ -231,11 +208,11 @@ export function GenericTool({
                     </div>
                   )}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

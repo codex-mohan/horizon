@@ -56,7 +56,8 @@ const routeAfterApproval = (state: AgentState): "ToolExecution" | "AgentNode" =>
  * Check if we should continue the agent loop after ToolExecution
  */
 const shouldContinue = (state: AgentState): "AgentNode" | "EndMiddleware" => {
-  const maxCalls = state.metadata?.max_model_calls || 10;
+  const envLimit = process.env.MAX_MODEL_CALLS ? parseInt(process.env.MAX_MODEL_CALLS, 10) : 50;
+  const maxCalls = state.metadata?.max_model_calls || envLimit;
 
   if (state.model_calls >= maxCalls) {
     console.warn(`[Graph] Max model calls (${maxCalls}) reached`);

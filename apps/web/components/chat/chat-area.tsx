@@ -26,7 +26,7 @@ import type { AttachedFile, Message } from "./chat-interface";
 import { ChatLoadingIndicator } from "./chat-loading-indicator";
 import { MessageGroup } from "./message-group";
 import { groupMessages } from "./message-grouping";
-import { ToolApprovalBanner } from "./tool-approval-banner";
+import type { ToolApprovalData } from "./tool-approval-banner";
 import type { ToolCall } from "./tool-call-message";
 
 // ============================================================================
@@ -532,6 +532,37 @@ export function ChatArea({
             {messageGroups.map((group, groupIdx) => {
               const isLastGroup = groupIdx === messageGroups.length - 1;
 
+              // Pass interrupt inline to the last group so the approval banner
+              // appears adjacent to the tool that triggered it — not detached
+              // at the bottom of the message list.
+              const interruptProp =
+                isLastGroup && chat.isWaitingForInterrupt && chat.interrupt
+                  ? {
+                    data: {
+                      type: "tool_approval_required" as const,
+                      tool_call: {
+                        id: "0",
+                        name: chat.interrupt.action_requests[0]?.name || "unknown",
+                        args: chat.interrupt.action_requests[0]?.arguments || {},
+                        status: "pending",
+                      },
+                      all_pending_tools: chat.interrupt.action_requests.map((ar, idx) => ({
+                        id: String(idx),
+                        name: ar.name,
+                        args: ar.arguments,
+                        status: "pending",
+                      })),
+                      auto_execute_tools: [],
+                      message: chat.interrupt.action_requests
+                        .map((ar) => ar.description)
+                        .join("\n"),
+                    } satisfies ToolApprovalData,
+                    onApprove: () => chat.approveInterrupt(),
+                    onReject: () => chat.rejectInterrupt(),
+                    isLoading: chat.isResuming,
+                  }
+                  : undefined;
+
               return (
                 <MessageGroup
                   assistantMessage={group.assistantMessage}
@@ -539,6 +570,7 @@ export function ChatArea({
                   branchOptions={group.branchOptions}
                   firstAssistantMessageId={group.firstAssistantMessageId}
                   id={group.id}
+                  interrupt={interruptProp}
                   isLastGroup={isLastGroup}
                   isLoading={chat.isLoading}
                   key={group.id}
@@ -546,39 +578,14 @@ export function ChatArea({
                   onDelete={handleDelete}
                   onEdit={handleEdit}
                   onRegenerate={handleRegenerate}
-                  preToolMessage={group.preToolMessage}
                   showToolCalls={settings.showToolCalls}
-                  toolCalls={group.toolCalls}
+                  toolSteps={group.toolSteps}
                   userMessage={group.userMessage}
                 />
               );
             })}
 
-            {/* Tool Approval Banner - shown in message area */}
-            {chat.isWaitingForInterrupt && chat.interrupt && (
-              <ToolApprovalBanner
-                data={{
-                  type: "tool_approval_required",
-                  tool_call: {
-                    id: "0",
-                    name: chat.interrupt.action_requests[0]?.name || "unknown",
-                    args: chat.interrupt.action_requests[0]?.arguments || {},
-                    status: "pending",
-                  },
-                  all_pending_tools: chat.interrupt.action_requests.map((ar, idx) => ({
-                    id: String(idx),
-                    name: ar.name,
-                    args: ar.arguments,
-                    status: "pending",
-                  })),
-                  auto_execute_tools: [],
-                  message: chat.interrupt.action_requests.map((ar) => ar.description).join("\n"),
-                }}
-                onApprove={() => chat.approveInterrupt()}
-                onReject={() => chat.rejectInterrupt()}
-                isLoading={chat.isResuming}
-              />
-            )}
+            {/* Tool Approval Banner is now rendered inline inside the last MessageGroup */}
 
             {/* Loading Indicator */}
             {showLoading && (

@@ -271,8 +271,11 @@ export function ShellTool({ toolName, status, args, result, error, isLoading }: 
       className="glass overflow-hidden rounded-xl border border-white/10 shadow-lg"
       initial={{ opacity: 0, y: 10 }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3">
+      {/* Header — click to expand/collapse */}
+      <button
+        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-white/5"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <div className="flex items-center gap-3">
           {/* Icon with status color */}
           <div className={cn("rounded-lg p-2", isSuccess ? "bg-emerald-500/20" : "bg-red-500/20")}>
@@ -304,51 +307,84 @@ export function ShellTool({ toolName, status, args, result, error, isLoading }: 
           </div>
         </div>
 
-        {/* Duration */}
-        {duration > 0 && (
-          <div className="flex items-center gap-1 text-xs text-white/50">
-            <Clock className="h-3 w-3" />
-            <span>{formatDuration(duration)}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Expandable details section - collapsed by default */}
-      <div className="border-t border-white/5">
-        <button
-          className="flex w-full items-center justify-between px-4 py-2 text-xs text-white/50 transition-colors hover:text-white/70"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <span className="font-medium uppercase tracking-wider">Details</span>
-          {isExpanded ? (
-            <ChevronUp className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-2">
+          {/* Duration */}
+          {duration > 0 && (
+            <div className="flex items-center gap-1 text-xs text-white/50">
+              <Clock className="h-3 w-3" />
+              <span>{formatDuration(duration)}</span>
+            </div>
           )}
-        </button>
+          {isExpanded ? (
+            <ChevronUp className="h-3.5 w-3.5 text-white/40" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 text-white/40" />
+          )}
+        </div>
+      </button>
 
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              animate={{ height: "auto", opacity: 1 }}
-              className="overflow-hidden"
-              exit={{ height: 0, opacity: 0 }}
-              initial={{ height: 0, opacity: 0 }}
-            >
-              <div className="px-4 pb-3">
-                {/* Command */}
-                <div className="group relative mb-2">
-                  <div className="mb-1 flex items-center gap-1 text-xs font-medium text-white/60">
-                    <Terminal className="h-3 w-3" />
-                    Command
+      {/* Expandable details */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            animate={{ height: "auto", opacity: 1 }}
+            className="overflow-hidden"
+            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0, opacity: 0 }}
+          >
+            <div className="px-4 pb-3">
+              {/* Command */}
+              <div className="group relative mb-2">
+                <div className="mb-1 flex items-center gap-1 text-xs font-medium text-white/60">
+                  <Terminal className="h-3 w-3" />
+                  Command
+                </div>
+                <code className="block rounded-lg bg-black/30 p-2 font-mono text-sm">
+                  <span className="text-white/40">$ </span>
+                  <span className="text-emerald-400">{command}</span>
+                </code>
+                <button
+                  className="absolute right-2 top-6 rounded bg-white/10 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+                  onClick={() => handleCopy(command)}
+                >
+                  {copied ? (
+                    <Check className="h-3 w-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="h-3 w-3 text-white/60" />
+                  )}
+                </button>
+              </div>
+
+              {/* Truncation warning */}
+              {isTruncated && (
+                <div className="mb-2 flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                  <span className="text-xs text-amber-400">Output was truncated (too large)</span>
+                </div>
+              )}
+
+              {/* Stderr (errors) */}
+              {stderr && (
+                <div className="mb-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2">
+                  <div className="mb-1 flex items-center gap-1 text-xs font-medium text-red-400">
+                    <AlertCircle className="h-3 w-3" />
+                    stderr
                   </div>
-                  <code className="block rounded-lg bg-black/30 p-2 font-mono text-sm">
-                    <span className="text-white/40">$ </span>
-                    <span className="text-emerald-400">{command}</span>
-                  </code>
+                  <pre className="overflow-auto font-mono text-xs text-red-300">
+                    {parseAnsiColors(stderr)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Stdout */}
+              {stdout && (
+                <div className="group relative">
+                  <pre className="max-h-64 overflow-auto rounded-lg bg-black/30 p-2 font-mono text-xs text-white/80">
+                    {parseAnsiColors(stdout)}
+                  </pre>
                   <button
-                    className="absolute right-2 top-6 rounded bg-white/10 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
-                    onClick={() => handleCopy(command)}
+                    className="absolute right-2 top-2 rounded bg-white/10 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+                    onClick={() => handleCopy(stdout)}
                   >
                     {copied ? (
                       <Check className="h-3 w-3 text-emerald-400" />
@@ -357,51 +393,11 @@ export function ShellTool({ toolName, status, args, result, error, isLoading }: 
                     )}
                   </button>
                 </div>
-
-                {/* Truncation warning */}
-                {isTruncated && (
-                  <div className="mb-2 flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-                    <span className="text-xs text-amber-400">Output was truncated (too large)</span>
-                  </div>
-                )}
-
-                {/* Stderr (errors) */}
-                {stderr && (
-                  <div className="mb-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2">
-                    <div className="mb-1 flex items-center gap-1 text-xs font-medium text-red-400">
-                      <AlertCircle className="h-3 w-3" />
-                      stderr
-                    </div>
-                    <pre className="overflow-auto font-mono text-xs text-red-300">
-                      {parseAnsiColors(stderr)}
-                    </pre>
-                  </div>
-                )}
-
-                {/* Stdout */}
-                {stdout && (
-                  <div className="group relative">
-                    <pre className="max-h-64 overflow-auto rounded-lg bg-black/30 p-2 font-mono text-xs text-white/80">
-                      {parseAnsiColors(stdout)}
-                    </pre>
-                    <button
-                      className="absolute right-2 top-2 rounded bg-white/10 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => handleCopy(stdout)}
-                    >
-                      {copied ? (
-                        <Check className="h-3 w-3 text-emerald-400" />
-                      ) : (
-                        <Copy className="h-3 w-3 text-white/60" />
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

@@ -319,55 +319,59 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       setLastEvent(eventObj);
       onEvent?.(eventObj);
 
-      // Check if this event contains an interrupt (skip if actively resuming)
-      if (!isActivelyResuming && data && typeof data === "object") {
+      // Always check for interrupt data regardless of resuming state.
+      // A new interrupt may arrive immediately after a resume command is sent
+      // (second tool call), and we must not suppress it.
+      if (data && typeof data === "object") {
         const dataRecord = data as Record<string, unknown>;
         if (dataRecord.__interrupt__) {
           console.log("[useChat] Interrupt in update event:", dataRecord.__interrupt__);
           const interruptValue =
             (dataRecord.__interrupt__ as any)?.value || dataRecord.__interrupt__;
           if (interruptValue && interruptValue.action_requests) {
+            // A new interrupt arrived — clear the resuming flag so the UI shows it immediately
+            setIsActivelyResuming(false);
+            setIsResuming(false);
             setInterrupt(interruptValue as InterruptData);
           }
         }
       }
     },
-    [onEvent, isActivelyResuming]
+    [onEvent]
   );
 
   const handleInterrupt = useCallback(
     (interruptData: unknown) => {
-      // Don't process interrupts while actively resuming
-      if (isActivelyResuming) {
-        console.log("[useChat] Ignoring interrupt callback - actively resuming");
-        return;
-      }
-
       console.log("[useChat] onInterrupt callback fired with:", JSON.stringify(interruptData));
 
       // LangGraph sends interrupt as { action_requests: [...], review_configs: [...] }
+      // Always process — a new interrupt may arrive immediately after resume (second tool call).
       const interruptObj = interruptData as InterruptData;
       if (interruptObj && Array.isArray(interruptObj.action_requests)) {
-        console.log("[useChat] Setting interrupt state with action_requests");
+        console.log("[useChat] Setting interrupt state — clearing resuming flags");
+        setIsActivelyResuming(false);
+        setIsResuming(false);
         setInterrupt(interruptObj);
         onInterrupt?.(interruptData as Record<string, unknown>);
       } else {
         console.warn("[useChat] Unknown interrupt format, trying to extract:", interruptData);
-        // Try to handle different formats
         if (interruptData && typeof interruptData === "object") {
           const data = interruptData as Record<string, unknown>;
-          // Maybe it's nested
           if (data.value && (data.value as any).action_requests) {
             console.log("[useChat] Found nested action_requests in .value");
+            setIsActivelyResuming(false);
+            setIsResuming(false);
             setInterrupt(data.value as InterruptData);
           } else if (data.action_requests) {
             console.log("[useChat] Found action_requests at root");
+            setIsActivelyResuming(false);
+            setIsResuming(false);
             setInterrupt(interruptData as InterruptData);
           }
         }
       }
     },
-    [onInterrupt, isActivelyResuming]
+    [onInterrupt]
   );
 
   const handleCustomEvent = useCallback((event: unknown) => {
@@ -516,20 +520,16 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   // The SDK exposes interrupt as a property on stream - use it as a fallback
   const streamInterrupt = (stream as any).interrupt;
 
-  // Update interrupt state when stream.interrupt changes
+  // Update interrupt state when stream.interrupt changes (fallback for SDK-level interrupts)
   useEffect(() => {
-    if (isActivelyResuming) {
-      return;
-    }
-    if (streamInterrupt && !interrupt) {
+    if (isActivelyResuming) return;
+    if (!streamInterrupt) return;
+    const interruptValue = streamInterrupt.value || streamInterrupt;
+    if (interruptValue && interruptValue.action_requests) {
       console.log("[useChat] stream.interrupt detected:", streamInterrupt);
-      // The interrupt value might be nested
-      const interruptValue = streamInterrupt.value || streamInterrupt;
-      if (interruptValue && interruptValue.action_requests) {
-        setInterrupt(interruptValue as InterruptData);
-      } else if (typeof streamInterrupt === "object" && (streamInterrupt as any).action_requests) {
-        setInterrupt(streamInterrupt as InterruptData);
-      }
+      setInterrupt(interruptValue as InterruptData);
+    } else if (typeof streamInterrupt === "object" && (streamInterrupt as any).action_requests) {
+      setInterrupt(streamInterrupt as InterruptData);
     }
   }, [streamInterrupt, interrupt, isActivelyResuming]);
 

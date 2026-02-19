@@ -14,17 +14,20 @@ import { BranchSwitcher } from "./branch-switcher";
 import { ChatBubble } from "./chat-bubble";
 import type { Message } from "./chat-interface";
 import { GenerativeUIRenderer } from "./generative-ui-renderer";
+import type { ToolStep } from "./message-grouping";
+import type { ToolApprovalData } from "./tool-approval-banner";
+import { ToolApprovalBanner } from "./tool-approval-banner";
 import { type ToolCall, ToolCallMessage } from "./tool-call-message";
 
 interface MessageGroupProps {
   id: string;
   userMessage: Message | null;
-  /** AI message content that came BEFORE tool calls (intro text) */
-  preToolMessage: Message | null;
+  /** Ordered list of tool-call rounds inside this group */
+  toolSteps: ToolStep[];
+  /** The final AI text response (no tool_calls) */
   assistantMessage: Message | null;
   /** ID of the first AI message in this group - used for regeneration */
   firstAssistantMessageId?: string;
-  toolCalls: ToolCall[];
   isLastGroup: boolean;
   branch?: string;
   branchOptions?: string[];
@@ -34,24 +37,31 @@ interface MessageGroupProps {
   onDelete: (id: string) => void;
   onRegenerate: (messageId: string, isLastGroup: boolean) => void;
   onBranchChange: (branch: string) => void;
+  /** When set, renders a ToolApprovalBanner inline at the bottom of the assistant section */
+  interrupt?: {
+    data: ToolApprovalData;
+    onApprove: () => void;
+    onReject: () => void;
+    isLoading: boolean;
+  };
 }
 
 /**
- * MessageGroup - Renders a single message group (user + assistant pair)
+ * MessageGroup - Renders a single conversation turn (user + assistant pair).
  *
- * Features:
- * - User message with edit/delete actions
- * - Assistant message with regenerate/copy actions
- * - Tool calls display with custom UI support
- * - Branch switcher for navigation
+ * Owns ALL action controls for the group:
+ * - User message: edit button (rendered by ChatBubble internally, but edit callback is passed here)
+ * - Assistant: copy, regenerate, branch switcher (rendered in this component's actions bar)
+ * - Tool approval banner (inline, when interrupt prop is set)
+ *
+ * Chat bubble is purely a content renderer — it no longer owns assistant-side controls.
  */
 export function MessageGroup({
   id,
   userMessage,
-  preToolMessage,
+  toolSteps,
   assistantMessage,
   firstAssistantMessageId,
-  toolCalls,
   isLastGroup,
   branch,
   branchOptions,
@@ -61,28 +71,28 @@ export function MessageGroup({
   onDelete,
   onRegenerate,
   onBranchChange,
+  interrupt,
 }: MessageGroupProps) {
+  const hasAssistantContent = !!(assistantMessage || toolSteps.length > 0);
+
+  // The message to use as the copy/regenerate reference (prefer final response)
+  const controlsMessage = assistantMessage ?? toolSteps.at(-1)?.introMessage ?? null;
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-group-id={id}>
       {/* User Message */}
       {userMessage && (
         <ChatBubble
-          branch={branch}
-          branchOptions={branchOptions}
           isLastGroup={isLastGroup}
-          isLastInGroup={true}
-          isLastMessage={isLastGroup}
           isLoading={isLoading}
           message={userMessage}
           onDelete={onDelete}
           onEdit={onEdit}
-          showActions={true}
-          showAvatar={false}
         />
       )}
 
-      {/* Assistant Group */}
-      {(assistantMessage || preToolMessage || toolCalls.length > 0) && (
+      {/* Assistant Section */}
+      {hasAssistantContent && (
         <div className="group flex items-start gap-4">
           {/* Assistant Avatar - Always at top of group, before all content */}
           <div
@@ -95,53 +105,76 @@ export function MessageGroup({
           </div>
 
           <div className="flex-1 min-w-0 space-y-2">
-            {/* Pre-Tool Message - Intro text before tool calls */}
-            {preToolMessage && preToolMessage.content && (
-              <ChatBubble
-                isLastGroup={isLastGroup}
-                isLastInGroup={false}
-                isLastMessage={false}
-                isLoading={false}
-                message={preToolMessage}
-                showActions={false}
-                showAvatar={false}
+            {/* Tool Rounds - Rendered in order */}
+            {showToolCalls &&
+              toolSteps.map((step, stepIdx) => (
+                <div className="space-y-2" key={`step-${stepIdx}`}>
+                  {/* Intro text for this round (if any) */}
+                  {step.introMessage && step.introMessage.content && (
+                    <ChatBubble
+                      isLastGroup={isLastGroup}
+                      isLoading={false}
+                      message={step.introMessage}
+                      showActions={false}
+                    />
+                  )}
+
+                  {/* Tool call cards for this round */}
+                  {step.toolCalls.length > 0 && (
+                    <div className="space-y-2">
+                      {/* Custom Tool UIs for THIS step only — keeps order intact */}
+                      {step.toolCalls.some((tc) => hasCustomUI(tc.name)) && (
+                        <GenerativeUIRenderer
+                          isLoading={step.toolCalls.some((tc) => tc.status === "loading")}
+                          toolCalls={step.toolCalls.filter((tc) => hasCustomUI(tc.name))}
+                        />
+                      )}
+
+                      {/* Standard Tool Display for THIS step */}
+                      {step.toolCalls.some((tc) => !hasCustomUI(tc.name)) && (
+                        <ToolCallMessage
+                          isLoading={step.toolCalls.some((tc) => tc.status === "loading")}
+                          toolCalls={step.toolCalls.filter((tc) => !hasCustomUI(tc.name))}
+                        />
+                      )}
+
+                      {/* Inline approval banner - appears after the relevant tool round */}
+                      {interrupt && stepIdx === toolSteps.length - 1 && (
+                        <ToolApprovalBanner
+                          data={interrupt.data}
+                          isLoading={interrupt.isLoading}
+                          onApprove={interrupt.onApprove}
+                          onReject={interrupt.onReject}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+            {/* If there are no tool steps but there IS an interrupt (edge case: interrupt fired
+                before any tool step was committed to the message list) */}
+            {interrupt && toolSteps.length === 0 && (
+              <ToolApprovalBanner
+                data={interrupt.data}
+                isLoading={interrupt.isLoading}
+                onApprove={interrupt.onApprove}
+                onReject={interrupt.onReject}
               />
             )}
 
-            {/* Tool Calls - Render after pre-tool message */}
-            {toolCalls.length > 0 && showToolCalls && (
-              <div className="space-y-2">
-                {/* Custom Tool UIs */}
-                <GenerativeUIRenderer
-                  isLoading={toolCalls.some((tc) => tc.status === "loading")}
-                  toolCalls={toolCalls.filter((tc) => hasCustomUI(tc.name))}
-                />
-
-                {/* Standard Tool Display */}
-                {toolCalls.some((tc) => !hasCustomUI(tc.name)) && (
-                  <ToolCallMessage
-                    isLoading={toolCalls.some((tc) => tc.status === "loading")}
-                    toolCalls={toolCalls.filter((tc) => !hasCustomUI(tc.name))}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Assistant Text Message - Final response after tools */}
+            {/* Final Assistant Text Message */}
             {assistantMessage && (assistantMessage.content || assistantMessage.reasoning) && (
               <ChatBubble
                 isLastGroup={isLastGroup}
-                isLastInGroup={true}
-                isLastMessage={isLastGroup}
                 isLoading={isLoading}
                 message={assistantMessage}
                 showActions={false}
-                showAvatar={false}
               />
             )}
 
-            {/* Actions Bar */}
-            {assistantMessage && (
+            {/* Group-level Actions Bar */}
+            {controlsMessage && (
               <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                 {/* Branch Switcher - Only on last group */}
                 {isLastGroup && branchOptions && branchOptions.length > 1 && (
@@ -160,7 +193,7 @@ export function MessageGroup({
                         className="transition-all duration-200 hover:scale-110"
                         disabled={isLoading}
                         onClick={() =>
-                          onRegenerate(firstAssistantMessageId ?? assistantMessage.id, isLastGroup)
+                          onRegenerate(firstAssistantMessageId ?? controlsMessage.id, isLastGroup)
                         }
                         size="icon-sm"
                         variant="ghost"
@@ -186,7 +219,9 @@ export function MessageGroup({
                     <TooltipTrigger asChild>
                       <Button
                         className="transition-all duration-200 hover:scale-110"
-                        onClick={() => navigator.clipboard.writeText(assistantMessage.content)}
+                        onClick={() =>
+                          navigator.clipboard.writeText(controlsMessage.content)
+                        }
                         size="icon-sm"
                         variant="ghost"
                       >
