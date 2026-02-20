@@ -3,12 +3,23 @@ import { persist } from "zustand/middleware";
 
 export type ToolApprovalMode = "always_ask" | "dangerous_only" | "never_ask";
 
+export interface ModelSettings {
+  temperature: number;
+  maxTokens: number;
+  topP: number;
+  topK: number;
+  frequencyPenalty: number;
+  presencePenalty: number;
+  systemPrompt: string;
+}
+
 export interface ChatSettings {
   showToolCalls: boolean;
   showActivityTimeline: boolean;
   toolApprovalMode: ToolApprovalMode;
   autoApproveTools: string[];
   neverApproveTools: string[];
+  modelSettings: ModelSettings;
 }
 
 interface ChatSettingsState {
@@ -22,6 +33,7 @@ interface ChatSettingsState {
   toggleNeverApproveTool: (toolName: string) => void;
   setAutoApproveTools: (tools: string[]) => void;
   setNeverApproveTools: (tools: string[]) => void;
+  setModelSetting: <K extends keyof ModelSettings>(key: K, value: ModelSettings[K]) => void;
 }
 
 export const useChatSettings = create<ChatSettingsState>()(
@@ -33,7 +45,34 @@ export const useChatSettings = create<ChatSettingsState>()(
         toolApprovalMode: "dangerous_only",
         autoApproveTools: [],
         neverApproveTools: [],
+        modelSettings: {
+          temperature: 0.7,
+          maxTokens: 2048,
+          topP: 0.9,
+          topK: 50,
+          frequencyPenalty: 0,
+          presencePenalty: 0,
+          systemPrompt: "",
+        },
       },
+      setModelSetting: (key, value) =>
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            modelSettings: {
+              ...(state.settings.modelSettings || {
+                temperature: 0.7,
+                maxTokens: 2048,
+                topP: 0.9,
+                topK: 50,
+                frequencyPenalty: 0,
+                presencePenalty: 0,
+                systemPrompt: "",
+              }),
+              [key]: value,
+            },
+          },
+        })),
       toggleShowToolCalls: () =>
         set((state) => ({
           settings: {

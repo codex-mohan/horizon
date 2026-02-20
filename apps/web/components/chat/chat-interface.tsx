@@ -6,7 +6,7 @@ import { useConversationStore } from "@/lib/stores/conversation";
 import { AnimatedBackground } from "./animated-background";
 import { ChatArea } from "./chat-area";
 import { DragDropOverlay } from "./drag-drop-overlay";
-import { SettingsSidebar } from "./settings-sidebar";
+import { SettingsDialog } from "./settings-dialog";
 import { Sidebar } from "./sidebar";
 
 export interface Message {
@@ -143,7 +143,7 @@ export function ChatInterface() {
         threadId={currentThreadId}
       />
 
-      <SettingsSidebar isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }

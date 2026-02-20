@@ -3,7 +3,7 @@
 import { Button } from "@workspace/ui/components/button";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { cn } from "@workspace/ui/lib/utils";
-import { Pencil, User } from "lucide-react";
+import { Pencil, User, ChevronDown, ChevronUp } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import MarkdownView from "@/components/markdown-view";
 import { useTheme } from "@/components/theme/theme-provider";
@@ -48,6 +48,9 @@ export const ChatBubble = React.memo(
     const { themeMode } = useTheme();
     const isLightTheme = themeMode === "light";
 
+    const isLongMessage = isUser && (message.content.length > 1000 || message.content.split('\n').length > 15);
+    const [isExpanded, setIsExpanded] = useState(false);
+
     const handleSaveEdit = useCallback(() => {
       if (onEdit && editContent.trim() !== message.content) {
         onEdit(message.id, editContent, isLastGroup);
@@ -91,7 +94,7 @@ export const ChatBubble = React.memo(
           className={cn(
             "flex flex-col gap-2",
             isUser ? "items-end" : "items-start",
-            isEditing ? "w-full max-w-full" : "max-w-[95%]"
+            isEditing ? "w-full max-w-full" : "max-w-[95%] sm:max-w-[85%] md:max-w-[75%]"
           )}
         >
           {/* File Attachments */}
@@ -167,7 +170,25 @@ export const ChatBubble = React.memo(
                 )}
 
                 {/* Message Content */}
-                <MarkdownView text={message.content} />
+                <div
+                  className={cn(
+                    isLongMessage && !isExpanded && "max-h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]"
+                  )}
+                >
+                  <MarkdownView text={message.content} />
+                </div>
+
+                {isLongMessage && (
+                  <div className="mt-2 flex justify-center border-t border-foreground/10 pt-2">
+                    <button
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="flex items-center gap-1.5 text-xs text-foreground/70 hover:text-foreground transition-colors font-medium cursor-pointer"
+                    >
+                      {isExpanded ? 'Show less' : 'Show more'}
+                      {isExpanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* User message action bar — edit only */}

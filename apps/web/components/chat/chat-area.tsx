@@ -348,6 +348,7 @@ export function ChatArea({
 
       // --- Build the human message content (text + images only, NO extracted doc text) ---
       const humanContent: ContentBlock[] = [];
+      const updatedFilesInfo = new Map<string, string>(); // fileId -> newUrl (base64)
 
       if (text.trim()) {
         humanContent.push({ type: "text", text });
@@ -356,6 +357,7 @@ export function ChatArea({
       // Process images - convert to base64 for multimodal
       for (const file of imageFiles) {
         if (file.url) {
+          let finalUrl = file.url;
           if (file.url.startsWith("blob:")) {
             try {
               const response = await fetch(file.url);
@@ -365,6 +367,7 @@ export function ChatArea({
                 reader.onloadend = () => resolve(reader.result as string);
                 reader.readAsDataURL(blob);
               });
+              finalUrl = base64;
               humanContent.push({ type: "image_url", image_url: { url: base64 } });
             } catch (e) {
               console.error("[handleSubmit] Failed to convert image to base64:", e);
@@ -372,6 +375,7 @@ export function ChatArea({
           } else if (file.url.startsWith("data:")) {
             humanContent.push({ type: "image_url", image_url: { url: file.url } });
           }
+          updatedFilesInfo.set(file.id, finalUrl);
         }
       }
 
@@ -383,7 +387,7 @@ export function ChatArea({
         id: f.id,
         name: f.name,
         type: f.type,
-        url: f.url,
+        url: updatedFilesInfo.get(f.id) || f.url,
         size: f.size,
         category: getFileCategory(f.file || new File([], f.name, { type: f.type })),
       }));
@@ -453,6 +457,9 @@ export function ChatArea({
             } as unknown as LangGraphMessage,
           ],
         }),
+        configurable: {
+          model_settings: settings.modelSettings,
+        }
       };
 
       chat.submit({ messages: messagesToSubmit as any }, submitOptions);

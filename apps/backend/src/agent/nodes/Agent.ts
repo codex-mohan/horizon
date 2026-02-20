@@ -32,6 +32,7 @@ function isVisionModel(modelName: string): boolean {
     "llava",
     "cogvlm",
     "qwen-vl",
+    "qwen",
   ];
   const lowerModel = modelName.toLowerCase();
   return visionModels.some((vm) => lowerModel.includes(vm));
@@ -41,14 +42,34 @@ export async function AgentNode(
   state: AgentState,
   _config: RunnableConfig
 ): Promise<Partial<AgentState>> {
-  console.log("[AgentNode] Processing...");
+  console.log("[AgentNode] Processing with config:", _config.configurable?.model_settings);
 
-  const llm = await createLLM();
+  const modelSettings = _config.configurable?.model_settings as any;
+  const mergedConfig = { ...agentConfig };
+
+  if (modelSettings) {
+    if (modelSettings.temperature !== undefined) mergedConfig.TEMPERATURE = modelSettings.temperature;
+    if (modelSettings.maxTokens !== undefined) mergedConfig.MAX_TOKENS = modelSettings.maxTokens;
+  }
+
+  const llm = await createLLM(mergedConfig);
   if (!llm.bindTools) {
     throw new Error("LLM does not support tool binding");
   }
 
-  const llmWithTools = llm.bindTools(tools);
+  let llmWithTools = llm.bindTools(tools);
+
+  if (modelSettings) {
+    const callArgs: Record<string, any> = {};
+    if (modelSettings.topP !== undefined) callArgs.top_p = modelSettings.topP;
+    if (modelSettings.topK !== undefined) callArgs.top_k = modelSettings.topK;
+    if (modelSettings.frequencyPenalty !== undefined) callArgs.frequency_penalty = modelSettings.frequencyPenalty;
+    if (modelSettings.presencePenalty !== undefined) callArgs.presence_penalty = modelSettings.presencePenalty;
+
+    if (Object.keys(callArgs).length > 0) {
+      llmWithTools = llmWithTools.bind(callArgs);
+    }
+  }
 
   let systemPrompt =
     `${agentConfig.CHARACTER}\n\n` +
@@ -60,6 +81,10 @@ export async function AgentNode(
     `Format: ${agentConfig.RESPONSE_FORMAT}\n` +
     `Standards: ${agentConfig.FORMATTING_STANDARDS}\n` +
     `Security: ${agentConfig.SECURITY_REQUIREMENTS}`;
+
+  if (modelSettings?.systemPrompt) {
+    systemPrompt += `\n\nUser Override/Custom Instructions:\n${modelSettings.systemPrompt}`;
+  }
 
   const memories = state.metadata?.retrieved_memories;
   if (memories && memories.length > 0) {

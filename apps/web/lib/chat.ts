@@ -63,6 +63,7 @@ export interface SubmitOptions {
   threadId?: string;
   optimisticValues?: (prev: ChatState) => ChatState;
   metadata?: Record<string, unknown>;
+  configurable?: Record<string, unknown>;
 }
 
 export interface ActionRequest {
@@ -558,7 +559,9 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       }
 
       const config: { configurable: Record<string, unknown> } = {
-        configurable: {},
+        configurable: {
+          ...(options?.configurable || {}),
+        },
       };
 
       if (userId) {

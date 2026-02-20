@@ -9,7 +9,7 @@ import { AnimatedBackground } from "@/components/chat/animated-background";
 import { ChatArea } from "@/components/chat/chat-area";
 import type { AttachedFile, Message } from "@/components/chat/chat-interface";
 import { DragDropOverlay } from "@/components/chat/drag-drop-overlay";
-import { SettingsSidebar } from "@/components/chat/settings-sidebar";
+import { SettingsDialog } from "@/components/chat/settings-dialog";
 import { Sidebar } from "@/components/chat/sidebar";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useConversationStore } from "@/lib/stores/conversation";
@@ -332,7 +332,7 @@ export default function ChatPage() {
           threadId={activeThreadId}
         />
 
-        <SettingsSidebar isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+        <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       </div>
     </>
   );
