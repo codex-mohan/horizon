@@ -34,10 +34,8 @@ const SmartLink: React.FC<{ href: string; children: React.ReactNode }> = ({ href
         if (response.ok) {
           const data = await response.json();
           // Use the fetched title, but fallback to the href if it's empty
-          console.log(`Got title:${data}`);
           setTitle(data.title || href);
         } else {
-          console.error("Failed to fetch title:", response.status);
           setTitle(href);
         }
       } catch (_err) {
@@ -57,10 +55,11 @@ const SmartLink: React.FC<{ href: string; children: React.ReactNode }> = ({ href
   }, [href]);
 
   return (
-    <div
+    <span
       className="relative inline-flex"
       onMouseEnter={() => setIsTooltipVisible(true)}
       onMouseLeave={() => setIsTooltipVisible(false)}
+      role="tooltip"
     >
       <a
         className="inline-flex items-center gap-1 text-primary underline decoration-primary/50 underline-offset-2 transition-colors hover:text-primary/80"
@@ -86,13 +85,15 @@ const SmartLink: React.FC<{ href: string; children: React.ReactNode }> = ({ href
             </div>
           ) : (
             <div>
-              <p className="font-semibold text-foreground">{title}</p>
-              <p className="mt-1 max-w-full truncate text-muted-foreground text-xs">{href}</p>
+              <span className="block font-semibold text-foreground">{title}</span>
+              <span className="mt-1 block max-w-full truncate text-muted-foreground text-xs">
+                {href}
+              </span>
             </div>
           )}
         </div>
       )}
-    </div>
+    </span>
   );
 };
 
