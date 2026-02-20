@@ -3,7 +3,7 @@
 import { Button } from "@workspace/ui/components/button";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { cn } from "@workspace/ui/lib/utils";
-import { Pencil, User, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, User } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import MarkdownView from "@/components/markdown-view";
 import { useTheme } from "@/components/theme/theme-provider";
@@ -48,7 +48,8 @@ export const ChatBubble = React.memo(
     const { themeMode } = useTheme();
     const isLightTheme = themeMode === "light";
 
-    const isLongMessage = isUser && (message.content.length > 1000 || message.content.split('\n').length > 15);
+    const isLongMessage =
+      isUser && (message.content.length > 1000 || message.content.split("\n").length > 15);
     const [isExpanded, setIsExpanded] = useState(false);
 
     const handleSaveEdit = useCallback(() => {
@@ -93,8 +94,8 @@ export const ChatBubble = React.memo(
         <div
           className={cn(
             "flex flex-col gap-2",
-            isUser ? "items-end" : "items-start",
-            isEditing ? "w-full max-w-full" : "max-w-[95%] sm:max-w-[85%] md:max-w-[75%]"
+            isUser ? "items-end max-w-[70%]" : "items-center-safe max-w-[90%]",
+            isEditing ? "w-full max-w-full" : ""
           )}
         >
           {/* File Attachments */}
@@ -148,13 +149,13 @@ export const ChatBubble = React.memo(
             <>
               <div
                 className={cn(
-                  "relative min-w-[120px] wrap-break-word rounded-xl p-4 font-body leading-relaxed",
+                  "relative wrap-break-word rounded-xl px-4 py-2 font-body leading-relaxed",
                   isUser
                     ? cn(
                       isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
                       "text-foreground"
                     )
-                    : "w-full text-foreground"
+                    : "w-full min-w-[120px] text-foreground"
                 )}
               >
                 {/* Reasoning Block (assistant only) */}
@@ -172,10 +173,16 @@ export const ChatBubble = React.memo(
                 {/* Message Content */}
                 <div
                   className={cn(
-                    isLongMessage && !isExpanded && "max-h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]"
+                    isLongMessage &&
+                    !isExpanded &&
+                    "max-h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]"
                   )}
                 >
-                  <MarkdownView text={message.content} />
+                  {isUser ? (
+                    <div className="whitespace-pre-wrap">{message.content}</div>
+                  ) : (
+                    <MarkdownView text={message.content} />
+                  )}
                 </div>
 
                 {isLongMessage && (
@@ -184,8 +191,12 @@ export const ChatBubble = React.memo(
                       onClick={() => setIsExpanded(!isExpanded)}
                       className="flex items-center gap-1.5 text-xs text-foreground/70 hover:text-foreground transition-colors font-medium cursor-pointer"
                     >
-                      {isExpanded ? 'Show less' : 'Show more'}
-                      {isExpanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                      {isExpanded ? "Show less" : "Show more"}
+                      {isExpanded ? (
+                        <ChevronUp className="size-3.5" />
+                      ) : (
+                        <ChevronDown className="size-3.5" />
+                      )}
                     </button>
                   </div>
                 )}

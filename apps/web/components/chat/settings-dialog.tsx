@@ -3,9 +3,8 @@
 import { Button } from "@workspace/ui/components/button";
 import { GradientButton } from "@workspace/ui/components/gradient-button";
 import { GradientSlider } from "@workspace/ui/components/gradient-slider";
-import { Input } from "@workspace/ui/components/input";
+import { Textarea } from "@workspace/ui/components/textarea";
 import { Label } from "@workspace/ui/components/label";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { cn } from "@workspace/ui/lib/utils";
 import { X } from "lucide-react";
 import { useChatSettings } from "@/lib/stores/chat-settings";
@@ -32,7 +31,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
   return (
     <div
       className={cn(
-        "fixed inset-0 z-50 flex items-start justify-center bg-background/80 pt-[10vh] backdrop-blur-sm transition-all duration-300 ease-out",
+        "fixed inset-0 z-50 flex items-start justify-center bg-background/80 pt-[5vh] backdrop-blur-sm transition-all duration-300 ease-out",
         isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       )}
     >
@@ -40,7 +39,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
 
       <div
         className={cn(
-          "glass-strong relative z-10 flex w-[90vw] max-w-3xl flex-col overflow-hidden rounded-2xl border-border shadow-2xl transition-all duration-300 ease-out",
+          "glass-strong relative z-10 flex w-[90vw] max-w-3xl flex-col overflow-hidden rounded-2xl border-border shadow-2xl transition-all duration-300 ease-out max-h-[90vh]",
           isOpen ? "scale-100 translate-y-0 opacity-100" : "scale-95 -translate-y-8 opacity-0"
         )}
       >
@@ -58,7 +57,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
           </Button>
         </div>
 
-        <ScrollArea className="max-h-[60vh] p-6 lg:p-8">
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 pb-4 lg:p-8 lg:pb-4">
           <div className="grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-2">
             <div className="stagger-item space-y-3">
               <div className="flex items-center justify-between">
@@ -73,7 +72,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
                 min={0}
                 onValueChange={(val) => setModelSetting("temperature", val[0])}
                 step={0.1}
-                thumbClassName="w-5 h-5 bg-background shadow-lg border-2 border-primary/50"
+                thumbClassName="w-4 h-4 bg-white"
                 trackClassName="h-3 rounded-full"
                 value={[ms.temperature]}
               />
@@ -95,7 +94,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
                 min={256}
                 onValueChange={(val) => setModelSetting("maxTokens", val[0])}
                 step={256}
-                thumbClassName="w-5 h-5 bg-background shadow-lg border-2 border-primary/50"
+                thumbClassName="w-4 h-4 bg-white"
                 trackClassName="h-3 rounded-full"
                 value={[ms.maxTokens]}
               />
@@ -117,7 +116,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
                 min={0}
                 onValueChange={(val) => setModelSetting("topP", val[0])}
                 step={0.05}
-                thumbClassName="w-5 h-5 bg-background shadow-lg border-2 border-primary/50"
+                thumbClassName="w-4 h-4 bg-white"
                 trackClassName="h-3 rounded-full"
                 value={[ms.topP]}
               />
@@ -139,7 +138,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
                 min={1}
                 onValueChange={(val) => setModelSetting("topK", val[0])}
                 step={1}
-                thumbClassName="w-5 h-5 bg-background shadow-lg border-2 border-primary/50"
+                thumbClassName="w-4 h-4 bg-white"
                 trackClassName="h-3 rounded-full"
                 value={[ms.topK]}
               />
@@ -161,7 +160,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
                 min={-2}
                 onValueChange={(val) => setModelSetting("frequencyPenalty", val[0])}
                 step={0.1}
-                thumbClassName="w-5 h-5 bg-background shadow-lg border-2 border-primary/50"
+                thumbClassName="w-4 h-4 bg-white"
                 trackClassName="h-3 rounded-full"
                 value={[ms.frequencyPenalty]}
               />
@@ -183,7 +182,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
                 min={-2}
                 onValueChange={(val) => setModelSetting("presencePenalty", val[0])}
                 step={0.1}
-                thumbClassName="w-5 h-5 bg-background shadow-lg border-2 border-primary/50"
+                thumbClassName="w-4 h-4 bg-white"
                 trackClassName="h-3 rounded-full"
                 value={[ms.presencePenalty]}
               />
@@ -196,10 +195,11 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
               <Label className="font-display text-sm font-medium" htmlFor="system-prompt">
                 System Prompt Template Override
               </Label>
-              <Input
-                className="glass transition-all duration-200 focus:border-primary/50 focus:ring-1 focus:ring-primary/30"
+              <Textarea
+                className="glass min-h-[120px] resize-none overflow-y-auto transition-all duration-200 focus:border-primary/50 focus:ring-1 focus:ring-primary/30"
                 id="system-prompt"
                 placeholder="Append custom system instructions here (e.g. You are an expert in Physics...)"
+                rows={4}
                 value={ms.systemPrompt}
                 onChange={(e) => setModelSetting("systemPrompt", e.target.value)}
               />
@@ -208,7 +208,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
               </p>
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="border-border border-t bg-card/10 p-5">
           <div className="flex justify-end">

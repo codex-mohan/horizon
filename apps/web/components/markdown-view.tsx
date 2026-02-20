@@ -41,45 +41,81 @@ const ensureKatexCSS = () => {
     document.head.appendChild(link);
   }
 
-  // Inject display/inline math layout fixes
+  // Always overwrite — NOT an early-exit check — so hot-reload picks up changes.
   const styleId = "katex-layout-fixes";
-  if (!document.getElementById(styleId)) {
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.textContent = `
-      /* Display math: centered block with vertical breathing room */
-      .katex-display {
-        display: block !important;
-        text-align: center !important;
-        margin: 1.25em auto !important;
-        overflow-x: auto;
-        overflow-y: hidden;
-      }
-      /* Prevent the wrapping <p> from collapsing display math */
-      .katex-display > .katex {
-        display: inline-block;
-        white-space: nowrap;
-      }
-      /* Reset KaTeX's own line-height so sub/superscripts don't clip */
-      .katex {
-        line-height: normal;
-        font-size: 1.0em;
-      }
-      /* Give paragraphs and list items containing math enough room
-         so subscripts/superscripts don't overlap adjacent lines */
-      p:has(.katex),
-      li:has(.katex) {
-        line-height: 2.4 !important;
-      }
-      /* Inline math baseline alignment */
-      .katex:not(.katex-display > .katex) {
-        display: inline-block !important;
-        vertical-align: middle;
-      }
-    `;
-    document.head.appendChild(style);
+  let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = styleId;
+    document.head.appendChild(styleEl);
   }
+
+  styleEl.textContent = `
+    /* ── Display math ($$...$$) ─────────────────────────────────────── */
+    .katex-display {
+      display: block !important;
+      text-align: center !important;
+      margin: 1.5em auto !important;
+      overflow-x: auto;
+      overflow-y: visible;
+    }
+    .katex-display > .katex {
+      display: inline-block;
+      white-space: nowrap;
+    }
+    /* Center the wrapping <p> that ReactMarkdown generates for $$...$$ */
+    p:has(> .katex-display),
+    p:has(> span > .katex-display) {
+      text-align: center;
+    }
+
+    /* ── All KaTeX ───────────────────────────────────────────────────── */
+    /*
+     * KaTeX renders sub/superscripts with  position:relative; top:-Xem
+     * inside .vlist elements. This moves them VISUALLY outside the .katex
+     * span's layout box without affecting the box's reported height.
+     * line-height cannot fix this — the overflow is purely visual.
+     *
+     * Solution: (a) keep line-height reasonable inside .katex, and
+     * (b) add physical margin-top on containing paragraphs/list-items
+     *     so the visually-overflowing scripts have real space above them.
+     */
+    .katex {
+      line-height: 1.2;
+      font-size: 1.0em;
+    }
+
+    /* ── Inline math ─────────────────────────────────────────────────── */
+    /*
+     * vertical-align: baseline  ← DO NOT change to "middle".
+     * "middle" snaps the math midpoint to the line midpoint, hoisting
+     * the already-overflowing superscripts even further upward.
+     */
+    .katex:not(.katex-display > .katex) {
+      display: inline-block !important;
+      vertical-align: baseline;
+    }
+
+    /* ── Containing paragraphs / list items ──────────────────────────── */
+    /*
+     * Physical margin-top creates real space so KaTeX script overflow
+     * doesn't bleed into the previous DOM sibling's visual area.
+     * margin-bottom gives similar room for deep subscripts.
+     * line-height 2 keeps consecutive text lines from crowding the math.
+     */
+    p:has(.katex):not(:has(.katex-display)) {
+      margin-top: 1.2em !important;
+      margin-bottom: 0.5em !important;
+      line-height: 2 !important;
+    }
+    li:has(.katex) {
+      margin-top: 1.2em !important;
+      margin-bottom: 0.4em !important;
+      line-height: 2 !important;
+    }
+  `;
 };
+
 
 // FIXED: Use direct language extensions instead of langs object
 const getLanguageExtension = (lang: string) => {
@@ -189,7 +225,7 @@ const getLanguageExtension = (lang: string) => {
         return null;
     }
   } catch (error) {
-    console.warn(`Failed to load language extension for ${langKey}:`, error);
+    console.warn(`Failed to load language extension for ${langKey}: `, error);
     return null;
   }
 };
@@ -254,7 +290,7 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
     const languageExt = useMemo(() => {
       const ext = getLanguageExtension(langHint || "");
       if (langHint && !ext) {
-        console.warn(`Language extension not found for: ${langHint}`);
+        console.warn(`Language extension not found for: ${langHint} `);
       }
       return ext;
     }, [langHint]);
@@ -278,9 +314,9 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
 
     const handleDownload = () => {
       const extension = languageExtensions[langHint?.toLowerCase() || ""] || "txt";
-      const filename = `code.${extension}`;
+      const filename = `code.${extension} `;
       const blob = new Blob([code], {
-        type: `text/${extension};charset=utf-8;`,
+        type: `text / ${extension}; charset = utf - 8; `,
       });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -401,7 +437,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         );
       },
       p: ({ children }: any) => (
-        <p className="my-3 break-words font-body text-[1.0625rem] text-foreground/90 leading-relaxed last:mb-0">
+        <p className="my-3 wrap-break-word font-body text-[1.0625rem] text-foreground/90 leading-relaxed last:mb-0">
           {children}
         </p>
       ),
@@ -422,13 +458,13 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
       ),
       ul: (props: any) => (
         <ul
-          className="[&_span]:m-0! [&_span]:inline! my-3 list-disc pl-5 text-[1.0625rem] [&>li]:mt-1.5"
+          className="my-3 list-disc pl-5 text-[1.0625rem] [&>li]:mt-1.5"
           {...props}
         />
       ),
       ol: (props: any) => (
         <ol
-          className="[&_span]:m-0! [&_span]:inline! my-3 list-decimal pl-5 text-[1.0625rem] [&>li]:mt-1.5"
+          className="my-3 list-decimal pl-5 text-[1.0625rem] [&>li]:mt-1.5"
           {...props}
         />
       ),
@@ -526,7 +562,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
                 src={`https://www.youtube.com/embed/${videoId}`}
                 title="YouTube video player"
               />
-            </div>
+            </div >
           );
         }
 
