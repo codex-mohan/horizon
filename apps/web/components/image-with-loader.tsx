@@ -61,14 +61,13 @@ const ZoomableImageWithLoader = ({
   };
 
   return (
-    <div className="group relative flex items-center justify-center">
+    <div className={cn("group relative flex w-full items-center justify-center", className)}>
       {/* The clickable thumbnail area */}
       <button
         className={cn(
-          "relative overflow-hidden border border-zinc-700 transition",
+          "relative block h-full w-full overflow-hidden border border-zinc-700 transition rounded-lg",
           "focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-zinc-900",
-          "bg-zinc-800", // Set a background for loading/error states
-          className // For sizing and aspect ratio
+          "bg-zinc-800" // Set a background for loading/error states
         )}
         disabled={isLoading || isError}
         onClick={openModal}

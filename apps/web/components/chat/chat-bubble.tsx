@@ -94,7 +94,7 @@ export const ChatBubble = React.memo(
         <div
           className={cn(
             "flex flex-col gap-2",
-            isUser ? "items-end max-w-[70%]" : "items-center-safe max-w-[90%]",
+            isUser ? "items-end max-w-[70%]" : "items-center max-w-[90%]",
             isEditing ? "w-full max-w-full" : ""
           )}
         >

@@ -553,7 +553,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         // If it's a YouTube link, render an embed
         if (videoId) {
           return (
-            <div className="my-4 aspect-video overflow-hidden rounded-lg border border-border bg-black">
+            <div className="my-4 mx-auto aspect-video w-full min-w-[280px] sm:min-w-[400px] md:min-w-[500px] max-w-3xl overflow-hidden rounded-xl border border-border bg-black shadow-md">
               <iframe
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -577,7 +577,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         // Also check if an image tag is being used to embed a YouTube video
         if (videoId) {
           return (
-            <div className="my-2 aspect-video overflow-hidden rounded-lg border border-border bg-black">
+            <div className="my-4 mx-auto aspect-video w-full min-w-[280px] sm:min-w-[400px] md:min-w-[500px] max-w-3xl overflow-hidden rounded-xl border border-border bg-black shadow-md">
               <iframe
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -593,7 +593,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         return (
           <ZoomableImageWithLoader
             alt={alt}
-            className="my-2 aspect-video w-full max-w-xl rounded-lg"
+            className="my-4 mx-auto aspect-video min-w-[280px] sm:min-w-[400px] md:min-w-[500px] max-w-3xl rounded-xl shadow-md"
             // Add sizing and margin classes for the thumbnail display and align center
             src={src}
             {...props}
