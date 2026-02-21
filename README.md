@@ -4,12 +4,12 @@
 
 # H O R I Z O N
 
-**The Event Horizon of Personal Intelligence**
+**Your Personal Agentic AI Assistant**
 
 <p>
-An agentic AI assistant capable of system operations, browser automation, and hybrid model orchestration.
+A privacy-focused AI assistant with system operations, browser automation, and multi-model support.
 <br />
-Built for local privacy, styled with glassmorphism.
+Run locally, scale globally.
 </p>
 
 <p>
@@ -57,11 +57,34 @@ Built for local privacy, styled with glassmorphism.
 
 ## 🚀 About The Project
 
-**Horizon** is not just a chatbot—it is a sophisticated agentic framework designed to bridge the gap between large language models (LLMs) and your local operating environment. Inspired by the concept of an event horizon—the point of no return where gravity becomes absolute—this application serves as your singular entry point for digital tasks, combining powerful AI capabilities with elegant design.
+**Horizon** is an agentic AI assistant that bridges large language models with your local operating system. Unlike traditional chatbots, Horizon can execute system commands, browse the web, manage files, and run code—all through natural conversation.
 
-Built with a modern monorepo architecture using **Turborepo** and **Bun**, Horizon seamlessly integrates a stunning **Next.js 16** frontend with a robust **LangGraph-powered** TypeScript backend. The result is a full-stack AI assistant that can plan, reason, and execute complex multi-step workflows while maintaining a beautiful, responsive user interface.
+### 🎯 The Problem
 
-### 🎯 What Makes Horizon Unique
+Most AI assistants operate in isolation, unable to interact with your actual system. They can generate text but can't execute commands, access files, or automate workflows. This creates a gap between AI capabilities and real-world tasks.
+
+### 💡 The Solution
+
+Horizon provides a unified interface where AI meets your operating system:
+
+- **System Operations**: Execute terminal commands, manage files, monitor system resources
+- **Browser Automation**: Search the web, extract content, summarize information
+- **Code Execution**: Run code safely in sandboxed environments
+- **Multi-Model Support**: Switch between OpenAI, Anthropic, Groq, Gemini, or local Ollama models
+
+### 📍 Current State
+
+Horizon currently features a local web UI with a LangGraph-powered TypeScript backend. It supports conversation memory, custom assistants, human-in-the-loop tool approvals, and a glassmorphic design with multiple themes.
+
+### 🔮 Roadmap
+
+Future releases will include scalable server architecture designed for millions of concurrent users, with production-ready deployment configurations and distributed processing capabilities.
+
+### 💜 Inspiration
+
+This project draws inspiration from [bolt.diy](https://github.com/stackblitz-labs/bolt.diy), a frontend coding agent with a similar architecture combining a web UI with a backend agent system.
+
+### ✨ What Makes Horizon Unique
 
 - **🔒 Local-First Privacy**: Run entirely on your machine with local LLM support via Ollama
 - **🧠 Multi-Model Orchestration**: Seamlessly switch between cloud and local models based on task requirements
@@ -408,13 +431,13 @@ Distributed under the MIT License. See `LICENSE` for more information.
 Mohana Krishna
 
 <p>
-  <a href="mailto:your.email@example.com">
+  <a href="mailto:codexmohan@gmail.com">
     <img src="https://img.shields.io/badge/EMAIL-EA4335?style=for-the-badge&logo=gmail&logoColor=white&labelColor=0D0D0D" alt="Email" />
   </a>
-  <a href="https://github.com/yourusername">
+  <a href="https://github.com/codex-mohan">
     <img src="https://img.shields.io/badge/GITHUB-181717?style=for-the-badge&logo=github&logoColor=white&labelColor=0D0D0D" alt="GitHub" />
   </a>
-  <a href="https://linkedin.com/in/yourusername">
+  <a href="https://linkedin.com/in/codex-mohan">
     <img src="https://img.shields.io/badge/LINKEDIN-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white&labelColor=0D0D0D" alt="LinkedIn" />
   </a>
 </p>
