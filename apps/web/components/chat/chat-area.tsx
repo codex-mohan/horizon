@@ -20,6 +20,7 @@ import { createThreadsClient } from "@/lib/threads";
 import { generateConversationTitle } from "@/lib/title-utils";
 import { getToolUIConfig } from "@/lib/tool-config";
 import { ChatEmptyState } from "./chat-empty-state";
+import { ChatIndex } from "./chat-index";
 import type { AttachedFile as ChatInputAttachedFile } from "./chat-input";
 import { ChatInputArea } from "./chat-input-area";
 import type { AttachedFile, Message } from "./chat-interface";
@@ -28,10 +29,6 @@ import { MessageGroup } from "./message-group";
 import { groupMessages } from "./message-grouping";
 import type { ToolApprovalData } from "./tool-approval-banner";
 import type { ToolCall } from "./tool-call-message";
-
-// ============================================================================
-// MAIN CHAT AREA
-// ============================================================================
 
 interface ChatAreaProps {
   messages: Message[];
@@ -53,6 +50,7 @@ export function ChatArea({
   onThreadChange,
 }: ChatAreaProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const [visibleMessageIds, setVisibleMessageIds] = useState<Set<string>>(new Set());
 
   const { themeMode } = useTheme();
   const isLightTheme = themeMode === "light";
@@ -73,6 +71,8 @@ export function ChatArea({
   const [liveActivityEvents, setLiveActivityEvents] = useState<ChatProcessedEvent[]>([]);
   const [currentToolCalls, setCurrentToolCalls] = useState<ToolCall[]>([]);
   const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const wasLoadingRef = useRef(false);
 
   // Holds the generated title for the current first message until chat.threadId arrives
   const pendingTitleRef = useRef<string | null>(null);
@@ -181,13 +181,46 @@ export function ChatArea({
     client
       .updateThread(chat.threadId, { title })
       .then(() => triggerThreadRefresh())
-      .catch(() => {/* non-critical */ });
+      .catch(() => {
+        /* non-critical */
+      });
   }, [chat.threadId, triggerThreadRefresh]);
 
   // Group messages
   const messageGroups = useMemo(() => {
     return groupMessages(chat.messages, chat, hiddenMessageIds);
   }, [chat.messages, chat, hiddenMessageIds]);
+
+  // Track which message groups are in the viewport using IntersectionObserver
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setVisibleMessageIds((prev) => {
+          const next = new Set(prev);
+          for (const entry of entries) {
+            const id = (entry.target as HTMLElement).dataset.groupId;
+            if (!id) continue;
+            if (entry.isIntersecting) {
+              next.add(id);
+            } else {
+              next.delete(id);
+            }
+          }
+          return next;
+        });
+      },
+      { root: container, threshold: 0.1 }
+    );
+
+    // Observe all current group elements
+    const groupEls = container.querySelectorAll("[data-group-id]");
+    groupEls.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [messageGroups]);
 
   // Clear loading states when done
   useEffect(() => {
@@ -220,13 +253,46 @@ export function ChatArea({
     }
   }, [threadId]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom on initial mount
   useEffect(() => {
     chatContainerRef.current?.scrollTo({
       top: chatContainerRef.current.scrollHeight,
-      behavior: "smooth",
+      behavior: "instant",
     });
   }, []);
+
+  // Track if user is near bottom (within 150px threshold)
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      setIsNearBottom(distanceFromBottom < 150);
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Auto-scroll when new messages arrive, but only if user is near bottom or was loading
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container || !chat.messages.length) return;
+
+    const wasLoading = wasLoadingRef.current;
+    wasLoadingRef.current = chat.isLoading;
+
+    if (isNearBottom || wasLoading) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [chat.messages, chat.isLoading, isNearBottom]);
 
   // ============================================================================
   // MESSAGE ACTIONS
@@ -432,7 +498,6 @@ export function ChatArea({
         });
       }
 
-
       console.log("[handleSubmit] Submitting messages:", {
         count: messagesToSubmit.length,
         hasImages,
@@ -459,7 +524,7 @@ export function ChatArea({
         }),
         configurable: {
           model_settings: settings.modelSettings,
-        }
+        },
       };
 
       chat.submit({ messages: messagesToSubmit as any }, submitOptions);
@@ -481,7 +546,6 @@ export function ChatArea({
       if (isFirstMessage) {
         pendingTitleRef.current = generateConversationTitle(text);
       }
-
     },
     [chat, onAttachedFilesChange]
   );
@@ -514,109 +578,144 @@ export function ChatArea({
     });
   }, [chat.isWaitingForInterrupt, chat.interrupt]);
 
+  // Collect index entries from messageGroups for the right-rail scrubber
+  const indexEntries = useMemo(() => {
+    const entries: Array<{ id: string; role: "user" | "assistant" }> = [];
+    for (const group of messageGroups) {
+      if (group.userMessage) {
+        entries.push({ id: group.id, role: "user" });
+      }
+      if (group.assistantMessage || group.toolSteps.length > 0) {
+        entries.push({ id: group.id + "-assistant", role: "assistant" });
+      }
+    }
+    return entries;
+  }, [messageGroups]);
+
+  // Jump to a message group by scrolling it into view
+  const handleJumpToMessage = useCallback((id: string) => {
+    const cleanId = id.replace("-assistant", "");
+    const el = chatContainerRef.current?.querySelector(`[data-group-id="${cleanId}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
+
   return (
     <div className="relative z-10 flex flex-1 flex-col">
       {/* Messages Container */}
-      <div
-        className={cn(
-          "custom-scrollbar flex-1 overflow-y-auto",
-          hasMessages ? "p-4" : "flex items-center justify-center"
-        )}
-        ref={chatContainerRef}
-      >
-        {hasMessages ? (
-          // Messages List - Render by Groups
-          <div className="mx-auto w-full max-w-4xl space-y-6">
-            {/* Error Display */}
-            {chatError && (
-              <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-                <p className="font-medium text-sm">Error</p>
-                <p className="text-xs opacity-80">{chatError}</p>
-              </div>
-            )}
+      <div className="relative flex-1 min-h-0">
+        <div
+          className={cn(
+            "custom-scrollbar h-full overflow-y-auto",
+            hasMessages ? "px-4 pb-4 pt-6" : "flex items-center justify-center"
+          )}
+          ref={chatContainerRef}
+        >
+          {hasMessages ? (
+            // Messages List - Render by Groups
+            <div className="mx-auto w-full max-w-3xl space-y-6">
+              {/* Error Display */}
+              {chatError && (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+                  <p className="font-medium text-sm">Error</p>
+                  <p className="text-xs opacity-80">{chatError}</p>
+                </div>
+              )}
 
-            {/* Message Groups */}
-            {messageGroups.map((group, groupIdx) => {
-              const isLastGroup = groupIdx === messageGroups.length - 1;
+              {/* Message Groups */}
+              {messageGroups.map((group, groupIdx) => {
+                const isLastGroup = groupIdx === messageGroups.length - 1;
 
-              // Pass interrupt inline to the last group so the approval banner
-              // appears adjacent to the tool that triggered it — not detached
-              // at the bottom of the message list.
-              const interruptProp =
-                isLastGroup && chat.isWaitingForInterrupt && chat.interrupt
-                  ? {
-                    data: {
-                      type: "tool_approval_required" as const,
-                      tool_call: {
-                        id: "0",
-                        name: chat.interrupt.action_requests[0]?.name || "unknown",
-                        args: chat.interrupt.action_requests[0]?.arguments || {},
-                        status: "pending",
-                      },
-                      all_pending_tools: chat.interrupt.action_requests.map((ar, idx) => ({
-                        id: String(idx),
-                        name: ar.name,
-                        args: ar.arguments,
-                        status: "pending",
-                      })),
-                      auto_execute_tools: [],
-                      message: chat.interrupt.action_requests
-                        .map((ar) => ar.description)
-                        .join("\n"),
-                    } satisfies ToolApprovalData,
-                    onApprove: () => chat.approveInterrupt(),
-                    onReject: () => chat.rejectInterrupt(),
-                    isLoading: chat.isResuming,
-                  }
-                  : undefined;
+                // Pass interrupt inline to the last group so the approval banner
+                // appears adjacent to the tool that triggered it — not detached
+                // at the bottom of the message list.
+                const interruptProp =
+                  isLastGroup && chat.isWaitingForInterrupt && chat.interrupt
+                    ? {
+                        data: {
+                          type: "tool_approval_required" as const,
+                          tool_call: {
+                            id: "0",
+                            name: chat.interrupt.action_requests[0]?.name || "unknown",
+                            args: chat.interrupt.action_requests[0]?.arguments || {},
+                            status: "pending",
+                          },
+                          all_pending_tools: chat.interrupt.action_requests.map((ar, idx) => ({
+                            id: String(idx),
+                            name: ar.name,
+                            args: ar.arguments,
+                            status: "pending",
+                          })),
+                          auto_execute_tools: [],
+                          message: chat.interrupt.action_requests
+                            .map((ar) => ar.description)
+                            .join("\n"),
+                        } satisfies ToolApprovalData,
+                        onApprove: () => chat.approveInterrupt(),
+                        onReject: () => chat.rejectInterrupt(),
+                        isLoading: chat.isResuming,
+                      }
+                    : undefined;
 
-              return (
-                <MessageGroup
-                  assistantMessage={group.assistantMessage}
-                  branch={group.branch}
-                  branchOptions={group.branchOptions}
-                  firstAssistantMessageId={group.firstAssistantMessageId}
-                  id={group.id}
-                  interrupt={interruptProp}
-                  isLastGroup={isLastGroup}
-                  isLoading={chat.isLoading}
-                  key={group.id}
-                  onBranchChange={handleBranchChange}
-                  onDelete={handleDelete}
-                  onEdit={handleEdit}
-                  onRegenerate={handleRegenerate}
+                return (
+                  <MessageGroup
+                    assistantMessage={group.assistantMessage}
+                    branch={group.branch}
+                    branchOptions={group.branchOptions}
+                    firstAssistantMessageId={group.firstAssistantMessageId}
+                    id={group.id}
+                    interrupt={interruptProp}
+                    isLastGroup={isLastGroup}
+                    isLoading={chat.isLoading}
+                    key={group.id}
+                    onBranchChange={handleBranchChange}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
+                    onRegenerate={handleRegenerate}
+                    showToolCalls={settings.showToolCalls}
+                    toolSteps={group.toolSteps}
+                    userMessage={group.userMessage}
+                  />
+                );
+              })}
+
+              {/* Tool Approval Banner is now rendered inline inside the last MessageGroup */}
+
+              {/* Loading Indicator */}
+              {showLoading && (
+                <ChatLoadingIndicator
+                  currentToolCalls={currentToolCalls}
+                  isLightTheme={isLightTheme}
+                  liveActivityEvents={liveActivityEvents}
+                  showActivityTimeline={settings.showActivityTimeline}
                   showToolCalls={settings.showToolCalls}
-                  toolSteps={group.toolSteps}
-                  userMessage={group.userMessage}
                 />
-              );
-            })}
+              )}
+            </div>
+          ) : (
+            <ChatEmptyState
+              attachedFiles={attachedFiles}
+              isLightTheme={isLightTheme}
+              isLoading={chat.isLoading}
+              onAttachedFilesChange={onAttachedFilesChange}
+              onRemoveFile={handleRemoveFile}
+              onSettingsOpen={onSettingsOpen}
+              onStop={handleStop}
+              onSubmit={handleSubmit}
+              onToggleToolCalls={toggleShowToolCalls}
+              showToolCalls={settings.showToolCalls}
+            />
+          )}
+        </div>
 
-            {/* Tool Approval Banner is now rendered inline inside the last MessageGroup */}
-
-            {/* Loading Indicator */}
-            {showLoading && (
-              <ChatLoadingIndicator
-                currentToolCalls={currentToolCalls}
-                isLightTheme={isLightTheme}
-                liveActivityEvents={liveActivityEvents}
-                showActivityTimeline={settings.showActivityTimeline}
-                showToolCalls={settings.showToolCalls}
-              />
-            )}
-          </div>
-        ) : (
-          <ChatEmptyState
-            attachedFiles={attachedFiles}
-            isLightTheme={isLightTheme}
-            isLoading={chat.isLoading}
-            onAttachedFilesChange={onAttachedFilesChange}
-            onRemoveFile={handleRemoveFile}
-            onSettingsOpen={onSettingsOpen}
-            onStop={handleStop}
-            onSubmit={handleSubmit}
-            onToggleToolCalls={toggleShowToolCalls}
-            showToolCalls={settings.showToolCalls}
+        {/* Grok-style Chat Message Index — horizontal dashes just left of scrollbar */}
+        {hasMessages && (
+          <ChatIndex
+            entries={indexEntries}
+            visibleIds={visibleMessageIds}
+            onJump={handleJumpToMessage}
+            scrollContainerRef={chatContainerRef}
           />
         )}
       </div>
