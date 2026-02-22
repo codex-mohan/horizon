@@ -8,13 +8,13 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
-import { Bot, Copy, RefreshCw } from "lucide-react";
+import { Bot, Copy, CornerDownRight, RefreshCw } from "lucide-react";
+import type { ToolStep } from "@/lib/message-grouping";
 import { hasCustomUI } from "@/lib/tool-config";
 import { BranchSwitcher } from "./branch-switcher";
 import { ChatBubble } from "./chat-bubble";
 import type { Message } from "./chat-interface";
 import { GenerativeUIRenderer } from "./generative-ui-renderer";
-import type { ToolStep } from "@/lib/message-grouping";
 import type { ToolApprovalData } from "./tool-approval-banner";
 import { ToolApprovalBanner } from "./tool-approval-banner";
 import { type ToolCall, ToolCallMessage } from "./tool-call-message";
@@ -32,10 +32,12 @@ interface MessageGroupProps {
   branch?: string;
   branchOptions?: string[];
   isLoading: boolean;
+  hasPendingTasks?: boolean;
   showToolCalls: boolean;
   onEdit: (messageId: string, content: string, isLastGroup: boolean) => void;
   onDelete: (id: string) => void;
   onRegenerate: (messageId: string, isLastGroup: boolean) => void;
+  onContinue?: (messageId: string) => void;
   onBranchChange: (branch: string) => void;
   /** When set, renders a ToolApprovalBanner inline at the bottom of the assistant section */
   interrupt?: {
@@ -66,17 +68,25 @@ export function MessageGroup({
   branch,
   branchOptions,
   isLoading,
+  hasPendingTasks,
   showToolCalls,
   onEdit,
   onDelete,
   onRegenerate,
+  onContinue,
   onBranchChange,
   interrupt,
 }: MessageGroupProps) {
   const hasAssistantContent = !!(assistantMessage || toolSteps.length > 0);
 
-  // The message to use as the copy/regenerate reference (prefer final response)
-  const controlsMessage = assistantMessage ?? toolSteps.at(-1)?.introMessage ?? null;
+  // The message to use as the copy/regenerate reference
+  // Prefer final response, fall back to intro message, then to last tool step
+  const controlsMessage =
+    assistantMessage ??
+    toolSteps.at(-1)?.introMessage ??
+    (toolSteps.length > 0
+      ? { id: `${id}-tool`, role: "assistant" as const, content: "", timestamp: new Date() }
+      : null);
 
   return (
     <div className="space-y-3" data-group-id={id}>
@@ -213,15 +223,39 @@ export function MessageGroup({
                   </Tooltip>
                 </TooltipProvider>
 
+                {/* Continue Button - Only on last group when not loading and there's assistant content */}
+                {isLastGroup &&
+                  !isLoading &&
+                  onContinue &&
+                  (assistantMessage || toolSteps.length > 0) && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            className="transition-all duration-200 hover:scale-110"
+                            onClick={() =>
+                              onContinue(assistantMessage?.id ?? firstAssistantMessageId ?? "")
+                            }
+                            size="icon-sm"
+                            variant="ghost"
+                          >
+                            <CornerDownRight className="size-4 text-foreground" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Continue generating</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+
                 {/* Copy Button */}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         className="transition-all duration-200 hover:scale-110"
-                        onClick={() =>
-                          navigator.clipboard.writeText(controlsMessage.content)
-                        }
+                        onClick={() => navigator.clipboard.writeText(controlsMessage.content)}
                         size="icon-sm"
                         variant="ghost"
                       >

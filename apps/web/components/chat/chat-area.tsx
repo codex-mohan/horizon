@@ -373,6 +373,27 @@ export function ChatArea({
     [chat]
   );
 
+  const handleContinue = useCallback(
+    (messageId: string) => {
+      const liveMessage = chat.messages.find((m) => m.id === messageId);
+      if (!liveMessage) {
+        toast.error("Message not found in current session");
+        return;
+      }
+
+      const metadata = chat.getMessagesMetadata(liveMessage);
+      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
+
+      if (parentCheckpoint) {
+        chat.submit(undefined, { checkpoint: parentCheckpoint });
+        toast.success("Continuing response...");
+      } else {
+        toast.error("Unable to continue: No checkpoint available");
+      }
+    },
+    [chat]
+  );
+
   const handleDelete = useCallback(
     (id: string) => {
       setHiddenMessageIds((prev) => {
@@ -679,6 +700,7 @@ export function ChatArea({
                     onDelete={handleDelete}
                     onEdit={handleEdit}
                     onRegenerate={handleRegenerate}
+                    onContinue={handleContinue}
                     showToolCalls={settings.showToolCalls}
                     toolSteps={group.toolSteps}
                     userMessage={group.userMessage}

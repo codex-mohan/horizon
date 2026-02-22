@@ -97,6 +97,7 @@ export interface UseChatReturn {
   interrupt: InterruptData | null;
   isWaitingForInterrupt: boolean;
   isResuming: boolean;
+  hasPendingTasks: boolean;
   submit: (
     input: { messages: Array<{ type: string; content: string | ContentBlock[] }> } | undefined,
     options?: SubmitOptions
@@ -274,6 +275,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   const [uiMessages, setUIMessages] = useState<UIMessage[]>([]);
   const [isResuming, setIsResuming] = useState(false);
   const [isActivelyResuming, setIsActivelyResuming] = useState(false);
+  const [hasPendingTasks, setHasPendingTasks] = useState(false);
   const onThreadIdCalledRef = useRef(false);
   const toolApprovalRef = useRef(toolApproval);
 
@@ -453,6 +455,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       // No thread or actively resuming - ensure interrupt is cleared appropriately
       if (!isActivelyResuming) {
         setInterrupt(null);
+        setHasPendingTasks(false);
       }
       return;
     }
@@ -460,17 +463,22 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     const checkForInterrupt = async () => {
       try {
         const response = await fetch(`${apiUrl}/threads/${currentThreadId}/state`);
-        if (!response.ok) return;
+        if (!response.ok) {
+          setHasPendingTasks(false);
+          return;
+        }
 
         const state = await response.json();
         console.log("[useChat] State check for thread", currentThreadId, {
           hasNext: state.next?.length > 0,
           next: state.next,
+          tasks: state.tasks?.length || 0,
         });
 
         // Check if the thread has pending tasks (interrupt)
         if (state.next && state.next.length > 0) {
           // Thread has pending execution - check for interrupt data
+          setHasPendingTasks(true);
           if (state.tasks && Array.isArray(state.tasks)) {
             for (const task of state.tasks) {
               if (task.interrupts && task.interrupts.length > 0) {
@@ -494,9 +502,12 @@ export function useChat(options: UseChatOptions): UseChatReturn {
               return;
             }
           }
+        } else {
+          setHasPendingTasks(false);
         }
       } catch (error) {
         console.error("[useChat] Error checking for interrupt:", error);
+        setHasPendingTasks(false);
       }
     };
 
@@ -735,6 +746,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     interrupt,
     isWaitingForInterrupt: interrupt !== null,
     isResuming,
+    hasPendingTasks,
     submit,
     stop,
     setBranch,
