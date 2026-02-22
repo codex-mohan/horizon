@@ -729,11 +729,11 @@ export function ChatArea({
         {hasMessages && !isNearBottom && (
           <button
             onClick={scrollToBottom}
-            className="absolute bottom-4 left-1/2 z-20 flex h-10 w-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border border-border/50 bg-background/80 text-muted-foreground shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background active:scale-95 animate-bounce-subtle"
+            className="scroll-to-bottom-btn absolute bottom-4 left-1/2 z-20 flex h-10 w-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[var(--gradient-from)] via-[var(--gradient-via)] to-[var(--gradient-to)] text-primary-foreground shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background active:scale-95"
             title="Jump to latest"
             type="button"
           >
-            <ArrowDown className="size-5" />
+            <ArrowDown className="size-5 transition-transform duration-500 hover:rotate-[360deg]" />
           </button>
         )}
       </div>

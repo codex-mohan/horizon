@@ -566,6 +566,36 @@ html:is(.dark)[data-theme="aurora"],
   }
 }
 
+@keyframes emerge-bounce {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-6px);
+  }
+
+  80% {
+    transform: translateX(-50%) translateY(2px);
+  }
+
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -665,6 +695,19 @@ html:is(.dark)[data-theme="aurora"],
 
 .animate-bounce-subtle {
   animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+.animate-emerge-bounce {
+  animation: emerge-bounce 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, bounce-subtle 2s ease-in-out 0.5s infinite;
+}
+
+.scroll-to-bottom-btn {
+  background-size: 200% 200%;
+  animation: emerge-bounce 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, bounce-subtle 2s ease-in-out 0.5s infinite, gradient-shift 3s ease infinite;
+}
+
+.scroll-to-bottom-btn:hover {
+  animation: none;
 }
 
 /* Interactive hover effects */
