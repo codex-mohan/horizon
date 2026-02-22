@@ -30,7 +30,7 @@ export function ChatIndex({ entries, visibleIds, onJump, scrollContainerRef }: C
       <div className="flex flex-col items-center gap-1">
         <button
           onClick={scrollUp}
-          className="pointer-events-auto -me-2 h-8 w-8 translate-y-1 cursor-pointer rounded-full border border-transparent px-1.5 py-1.5 text-muted-foreground opacity-0 transition-all duration-200 hover:bg-accent hover:text-accent-foreground group-hover:translate-y-0 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
+          className="pointer-events-auto -me-2 flex h-8 w-8 translate-y-1 cursor-pointer items-center justify-center rounded-full border border-transparent text-muted-foreground opacity-0 transition-all duration-200 hover:text-foreground group-hover:translate-y-0 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
           title="Navigate to previous message"
           type="button"
         >
@@ -70,7 +70,7 @@ export function ChatIndex({ entries, visibleIds, onJump, scrollContainerRef }: C
 
         <button
           onClick={scrollDown}
-          className="pointer-events-auto -me-2 h-8 w-8 -translate-y-1 cursor-pointer rounded-full border border-transparent px-1.5 py-1.5 text-muted-foreground opacity-0 transition-all duration-200 hover:bg-accent hover:text-accent-foreground group-hover:translate-y-0 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
+          className="pointer-events-auto -me-2 flex h-8 w-8 -translate-y-1 cursor-pointer items-center justify-center rounded-full border border-transparent text-muted-foreground opacity-0 transition-all duration-200 hover:text-foreground group-hover:translate-y-0 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
           title="Navigate to next message"
           type="button"
         >
