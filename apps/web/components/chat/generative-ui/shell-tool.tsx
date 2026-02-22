@@ -2,23 +2,12 @@
 
 import { cn } from "@workspace/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  AlertCircle,
-  AlertTriangle,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Copy,
-  FolderOpen,
-  Terminal,
-} from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, ChevronUp, Copy, Terminal, Wrench } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ModernSpinner, ShimmerText } from "./loading-effects";
+import { useTheme } from "@/components/theme/theme-provider";
+import { getToolUIConfig } from "@/lib/tool-config";
+import { ModernSpinner, ShimmerText, ToolStatusBadge } from "./loading-effects";
 
-/**
- * Shell execution result structure from backend
- */
 interface ShellResult {
   command: string;
   stdout: string;
@@ -26,7 +15,6 @@ interface ShellResult {
   exitCode: number;
   success: boolean;
   duration: number;
-  cwd: string;
   truncated: boolean;
 }
 
@@ -35,15 +23,10 @@ interface ShellToolProps {
   status: "pending" | "executing" | "completed" | "failed";
   args: Record<string, unknown>;
   result?: string;
-  startedAt?: number;
-  completedAt?: number;
   error?: string;
   isLoading?: boolean;
 }
 
-/**
- * ANSI color code to CSS class mapping
- */
 const ANSI_COLORS: Record<string, string> = {
   "30": "text-gray-800",
   "31": "text-red-500",
@@ -63,19 +46,8 @@ const ANSI_COLORS: Record<string, string> = {
   "97": "text-gray-100",
 };
 
-/**
- * Parse ANSI color codes and convert to styled spans
- */
 function parseAnsiColors(text: string): React.ReactNode[] {
   const ansiRegex = /\x1b\[([0-9;]+)m/g;
-  const parts: React.ReactNode[] = [];
-  const lastIndex = 0;
-  const key = 0;
-
-  // Reset tracking
-  const resetAll = "\x1b[0m";
-
-  // Split by ANSI codes
   const tokens: Array<{ text: string; codes: string[] }> = [];
   let currentCodes: string[] = [];
   let currentPosition = 0;
@@ -84,7 +56,6 @@ function parseAnsiColors(text: string): React.ReactNode[] {
     const match = text.slice(currentPosition).match(ansiRegex);
 
     if (!match || match.index === undefined) {
-      // No more ANSI codes, add remaining text
       if (currentPosition < text.length) {
         tokens.push({
           text: text.slice(currentPosition),
@@ -94,7 +65,6 @@ function parseAnsiColors(text: string): React.ReactNode[] {
       break;
     }
 
-    // Add text before this code
     if (match.index > 0) {
       tokens.push({
         text: text.slice(currentPosition, currentPosition + match.index),
@@ -102,7 +72,6 @@ function parseAnsiColors(text: string): React.ReactNode[] {
       });
     }
 
-    // Update current codes
     const codeStr = match[1];
     if (codeStr === "0") {
       currentCodes = [];
@@ -114,7 +83,6 @@ function parseAnsiColors(text: string): React.ReactNode[] {
         } else if (code === "1") {
           currentCodes.push("font-bold");
         } else if (ANSI_COLORS[code]) {
-          // Replace any existing color
           currentCodes = currentCodes.filter(
             (c) => !ANSI_COLORS[c.replace("text-", "").replace("-500", "").replace("-400", "")]
           );
@@ -126,7 +94,6 @@ function parseAnsiColors(text: string): React.ReactNode[] {
     currentPosition += match.index + match[0].length;
   }
 
-  // Convert tokens to React nodes
   return tokens.map((token, i) => {
     if (token.codes.length === 0) {
       return <span key={i}>{token.text}</span>;
@@ -139,47 +106,15 @@ function parseAnsiColors(text: string): React.ReactNode[] {
   });
 }
 
-/**
- * Format duration in human-readable form
- */
 function formatDuration(ms: number): string {
-  if (ms < 1000) {
-    return `${ms}ms`;
-  }
+  if (ms < 1000) return `${ms}ms`;
   const seconds = ms / 1000;
-  if (seconds < 60) {
-    return `${seconds.toFixed(1)}s`;
-  }
+  if (seconds < 60) return `${seconds.toFixed(1)}s`;
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes}m ${remainingSeconds.toFixed(0)}s`;
 }
 
-/**
- * Truncate working directory for display
- */
-function truncateCwd(cwd: string, maxLength = 40): string {
-  if (cwd.length <= maxLength) return cwd;
-
-  // Try to show last meaningful parts
-  const parts = cwd.split(/[/\\]/);
-  if (parts.length <= 2) return cwd;
-
-  // Show first letter of early parts + last 2-3 parts
-  const lastParts = parts.slice(-3);
-  const firstParts = parts.slice(0, -3);
-
-  if (firstParts.length > 0) {
-    const shortened = firstParts.map((p) => (p ? p[0] : "")).join("/");
-    return `${shortened}/.../${lastParts.join("/")}`;
-  }
-
-  return `.../${lastParts.join("/")}`;
-}
-
-/**
- * Parse result string into ShellResult object
- */
 function parseResult(result?: string): ShellResult | null {
   if (!result) return null;
 
@@ -189,40 +124,28 @@ function parseResult(result?: string): ShellResult | null {
       return parsed as ShellResult;
     }
   } catch {
-    // Not JSON, return null to use legacy parsing
+    // Not JSON
   }
 
   return null;
 }
 
-/**
- * Shell Tool Component
- * Compact, glassmorphic design matching web search and weather tools
- */
 export function ShellTool({ toolName, status, args, result, error, isLoading }: ShellToolProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const config = getToolUIConfig(toolName);
+  const { themeMode } = useTheme();
+  const isLight = themeMode === "light";
 
-  // Parse the result
   const shellResult = useMemo(() => parseResult(result), [result]);
 
-  // Get command from args or result
   const command = useMemo(() => {
     if (shellResult?.command) return shellResult.command;
     return (args.command as string) || (args.cmd as string) || "";
   }, [args, shellResult]);
 
-  // Get working directory
-  const cwd = useMemo(() => {
-    return shellResult?.cwd || process.cwd();
-  }, [shellResult]);
+  const duration = useMemo(() => shellResult?.duration || 0, [shellResult]);
 
-  // Get duration
-  const duration = useMemo(() => {
-    return shellResult?.duration || 0;
-  }, [shellResult]);
-
-  // Determine if command succeeded
   const isSuccess = useMemo(() => {
     if (shellResult) return shellResult.success;
     if (error) return false;
@@ -230,7 +153,6 @@ export function ShellTool({ toolName, status, args, result, error, isLoading }: 
     return false;
   }, [shellResult, error, status]);
 
-  // Get stdout and stderr
   const stdout = shellResult?.stdout || "";
   const stderr = shellResult?.stderr || error || "";
   const isTruncated = shellResult?.truncated || false;
@@ -241,136 +163,141 @@ export function ShellTool({ toolName, status, args, result, error, isLoading }: 
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Loading state
-  if (isLoading && !result) {
-    return (
-      <motion.div
-        animate={{ opacity: 1, y: 0 }}
-        className="glass overflow-hidden rounded-xl border border-white/10 shadow-lg"
-        initial={{ opacity: 0, y: 10 }}
-      >
-        <div className="flex items-center gap-3 px-4 py-3">
-          <div className="rounded-lg bg-slate-500/20 p-2">
-            <Terminal className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-white/90">Shell Execute</span>
-              <ModernSpinner size="sm" />
-            </div>
-            <ShimmerText className="mt-1 text-xs text-white/50" text={command} />
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
+  const isExecuting = (isLoading || status === "executing") && !result && !error;
 
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
-      className="glass overflow-hidden rounded-xl border border-white/10 shadow-lg"
+      className={cn("overflow-hidden rounded-xl", "glass")}
       initial={{ opacity: 0, y: 10 }}
     >
-      {/* Header — click to expand/collapse */}
-      <button
-        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-white/5"
-        onClick={() => setIsExpanded(!isExpanded)}
+      {/* Compact Header */}
+      <div
+        className={cn(
+          "flex cursor-pointer items-center justify-between px-3 py-2",
+          "hover:bg-primary/5 transition-colors"
+        )}
+        onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-3">
-          {/* Icon with status color */}
-          <div className={cn("rounded-lg p-2", isSuccess ? "bg-emerald-500/20" : "bg-red-500/20")}>
-            {isSuccess ? (
-              <Check className="h-4 w-4 text-emerald-400" />
-            ) : (
-              <AlertCircle className="h-4 w-4 text-red-400" />
-            )}
+        <div className="flex items-center gap-2">
+          <div className={cn("rounded-lg p-1.5", config.icon.bgColor)}>
+            <Wrench className={cn("h-4 w-4", config.icon.color)} />
           </div>
-
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-white/90">Shell Execute</span>
-              {/* Exit code badge */}
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">
+              {command ? `"${command.slice(0, 25)}${command.length > 25 ? "..." : ""}"` : "Shell"}
+            </span>
+            {shellResult && (
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-medium",
-                  isSuccess ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
+                  isSuccess
+                    ? isLight
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-emerald-500/20 text-emerald-400"
+                    : isLight
+                      ? "bg-red-100 text-red-700"
+                      : "bg-red-500/20 text-red-400"
                 )}
               >
-                Exit {shellResult?.exitCode ?? (error ? 1 : 0)}
+                Exit {shellResult.exitCode}
               </span>
-            </div>
-            {/* Working directory */}
-            <div className="mt-0.5 flex items-center gap-1 text-xs text-white/50">
-              <FolderOpen className="h-3 w-3" />
-              <span className="font-mono">{truncateCwd(cwd)}</span>
-            </div>
+            )}
           </div>
         </div>
-
         <div className="flex items-center gap-2">
-          {/* Duration */}
           {duration > 0 && (
-            <div className="flex items-center gap-1 text-xs text-white/50">
-              <Clock className="h-3 w-3" />
-              <span>{formatDuration(duration)}</span>
-            </div>
+            <span className="text-xs text-muted-foreground">{formatDuration(duration)}</span>
           )}
-          {isExpanded ? (
-            <ChevronUp className="h-3.5 w-3.5 text-white/40" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-white/40" />
-          )}
+          <ToolStatusBadge status={status} />
         </div>
-      </button>
+      </div>
 
-      {/* Expandable details */}
+      {/* Expandable Content */}
       <AnimatePresence>
-        {isExpanded && (
+        {expanded && (
           <motion.div
             animate={{ height: "auto", opacity: 1 }}
             className="overflow-hidden"
             exit={{ height: 0, opacity: 0 }}
             initial={{ height: 0, opacity: 0 }}
           >
-            <div className="px-4 pb-3">
-              {/* Command */}
-              <div className="group relative mb-2">
-                <div className="mb-1 flex items-center gap-1 text-xs font-medium text-white/60">
-                  <Terminal className="h-3 w-3" />
-                  Command
-                </div>
-                <code className="block rounded-lg bg-black/30 p-2 font-mono text-sm">
-                  <span className="text-white/40">$ </span>
-                  <span className="text-emerald-400">{command}</span>
-                </code>
-                <button
-                  className="absolute right-2 top-6 rounded bg-white/10 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={() => handleCopy(command)}
-                >
-                  {copied ? (
-                    <Check className="h-3 w-3 text-emerald-400" />
-                  ) : (
-                    <Copy className="h-3 w-3 text-white/60" />
-                  )}
-                </button>
-              </div>
-
-              {/* Truncation warning */}
-              {isTruncated && (
-                <div className="mb-2 flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-                  <span className="text-xs text-amber-400">Output was truncated (too large)</span>
+            <div
+              className={cn(
+                "border-t px-3 py-2",
+                isLight ? "border-border/50" : "border-primary/10"
+              )}
+            >
+              {/* Loading State */}
+              {isExecuting && (
+                <div className="flex items-center justify-center gap-3 py-4">
+                  <ModernSpinner size="sm" />
+                  <ShimmerText
+                    className={cn("text-sm", isLight ? "text-foreground" : "")}
+                    text="Executing..."
+                  />
                 </div>
               )}
 
-              {/* Stderr (errors) */}
+              {/* Error State */}
+              {error && !shellResult && (
+                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-2">
+                  <p className="text-destructive text-xs">{error}</p>
+                </div>
+              )}
+
+              {/* Command */}
+              {command && !isExecuting && (
+                <div className="group relative mb-2">
+                  <div className="mb-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                    <Terminal className="h-3 w-3" />
+                    Command
+                  </div>
+                  <code
+                    className={cn(
+                      "block rounded-lg p-2 font-mono text-sm",
+                      isLight ? "bg-muted/50" : "bg-black/30"
+                    )}
+                  >
+                    <span className="text-muted-foreground">$ </span>
+                    <span className={isLight ? "text-emerald-600" : "text-emerald-400"}>
+                      {command}
+                    </span>
+                  </code>
+                  <button
+                    className="absolute right-2 top-6 rounded bg-background/80 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopy(command);
+                    }}
+                  >
+                    {copied ? (
+                      <Check className="h-3 w-3 text-emerald-500" />
+                    ) : (
+                      <Copy className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Truncation Warning */}
+              {isTruncated && (
+                <div className="mb-2 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="text-xs text-amber-600 dark:text-amber-400">
+                    Output was truncated (too large)
+                  </span>
+                </div>
+              )}
+
+              {/* Stderr */}
               {stderr && (
                 <div className="mb-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2">
-                  <div className="mb-1 flex items-center gap-1 text-xs font-medium text-red-400">
-                    <AlertCircle className="h-3 w-3" />
+                  <div className="mb-1 flex items-center gap-1 text-xs font-medium text-red-500">
+                    <AlertTriangle className="h-3 w-3" />
                     stderr
                   </div>
-                  <pre className="overflow-auto font-mono text-xs text-red-300">
+                  <pre className="overflow-auto font-mono text-xs text-red-400">
                     {parseAnsiColors(stderr)}
                   </pre>
                 </div>
@@ -379,17 +306,25 @@ export function ShellTool({ toolName, status, args, result, error, isLoading }: 
               {/* Stdout */}
               {stdout && (
                 <div className="group relative">
-                  <pre className="max-h-64 overflow-auto rounded-lg bg-black/30 p-2 font-mono text-xs text-white/80">
+                  <pre
+                    className={cn(
+                      "max-h-64 overflow-auto rounded-lg p-2 font-mono text-xs",
+                      isLight ? "bg-muted/50 text-foreground" : "bg-black/30 text-white/80"
+                    )}
+                  >
                     {parseAnsiColors(stdout)}
                   </pre>
                   <button
-                    className="absolute right-2 top-2 rounded bg-white/10 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
-                    onClick={() => handleCopy(stdout)}
+                    className="absolute right-2 top-2 rounded bg-background/80 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopy(stdout);
+                    }}
                   >
                     {copied ? (
-                      <Check className="h-3 w-3 text-emerald-400" />
+                      <Check className="h-3 w-3 text-emerald-500" />
                     ) : (
-                      <Copy className="h-3 w-3 text-white/60" />
+                      <Copy className="h-3 w-3 text-muted-foreground" />
                     )}
                   </button>
                 </div>

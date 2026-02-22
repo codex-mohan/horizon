@@ -13,17 +13,10 @@ interface FetchUrlToolProps {
   status: "pending" | "executing" | "completed" | "failed";
   args: Record<string, any>;
   result?: string;
-  startedAt?: number;
-  completedAt?: number;
   error?: string;
   isLoading?: boolean;
 }
 
-/**
- * Fetch URL Tool Component
- * Compact card: header is the expand/collapse toggle.
- * URL + page content are shown together in the expandable body.
- */
 export function FetchUrlTool({
   toolName,
   status,
@@ -40,68 +33,53 @@ export function FetchUrlTool({
 
   const url = args.url || args.link || args.href || "";
 
-  // Truncate result for preview
   const previewLength = 300;
   const shouldTruncate = result && result.length > previewLength;
   const displayResult =
     shouldTruncate && !isContentExpanded ? `${result.slice(0, previewLength)}...` : result;
 
+  const isFetching = (isLoading || status === "executing") && !result && !error;
+
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
-      className={cn(
-        "overflow-hidden rounded-xl border shadow-xl",
-        isLight
-          ? "border-border bg-gradient-to-br from-cyan-500/5 to-blue-500/5"
-          : "border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-blue-950/30"
-      )}
+      className={cn("overflow-hidden rounded-xl", "glass")}
       initial={{ opacity: 0, y: 10 }}
     >
-      {/* Header — click to expand/collapse */}
-      <button
+      {/* Compact Header */}
+      <div
         className={cn(
-          "flex w-full items-center justify-between px-4 py-3 text-left transition-colors",
-          isLight ? "hover:bg-muted/20" : "hover:bg-white/5"
+          "flex cursor-pointer items-center justify-between px-3 py-2",
+          "hover:bg-primary/5 transition-colors"
         )}
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-3">
-          <div className={cn("rounded-xl p-2", config.icon.bgColor)}>
-            <Globe className={cn("h-5 w-5", config.icon.color)} />
+        <div className="flex items-center gap-2">
+          <div className={cn("rounded-lg p-1.5", config.icon.bgColor)}>
+            <Globe className={cn("h-4 w-4", config.icon.color)} />
           </div>
-          <div>
-            <span
-              className={cn(
-                "font-semibold text-sm",
-                isLight ? "text-foreground" : "text-slate-200"
-              )}
-            >
-              {config.displayName}
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">
+              {url
+                ? `${url.replace(/^https?:\/\//, "").slice(0, 25)}${url.length > 40 ? "..." : ""}`
+                : "Fetch URL"}
             </span>
-            {url && (
-              <p
+            {result && status === "completed" && (
+              <span
                 className={cn(
-                  "max-w-[240px] truncate text-xs",
-                  isLight ? "text-muted-foreground" : "text-slate-500"
+                  "rounded-full px-2 py-0.5 text-xs",
+                  isLight ? "bg-primary/10 text-primary" : "bg-primary/20 text-primary-foreground"
                 )}
               >
-                {url}
-              </p>
+                {result.length.toLocaleString()} chars
+              </span>
             )}
           </div>
         </div>
+        <ToolStatusBadge status={status} />
+      </div>
 
-        <div className="flex items-center gap-2">
-          <ToolStatusBadge status={status} />
-          {expanded ? (
-            <ChevronUp className={cn("h-3.5 w-3.5", isLight ? "text-muted-foreground" : "text-slate-500")} />
-          ) : (
-            <ChevronDown className={cn("h-3.5 w-3.5", isLight ? "text-muted-foreground" : "text-slate-500")} />
-          )}
-        </div>
-      </button>
-
-      {/* Expandable body */}
+      {/* Expandable Content */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -112,87 +90,63 @@ export function FetchUrlTool({
           >
             <div
               className={cn(
-                "space-y-3 border-t px-4 py-3",
-                isLight ? "border-border/50" : "border-cyan-500/10"
+                "border-t px-3 py-2",
+                isLight ? "border-border/50" : "border-primary/10"
               )}
             >
-              {/* URL link */}
-              {url && (
+              {/* Loading State */}
+              {isFetching && (
+                <div className="flex items-center justify-center gap-3 py-4">
+                  <ModernSpinner size="sm" />
+                  <ShimmerText
+                    className={cn("text-sm", isLight ? "text-foreground" : "")}
+                    text="Fetching content..."
+                  />
+                </div>
+              )}
+
+              {/* Error State */}
+              {error && (
+                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-2">
+                  <p className="text-destructive text-xs">{error}</p>
+                </div>
+              )}
+
+              {/* URL Link */}
+              {url && !isFetching && (
                 <a
                   className={cn(
-                    "group flex items-center gap-2 rounded-lg border p-2.5 transition-colors",
+                    "group mb-2 flex items-center gap-2 rounded-lg border p-2 transition-colors",
                     isLight
-                      ? "border-primary/20 bg-primary/5 hover:bg-primary/10"
-                      : "border-cyan-500/20 bg-cyan-950/20 hover:bg-cyan-950/30"
+                      ? "border-border bg-muted/30 hover:bg-muted/50"
+                      : "border-primary/10 bg-background/30 hover:bg-background/50"
                   )}
                   href={url}
                   onClick={(e) => e.stopPropagation()}
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  <Globe className={cn("h-4 w-4 flex-shrink-0", isLight ? "text-primary" : "text-cyan-400")} />
-                  <span
-                    className={cn(
-                      "flex-1 truncate text-sm",
-                      isLight ? "text-primary" : "text-cyan-300"
-                    )}
-                  >
-                    {url}
-                  </span>
-                  <ExternalLink
-                    className={cn(
-                      "h-4 w-4 flex-shrink-0 transition-colors",
-                      isLight
-                        ? "text-primary/50 group-hover:text-primary"
-                        : "text-cyan-400/50 group-hover:text-cyan-400"
-                    )}
-                  />
+                  <Globe className="h-4 w-4 flex-shrink-0 text-primary" />
+                  <span className="flex-1 truncate text-sm text-primary">{url}</span>
+                  <ExternalLink className="h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
                 </a>
               )}
 
               {/* Content */}
-              {isLoading && !result && !error ? (
-                <div className="flex flex-col items-center justify-center gap-3 py-6">
-                  <ModernSpinner size="md" />
-                  <ShimmerText
-                    className={cn("text-sm", isLight ? "text-foreground" : "")}
-                    text="Fetching content..."
-                  />
-                </div>
-              ) : error ? (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
-                  <div className="mb-1.5 flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-destructive" />
-                    <span className="font-medium text-destructive text-sm">Failed to fetch</span>
-                  </div>
-                  <p className="text-destructive/80 text-xs">{error}</p>
-                </div>
-              ) : result ? (
+              {result && !isFetching && (
                 <div>
-                  <div className="mb-2 flex items-center gap-1.5">
-                    <FileText className={cn("h-3.5 w-3.5", isLight ? "text-primary" : "text-cyan-400")} />
-                    <span
-                      className={cn(
-                        "text-xs font-medium uppercase tracking-wider",
-                        isLight ? "text-muted-foreground" : "text-slate-500"
-                      )}
-                    >
-                      Content
-                    </span>
+                  <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <FileText className="h-3 w-3" />
+                    Content
                   </div>
                   <div
                     className={cn(
                       "relative rounded-lg border p-3",
-                      isLight ? "border-border bg-muted/30" : "border-slate-700/30 bg-slate-900/30",
+                      isLight ? "border-border bg-muted/30" : "border-primary/10 bg-background/30",
                       !isContentExpanded && shouldTruncate && "max-h-48 overflow-hidden"
                     )}
                   >
-                    <pre
-                      className={cn(
-                        "whitespace-pre-wrap font-sans text-xs leading-relaxed",
-                        isLight ? "text-foreground" : "text-slate-300"
-                      )}
-                    >
+                    <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-foreground">
                       {displayResult}
                     </pre>
                     {!isContentExpanded && shouldTruncate && (
@@ -200,8 +154,8 @@ export function FetchUrlTool({
                         className={cn(
                           "absolute right-0 bottom-0 left-0 h-12",
                           isLight
-                            ? "bg-gradient-to-t from-muted/80 to-transparent"
-                            : "bg-gradient-to-t from-slate-900/80 to-transparent"
+                            ? "bg-gradient-to-t from-muted to-transparent"
+                            : "bg-gradient-to-t from-background to-transparent"
                         )}
                       />
                     )}
@@ -210,9 +164,7 @@ export function FetchUrlTool({
                     <button
                       className={cn(
                         "mt-1.5 flex items-center gap-1 text-xs transition-colors",
-                        isLight
-                          ? "text-primary hover:text-primary/80"
-                          : "text-cyan-400 hover:text-cyan-300"
+                        "text-primary hover:text-primary/80"
                       )}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -227,13 +179,13 @@ export function FetchUrlTool({
                       ) : (
                         <>
                           <ChevronDown className="h-3.5 w-3.5" />
-                          Show more ({result.length - previewLength} characters)
+                          Show more ({(result.length - previewLength).toLocaleString()} characters)
                         </>
                       )}
                     </button>
                   )}
                 </div>
-              ) : null}
+              )}
             </div>
           </motion.div>
         )}
