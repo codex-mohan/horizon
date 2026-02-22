@@ -708,6 +708,7 @@ html:is(.dark)[data-theme="aurora"],
 
 .scroll-to-bottom-btn:hover {
   animation: none;
+  transform: translateX(-50%) scale(1.1);
 }
 
 /* Interactive hover effects */
