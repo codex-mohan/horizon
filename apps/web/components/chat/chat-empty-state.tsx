@@ -4,7 +4,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { ChatInput, type AttachedFile as ChatInputAttachedFile } from "./chat-input";
 import type { AttachedFile } from "./chat-interface";
 import { FileBadge } from "./file-badge";
-import { suggestedPrompts } from "./message-grouping";
+import { suggestedPrompts } from "@/lib/message-grouping";
 
 interface ChatEmptyStateProps {
   attachedFiles: AttachedFile[];

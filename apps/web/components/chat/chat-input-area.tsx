@@ -38,10 +38,10 @@ export function ChatInputArea({
   onRemoveFile,
 }: ChatInputAreaProps) {
   return (
-    <div className="border-border border-t p-4">
-      <div className="glass-strong mx-auto max-w-4xl rounded-xl p-4">
+    <div className="border-border/50 border-t px-4 py-2.5">
+      <div className="glass-strong mx-auto max-w-2xl rounded-xl px-4 py-3">
         {attachedFiles.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-2">
+          <div className="mb-2.5 flex flex-wrap gap-2">
             {attachedFiles.map((file) => (
               <FileBadge
                 key={file.id}

@@ -14,7 +14,7 @@ import { BranchSwitcher } from "./branch-switcher";
 import { ChatBubble } from "./chat-bubble";
 import type { Message } from "./chat-interface";
 import { GenerativeUIRenderer } from "./generative-ui-renderer";
-import type { ToolStep } from "./message-grouping";
+import type { ToolStep } from "@/lib/message-grouping";
 import type { ToolApprovalData } from "./tool-approval-banner";
 import { ToolApprovalBanner } from "./tool-approval-banner";
 import { type ToolCall, ToolCallMessage } from "./tool-call-message";

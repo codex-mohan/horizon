@@ -15,6 +15,14 @@
       "displayName": "Admin",
       "createdAt": "2026-02-07T10:31:13.759Z",
       "updatedAt": "2026-02-07T10:31:13.759Z"
+    },
+    {
+      "id": "1b401651-b4b1-450e-b452-b31e7af20c57",
+      "username": "tester",
+      "passwordHash": "$2b$12$f4pnijtoAFdi7dab5XnaEuCWzvgX8dHLi3M813LyX1Z7rozo44j96",
+      "displayName": "tester",
+      "createdAt": "2026-02-21T14:55:04.790Z",
+      "updatedAt": "2026-02-21T14:55:04.790Z"
     }
   ],
   "sessions": [
@@ -113,6 +121,14 @@
       "expiresAt": "2026-03-19T12:12:38.795Z",
       "rememberMe": true,
       "createdAt": "2026-02-17T12:12:38.813Z"
+    },
+    {
+      "id": "c58b64ad-bddb-43df-b5a0-95ee806e93a8",
+      "userId": "1b401651-b4b1-450e-b452-b31e7af20c57",
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIxYjQwMTY1MS1iNGIxLTQ1MGUtYjQ1Mi1iMzFlN2FmMjBjNTciLCJzZXNzaW9uSWQiOiJjNThiNjRhZC1iZGRiLTQzZGYtYjVhMC05NWVlODA2ZTkzYTgiLCJpYXQiOjE3NzE2ODU3MDYsImV4cCI6MTc3NDI3NzcwNn0.0OxpOjje6Kuu3NczivkHDvqL7O-wbNYDlfQAzKCRk8Y",
+      "expiresAt": "2026-02-22T14:55:06.752Z",
+      "rememberMe": false,
+      "createdAt": "2026-02-21T14:55:06.789Z"
     }
   ],
   "assistants": []

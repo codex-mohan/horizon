@@ -50,4 +50,4 @@ telemetry-id
 .telemetry
 
 # Horizon user config (keep example)
-horizon.json
+config/horizon.json

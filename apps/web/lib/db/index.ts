@@ -54,7 +54,7 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const dbPath = path.join(dataDir, "horizon.json");
+const dbPath = path.join(dataDir, "database.json");
 
 // Load or initialize database
 function loadDb(): Database {

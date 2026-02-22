@@ -57,19 +57,19 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
     <>
       <div className="relative z-10 flex">
         {/* Main Sidebar */}
-        <div className="glass-strong flex h-screen w-16 flex-col items-center gap-2 py-4">
+        <div className="glass-strong flex h-screen w-12 flex-col items-center gap-1.5 py-3">
           {/* Logo Section */}
-          <div className="flex items-center justify-center p-1">
+          <div className="flex items-center justify-center p-0.5">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    className="flex size-12 items-center justify-center p-2 transition-all duration-200 hover:scale-110 hover:bg-primary/40"
+                    className="flex size-9 items-center justify-center p-1.5 transition-all duration-200 hover:scale-110 hover:bg-primary/40"
                     variant="ghost"
                   >
                     <img
                       alt="Horizon Logo"
-                      className="size-full max-h-[48px] max-w-[48px] object-contain"
+                      className="size-full max-h-[36px] max-w-[36px] object-contain"
                       src="/horizon-icon.png"
                     />
                   </Button>
@@ -82,26 +82,26 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
           </div>
 
           {/* Separator */}
-          <Separator className="mb-1 h-0.5 w-8" />
+          <Separator className="mb-0.5 h-px w-7" />
 
-          <div className="flex flex-1 flex-col items-center gap-2">
+          <div className="flex flex-1 flex-col items-center gap-1">
             <TooltipProvider>
               {topSections.map((section, index) => (
                 <Tooltip key={section.id}>
                   <TooltipTrigger asChild>
                     <Button
                       className={cn(
-                        "flex items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-primary/40",
+                        "flex size-9 items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-primary/40",
                         activeSection === section.id &&
-                          "hover-glow scale-105 bg-primary/30 text-primary-foreground",
+                        "hover-glow scale-105 bg-primary/30 text-primary-foreground",
                         "stagger-item"
                       )}
                       onClick={() => onSectionChange(section.id)}
-                      size="icon-lg"
+                      size="icon"
                       style={{ animationDelay: `${index * 0.05}s` }}
                       variant="ghost"
                     >
-                      <section.icon className="size-5 transition-transform duration-200" />
+                      <section.icon className="size-4 transition-transform duration-200" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="animate-scale-in" side="right">
@@ -112,16 +112,16 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
             </TooltipProvider>
           </div>
 
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-1">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    className="flex items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-primary/40"
-                    size="icon-lg"
+                    className="flex size-9 items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-primary/40"
+                    size="icon"
                     variant="ghost"
                   >
-                    <HelpCircle className="size-5" />
+                    <HelpCircle className="size-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="animate-scale-in" side="right">
@@ -143,13 +143,13 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    className="hover-glow flex size-10 items-center justify-center rounded-full p-0 transition-all duration-200 hover:scale-110"
+                    className="hover-glow flex size-8 items-center justify-center rounded-full p-0 transition-all duration-200 hover:scale-110"
                     size="icon"
                     variant="ghost"
                   >
-                    <Avatar className="size-10 transition-transform duration-200">
+                    <Avatar className="size-8 transition-transform duration-200">
                       <AvatarImage src={user?.avatarUrl || "/horizon-icon.png"} />
-                      <AvatarFallback className="bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-[var(--foreground)]">
+                      <AvatarFallback className="bg-linear-to-br from-primary to-accent text-foreground text-xs">
                         {user?.displayName ? user.displayName.substring(0, 2).toUpperCase() : "U"}
                       </AvatarFallback>
                     </Avatar>

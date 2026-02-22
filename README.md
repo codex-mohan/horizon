@@ -55,6 +55,18 @@ Run locally, scale globally.
 
 ---
 
+## 📚 Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Configuration](./docs/configuration.md) | Configuring workspace, agent settings, and deployment |
+| [Development](./docs/development.md) | Setting up dev environment and contributing |
+| [Deployment](./docs/deployment.md) | Docker, production, and self-hosted deployment |
+| [Agent In Loop](./docs/AGENT_IN_LOOP.md) | Human-in-the-loop tool approval system |
+| [Generative UI](./docs/LANGCHAIN_GENERATIVE_UI.md) | Tool call visualization with custom renderers |
+
+---
+
 ## 🚀 About The Project
 
 **Horizon** is an agentic AI assistant that bridges large language models with your local operating system. Unlike traditional chatbots, Horizon can execute system commands, browse the web, manage files, and run code—all through natural conversation.
@@ -249,38 +261,38 @@ bun run dev
 
 ## ⚙️ Configuration
 
-### 🔐 Environment Variables
+Horizon uses a configuration file (`config/horizon.json`) for workspace and agent settings.
 
-#### Backend (`apps/backend/.env`)
+### Quick Setup
+
+```bash
+# Config is auto-created on first run
+# Or create manually from example:
+cp config/horizon.example.json config/horizon.json
+```
+
+### Environment Variables
+
+**Backend (`apps/backend/.env`):**
 
 ```env
-# LLM Provider (choose one or more)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+# LLM Provider (at least one required)
+MODEL_PROVIDER=groq
+MODEL_NAME=meta-llama/llama-4-scout-17b-16e-instruct
 GROQ_API_KEY=gsk_...
-GOOGLE_API_KEY=...
-OLLAMA_BASE_URL=http://localhost:11434
-
-# Agent Configuration
-AGENT_MODEL_PROVIDER=openai
-AGENT_MODEL=gpt-4-turbo-preview
-MAX_ITERATIONS=10
 
 # Server
 PORT=2024
-HOST=0.0.0.0
-CORS_ORIGINS=http://localhost:3000
-
-# Optional: Redis for caching
-REDIS_URL=redis://localhost:6379
+JWT_SECRET=your-secret
 ```
 
-#### Frontend (`apps/web/.env.local`)
+**Frontend (`apps/web/.env.local`):**
 
 ```env
-# Backend API URL
 NEXT_PUBLIC_LANGGRAPH_API_URL=http://localhost:2024
 ```
+
+For detailed configuration options, see [Configuration Guide](./docs/configuration.md).
 
 ---
 
@@ -338,55 +350,22 @@ docker-compose -f docker-compose.prod.yaml up -d --build
 
 ## 🧪 Development
 
-### 📝 Code Style
+For detailed development setup, see [Development Guide](./docs/development.md).
 
-This project uses:
-
-- **ESLint** with shared workspace configuration
-- **Prettier** for code formatting
-- **TypeScript** for type safety
-- **Ruff** for Python linting (legacy backend)
+### Quick Reference
 
 ```bash
 # Run linting
-bun run lint
+bun lint
 
 # Format code
-bun run format
+bun lint:fix
 
 # Type checking
-bun run typecheck
-```
+bun typecheck
 
-### 📦 Package Management
-
-This project uses **Bun** for fast package installation and script execution:
-
-```bash
-# Install all dependencies
-bun install
-
-# Add dependency to specific app
-bun add --cwd apps/web zod
-
-# Add dependency to workspace
-bun add --workspace @workspace/ui lucide-react
-```
-
-### 🔄 Turborepo Scripts
-
-```bash
 # Build all packages
-bun run build
-
-# Start development servers
-bun run dev
-
-# Run all tests
-bun run test
-
-# Clean build artifacts
-bun run clean
+bun build
 ```
 
 ---

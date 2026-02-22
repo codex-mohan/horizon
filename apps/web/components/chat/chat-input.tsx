@@ -151,7 +151,7 @@ export const ChatInput = memo(function ChatInput({
     const el = textareaRef.current;
     if (el) {
       el.style.height = "auto";
-      const newHeight = Math.min(el.scrollHeight, 120);
+      const newHeight = Math.min(el.scrollHeight, 100);
       el.style.height = `${newHeight}px`;
     }
   }, [text]);
@@ -207,7 +207,7 @@ export const ChatInput = memo(function ChatInput({
   return (
     <div className="flex flex-col gap-3">
       <Textarea
-        className="custom-scrollbar max-h-[120px] min-h-[44px] resize-none overflow-y-auto overflow-x-hidden border-0 bg-transparent py-3 focus-visible:ring-0"
+        className="custom-scrollbar max-h-[100px] min-h-[36px] resize-none overflow-y-auto overflow-x-hidden border-0 bg-transparent py-2 text-sm focus-visible:ring-0"
         disabled={disabled}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -218,7 +218,7 @@ export const ChatInput = memo(function ChatInput({
         value={text}
       />
 
-      <div className="flex items-center justify-between gap-3 border-border/50 border-t pt-2">
+      <div className="flex items-center justify-between gap-2 border-border/40 border-t pt-1.5">
         <div className="flex items-center gap-1">
           <TooltipProvider>
             <Tooltip>

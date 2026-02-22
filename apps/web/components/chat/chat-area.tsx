@@ -14,6 +14,7 @@ import {
   useChat,
 } from "@/lib/chat";
 import { extractFileContent, getFileCategory } from "@/lib/file-loader";
+import { groupMessages } from "@/lib/message-grouping";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useChatSettings } from "@/lib/stores/chat-settings";
 import { useConversationStore } from "@/lib/stores/conversation";
@@ -27,7 +28,6 @@ import { ChatInputArea } from "./chat-input-area";
 import type { AttachedFile, Message } from "./chat-interface";
 import { ChatLoadingIndicator } from "./chat-loading-indicator";
 import { MessageGroup } from "./message-group";
-import { groupMessages } from "./message-grouping";
 import type { ToolApprovalData } from "./tool-approval-banner";
 import type { ToolCall } from "./tool-call-message";
 
@@ -729,11 +729,11 @@ export function ChatArea({
         {hasMessages && !isNearBottom && (
           <button
             onClick={scrollToBottom}
-            className="absolute bottom-4 left-1/2 z-20 flex h-10 w-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border border-border/50 bg-background/80 text-muted-foreground shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background active:scale-95"
+            className="absolute bottom-4 left-1/2 z-20 flex h-10 w-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border border-border/50 bg-background/80 text-muted-foreground shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background active:scale-95 animate-bounce-subtle"
             title="Jump to latest"
             type="button"
           >
-            <ArrowDown className="size-5 transition-transform duration-200 group-hover:translate-y-0.5" />
+            <ArrowDown className="size-5" />
           </button>
         )}
       </div>
