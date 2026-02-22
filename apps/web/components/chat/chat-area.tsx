@@ -374,22 +374,11 @@ export function ChatArea({
   );
 
   const handleContinue = useCallback(
-    (messageId: string) => {
-      const liveMessage = chat.messages.find((m) => m.id === messageId);
-      if (!liveMessage) {
-        toast.error("Message not found in current session");
-        return;
-      }
-
-      const metadata = chat.getMessagesMetadata(liveMessage);
-      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
-
-      if (parentCheckpoint) {
-        chat.submit(undefined, { checkpoint: parentCheckpoint });
-        toast.success("Continuing response...");
-      } else {
-        toast.error("Unable to continue: No checkpoint available");
-      }
+    (_messageId: string) => {
+      // Continue without creating a new branch
+      // Submit undefined to resume from current state
+      chat.submit(undefined);
+      toast.success("Continuing response...");
     },
     [chat]
   );
@@ -691,6 +680,7 @@ export function ChatArea({
                     branch={group.branch}
                     branchOptions={group.branchOptions}
                     firstAssistantMessageId={group.firstAssistantMessageId}
+                    hasPendingTasks={chat.hasPendingTasks}
                     id={group.id}
                     interrupt={interruptProp}
                     isLastGroup={isLastGroup}

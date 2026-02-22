@@ -223,8 +223,9 @@ export function MessageGroup({
                   </Tooltip>
                 </TooltipProvider>
 
-                {/* Continue Button - Only on last group when not loading and there's assistant content */}
+                {/* Continue Button - Only on last group when has pending tasks (incomplete response) */}
                 {isLastGroup &&
+                  hasPendingTasks &&
                   !isLoading &&
                   onContinue &&
                   (assistantMessage || toolSteps.length > 0) && (
