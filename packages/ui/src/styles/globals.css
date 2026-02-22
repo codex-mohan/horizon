@@ -586,16 +586,6 @@ html:is(.dark)[data-theme="aurora"],
   }
 }
 
-@keyframes gradient-shift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -697,18 +687,41 @@ html:is(.dark)[data-theme="aurora"],
   animation: bounce-subtle 2s ease-in-out infinite;
 }
 
-.animate-emerge-bounce {
+.scroll-to-bottom-btn {
   animation: emerge-bounce 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, bounce-subtle 2s ease-in-out 0.5s infinite;
 }
 
-.scroll-to-bottom-btn {
-  background-size: 200% 200%;
-  animation: emerge-bounce 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, bounce-subtle 2s ease-in-out 0.5s infinite, gradient-shift 3s ease infinite;
+.scroll-to-bottom-btn:hover {
+  animation-play-state: paused;
+  transform: translateX(-50%) scale(1.1);
 }
 
-.scroll-to-bottom-btn:hover {
-  animation: none;
-  transform: translateX(-50%) scale(1.1);
+.scroll-to-bottom-btn:hover .scroll-to-bottom-arrow {
+  transform: rotate(360deg);
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+.animation-delay-150 {
+  animation-delay: 150ms;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
 }
 
 /* Interactive hover effects */

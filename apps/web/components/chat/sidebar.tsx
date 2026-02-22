@@ -57,7 +57,10 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
     <>
       <div className="relative z-10 flex">
         {/* Main Sidebar */}
-        <div className="glass-strong flex h-screen w-12 flex-col items-center gap-1.5 py-3">
+        <div
+          className="glass-strong flex h-screen w-12 flex-col items-center gap-1.5 py-3"
+          style={{ borderLeftWidth: 0, borderTopWidth: 0, borderBottomWidth: 0 }}
+        >
           {/* Logo Section */}
           <div className="flex items-center justify-center p-0.5">
             <TooltipProvider>
@@ -93,7 +96,7 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
                       className={cn(
                         "flex size-9 items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-primary/40",
                         activeSection === section.id &&
-                        "hover-glow scale-105 bg-primary/30 text-primary-foreground",
+                          "hover-glow scale-105 bg-primary/30 text-primary-foreground",
                         "stagger-item"
                       )}
                       onClick={() => onSectionChange(section.id)}

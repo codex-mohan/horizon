@@ -1,12 +1,8 @@
 "use client";
 
 import { cn } from "@workspace/ui/lib/utils";
-import { Loader2 } from "lucide-react";
 import type { ProcessedEvent as ChatProcessedEvent } from "@/lib/chat";
-import { hasCustomUI } from "@/lib/tool-config";
-import { ActivityTimeline } from "./activity-timeline";
-import { GenerativeUIRenderer } from "./generative-ui-renderer";
-import { type ToolCall, ToolCallMessage } from "./tool-call-message";
+import type { ToolCall } from "./tool-call-message";
 
 interface ChatLoadingIndicatorProps {
   isLightTheme: boolean;
@@ -16,67 +12,39 @@ interface ChatLoadingIndicatorProps {
   liveActivityEvents: ChatProcessedEvent[];
 }
 
-/**
- * ChatLoadingIndicator - Loading state component for chat
- *
- * Features:
- * - Shows loading spinner when processing
- * - Displays tool calls in progress
- * - Shows activity timeline for real-time updates
- */
-export function ChatLoadingIndicator({
-  isLightTheme,
-  showToolCalls,
-  showActivityTimeline,
-  currentToolCalls,
-  liveActivityEvents,
-}: ChatLoadingIndicatorProps) {
-  const hasToolCalls = currentToolCalls.length > 0;
-  const hasActivityEvents = liveActivityEvents.length > 0;
-  const showDetailedLoading = hasToolCalls || hasActivityEvents;
-
+export function ChatLoadingIndicator({ isLightTheme }: ChatLoadingIndicatorProps) {
   return (
-    <div className="flex items-start gap-3">
-      <div
+    <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5">
+        <span
+          className={cn(
+            "h-2 w-2 rounded-full animate-pulse-dot",
+            "bg-gradient-to-r from-[var(--gradient-from)] to-[var(--gradient-via)]"
+          )}
+        />
+        <span
+          className={cn(
+            "h-2 w-2 rounded-full animate-pulse-dot",
+            "bg-gradient-to-r from-[var(--gradient-via)] to-[var(--gradient-to)]",
+            "animation-delay-150"
+          )}
+        />
+        <span
+          className={cn(
+            "h-2 w-2 rounded-full animate-pulse-dot",
+            "bg-gradient-to-r from-[var(--gradient-to)] to-[var(--gradient-from)]",
+            "animation-delay-300"
+          )}
+        />
+      </div>
+      <span
         className={cn(
-          "min-h-[56px] w-full rounded-xl p-3",
-          isLightTheme ? "glass-strong bg-white/60" : "glass bg-card/60"
+          "text-sm font-medium",
+          isLightTheme ? "text-slate-600" : "text-muted-foreground"
         )}
       >
-        {showDetailedLoading ? (
-          <div className="space-y-3">
-            {showToolCalls && hasToolCalls && (
-              <>
-                <GenerativeUIRenderer
-                  isLoading
-                  toolCalls={currentToolCalls.filter((tc) => hasCustomUI(tc.name))}
-                />
-                {currentToolCalls.some((tc) => !hasCustomUI(tc.name)) && (
-                  <ToolCallMessage
-                    isLoading
-                    toolCalls={currentToolCalls.filter((tc) => !hasCustomUI(tc.name))}
-                  />
-                )}
-              </>
-            )}
-            {showActivityTimeline && hasActivityEvents && (
-              <ActivityTimeline isLoading processedEvents={liveActivityEvents} />
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Loader2
-              className={cn(
-                "size-5 animate-spin",
-                isLightTheme ? "text-slate-600" : "text-primary"
-              )}
-            />
-            <span className={isLightTheme ? "text-slate-600" : "text-foreground"}>
-              Processing...
-            </span>
-          </div>
-        )}
-      </div>
+        Generating...
+      </span>
     </div>
   );
 }

@@ -733,7 +733,7 @@ export function ChatArea({
             title="Jump to latest"
             type="button"
           >
-            <ArrowDown className="size-5 transition-transform duration-500 hover:rotate-[360deg]" />
+            <ArrowDown className="scroll-to-bottom-arrow size-5 transition-transform duration-500" />
           </button>
         )}
       </div>
