@@ -2,6 +2,7 @@
 
 import type { Message as LangGraphMessage } from "@langchain/langgraph-sdk";
 import { cn } from "@workspace/ui/lib/utils";
+import { ArrowDown } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTheme } from "@/components/theme/theme-provider";
@@ -72,7 +73,6 @@ export function ChatArea({
   const [currentToolCalls, setCurrentToolCalls] = useState<ToolCall[]>([]);
   const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
   const [isNearBottom, setIsNearBottom] = useState(true);
-  const wasLoadingRef = useRef(false);
 
   // Holds the generated title for the current first message until chat.threadId arrives
   const pendingTitleRef = useRef<string | null>(null);
@@ -278,21 +278,17 @@ export function ChatArea({
     return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Auto-scroll when new messages arrive, but only if user is near bottom or was loading
+  // Auto-scroll when new messages arrive, but only if user is near bottom
   useEffect(() => {
     const container = chatContainerRef.current;
-    if (!container || !chat.messages.length) return;
+    if (!container || !chat.messages.length || !isNearBottom) return;
 
-    const wasLoading = wasLoadingRef.current;
-    wasLoadingRef.current = chat.isLoading;
-
-    if (isNearBottom || wasLoading) {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }, [chat.messages, chat.isLoading, isNearBottom]);
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: "smooth",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat.messages.length, isNearBottom]);
 
   // ============================================================================
   // MESSAGE ACTIONS
@@ -601,6 +597,16 @@ export function ChatArea({
     }
   }, []);
 
+  const scrollToBottom = useCallback(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: "smooth",
+    });
+    setIsNearBottom(true);
+  }, []);
+
   return (
     <div className="relative z-10 flex flex-1 flex-col">
       {/* Messages Container */}
@@ -717,6 +723,18 @@ export function ChatArea({
             onJump={handleJumpToMessage}
             scrollContainerRef={chatContainerRef}
           />
+        )}
+
+        {/* Scroll to bottom button - appears when user scrolls up */}
+        {hasMessages && !isNearBottom && (
+          <button
+            onClick={scrollToBottom}
+            className="absolute bottom-4 left-1/2 z-20 flex h-10 w-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border border-border/50 bg-background/80 text-muted-foreground shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background active:scale-95"
+            title="Jump to latest"
+            type="button"
+          >
+            <ArrowDown className="size-5 transition-transform duration-200 group-hover:translate-y-0.5" />
+          </button>
         )}
       </div>
 
