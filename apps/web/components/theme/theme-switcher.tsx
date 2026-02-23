@@ -42,11 +42,11 @@ export function ThemeSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          className="flex items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-primary/20"
-          size="icon-lg"
+          className="sidebar-icon-btn flex size-9 items-center justify-center transition-all duration-200 hover:scale-110"
+          size="icon"
           variant="ghost"
         >
-          <Palette className="size-5" />
+          <Palette className="size-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

@@ -9,6 +9,7 @@ import {
 } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
 import { Bot, Copy, CornerDownRight, RefreshCw } from "lucide-react";
+import React from "react";
 import type { ToolStep } from "@/lib/message-grouping";
 import { hasCustomUI } from "@/lib/tool-config";
 import { BranchSwitcher } from "./branch-switcher";
@@ -58,7 +59,7 @@ interface MessageGroupProps {
  *
  * Chat bubble is purely a content renderer — it no longer owns assistant-side controls.
  */
-export function MessageGroup({
+export const MessageGroup = React.memo(function MessageGroup({
   id,
   userMessage,
   toolSteps,
@@ -275,4 +276,4 @@ export function MessageGroup({
       )}
     </div>
   );
-}
+});

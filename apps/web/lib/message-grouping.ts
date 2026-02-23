@@ -76,10 +76,6 @@ function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[
   // Primary: Extract from additional_kwargs.file_metadata (persists with message)
   const additionalKwargs = (msg as any).additional_kwargs;
   if (additionalKwargs?.file_metadata && Array.isArray(additionalKwargs.file_metadata)) {
-    console.log(
-      "[extractAttachments] Found file_metadata in additional_kwargs:",
-      additionalKwargs.file_metadata.length
-    );
     return additionalKwargs.file_metadata.map((f: any, i: number) => ({
       id: f.id || `attachment-${msgId}-${i}`,
       name: f.name || "File",
@@ -92,17 +88,12 @@ function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[
   // Fallback: Check for attachments stored directly on the message (legacy optimistic updates)
   const msgWithAttachments = msg as LangGraphMessage & { attachments?: AttachedFile[] };
   if (msgWithAttachments.attachments && Array.isArray(msgWithAttachments.attachments)) {
-    console.log(
-      "[extractAttachments] Found attachments on message object:",
-      msgWithAttachments.attachments.length
-    );
     return msgWithAttachments.attachments;
   }
 
   // Fallback: Extract from multimodal content array (for vision models)
   const content = msg.content;
   if (Array.isArray(content)) {
-    console.log("[extractAttachments] Content is array with", content.length, "blocks");
     let imageIndex = 0;
     for (const block of content) {
       if (block.type === "image_url" && block.image_url) {
@@ -119,12 +110,10 @@ function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[
       }
     }
     if (attachments.length > 0) {
-      console.log("[extractAttachments] Extracted from multimodal content:", attachments.length);
       return attachments;
     }
   }
 
-  console.log("[extractAttachments] No attachments found for message:", msgId);
   return [];
 }
 
@@ -171,25 +160,6 @@ export function groupMessages(
 ): MessageGroup[] {
   if (messages.length === 0) return [];
 
-  // Debug: Log incoming messages
-  console.log(
-    "[groupMessages] Incoming messages:",
-    messages.map((m, idx) => ({
-      index: idx,
-      id: m.id,
-      type: m.type,
-      contentType: typeof m.content,
-      isArray: Array.isArray(m.content),
-      contentPreview:
-        typeof m.content === "string"
-          ? m.content.slice(0, 50)
-          : Array.isArray(m.content)
-            ? `array[${m.content.length}]: ${m.content.map((b: any) => b.type).join(",")}`
-            : `[${typeof m.content}]`,
-      toolCalls: (m as any).tool_calls?.length || 0,
-    }))
-  );
-
   const groups: MessageGroup[] = [];
   let currentGroup: MessageGroup | null = null;
 
@@ -200,10 +170,8 @@ export function groupMessages(
     // Also skip human messages that are purely document context injected for the LLM —
     // these are tagged with is_document_context: true in additional_kwargs.
     if (msg.type === "system" || msg.type === "tool") continue;
-    if (
-      msg.type === "human" &&
-      (msg as any).additional_kwargs?.is_document_context === true
-    ) continue;
+    if (msg.type === "human" && (msg as any).additional_kwargs?.is_document_context === true)
+      continue;
 
     if (msg.id && hiddenMessageIds.has(msg.id)) continue;
 
@@ -270,9 +238,7 @@ export function groupMessages(
           // This AI message starts (or continues) a tool-call round.
           // Each distinct AI message with tool_calls is its own step — this
           // preserves multi-round ordering (no merging by ID dedup here).
-          const introMessage: Message | null = hasTextContent
-            ? { ...aiMessage }
-            : null;
+          const introMessage: Message | null = hasTextContent ? { ...aiMessage } : null;
 
           // Deduplicate tool calls against ALL previous steps to be safe
           const seenIds = new Set(
@@ -323,15 +289,14 @@ export function groupMessages(
           reasoning,
         };
 
-        const introMessage: Message | null = hasTextContent && hasToolCalls ? { ...aiMessage } : null;
+        const introMessage: Message | null =
+          hasTextContent && hasToolCalls ? { ...aiMessage } : null;
 
         currentGroup = {
           id: `group-${msg.id || i}`,
           userMessage: null,
           userAttachments: [],
-          toolSteps: hasToolCalls
-            ? [{ introMessage, toolCalls }]
-            : [],
+          toolSteps: hasToolCalls ? [{ introMessage, toolCalls }] : [],
           assistantMessage: hasToolCalls ? null : aiMessage,
           firstAssistantMessageId: msg.id || `msg-${i}`,
           isLastGroup: false,
@@ -350,26 +315,6 @@ export function groupMessages(
   // Mark the last group
   const lastGroup = groups.at(-1);
   if (lastGroup) lastGroup.isLastGroup = true;
-
-  // Debug logging
-  console.log(
-    "[groupMessages] Groups created:",
-    groups.map((g, idx) => ({
-      index: idx,
-      id: g.id,
-      hasUser: !!g.userMessage,
-      userContent: g.userMessage?.content?.slice(0, 50),
-      hasAssistant: !!g.assistantMessage,
-      assistantContent: g.assistantMessage?.content?.slice(0, 50),
-      toolStepsCount: g.toolSteps.length,
-      toolSteps: g.toolSteps.map((s) => ({
-        hasIntro: !!s.introMessage,
-        toolCalls: s.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, status: tc.status })),
-      })),
-      branch: g.branch,
-      isLastGroup: g.isLastGroup,
-    }))
-  );
 
   return groups;
 }

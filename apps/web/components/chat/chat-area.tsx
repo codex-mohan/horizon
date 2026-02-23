@@ -192,25 +192,53 @@ export function ChatArea({
   }, [chat.messages, chat, hiddenMessageIds]);
 
   // Track which message groups are in the viewport using IntersectionObserver
+  // Optimized with RAF batching and ref-based updates to prevent scroll jank
   useEffect(() => {
     const container = chatContainerRef.current;
     if (!container) return;
 
+    let rafId: number | null = null;
+    let pendingUpdates: Array<{ id: string; isIntersecting: boolean }> = [];
+
+    const flushUpdates = () => {
+      if (pendingUpdates.length === 0) return;
+
+      setVisibleMessageIds((prev) => {
+        // Only create a new Set if there are actual changes
+        let next: Set<string> | null = null;
+
+        for (const { id, isIntersecting } of pendingUpdates) {
+          const currentlyHas = prev.has(id);
+          if (isIntersecting && !currentlyHas) {
+            next ??= new Set(prev);
+            next.add(id);
+          } else if (!isIntersecting && currentlyHas) {
+            next ??= new Set(prev);
+            next.delete(id);
+          }
+        }
+
+        pendingUpdates = [];
+        return next ?? prev;
+      });
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
-        setVisibleMessageIds((prev) => {
-          const next = new Set(prev);
-          for (const entry of entries) {
-            const id = (entry.target as HTMLElement).dataset.groupId;
-            if (!id) continue;
-            if (entry.isIntersecting) {
-              next.add(id);
-            } else {
-              next.delete(id);
-            }
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset.groupId;
+          if (id) {
+            pendingUpdates.push({ id, isIntersecting: entry.isIntersecting });
           }
-          return next;
-        });
+        }
+
+        // Batch updates with requestAnimationFrame for smooth scrolling
+        if (rafId === null) {
+          rafId = requestAnimationFrame(() => {
+            rafId = null;
+            flushUpdates();
+          });
+        }
       },
       { root: container, threshold: 0.1 }
     );
@@ -219,7 +247,10 @@ export function ChatArea({
     const groupEls = container.querySelectorAll("[data-group-id]");
     groupEls.forEach((el) => observer.observe(el));
 
-    return () => observer.disconnect();
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      observer.disconnect();
+    };
   }, [messageGroups]);
 
   // Clear loading states when done
@@ -574,15 +605,6 @@ export function ChatArea({
   const hasMessages = messageGroups.length > 0;
   const showLoading =
     chat.isLoading && (chat.messages.length === 0 || chat.messages.at(-1)?.type === "human");
-
-  // Debug: Log interrupt state
-  useEffect(() => {
-    console.log("[ChatArea] Interrupt state:", {
-      isWaitingForInterrupt: chat.isWaitingForInterrupt,
-      hasInterrupt: !!chat.interrupt,
-      interruptData: chat.interrupt,
-    });
-  }, [chat.isWaitingForInterrupt, chat.interrupt]);
 
   // Collect index entries from messageGroups for the right-rail scrubber
   const indexEntries = useMemo(() => {

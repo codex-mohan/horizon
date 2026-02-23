@@ -806,3 +806,47 @@ html:is(.dark)[data-theme="aurora"],
   color: var(--dropdown-fg) !important;
   border-color: var(--dropdown-border) !important;
 }
+
+/* Sidebar Icon Buttons - Subtle theme-aware hover */
+.sidebar-icon-btn {
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-icon-btn:hover {
+  background: color-mix(in srgb, var(--sidebar-foreground) 8%, transparent);
+}
+
+.sidebar-icon-active {
+  background: color-mix(in srgb, var(--sidebar-primary) 15%, transparent);
+  color: var(--sidebar-primary);
+  transform: scale(1.05);
+}
+
+.sidebar-icon-active:hover {
+  background: color-mix(in srgb, var(--sidebar-primary) 25%, transparent);
+}
+
+/* Sidebar Search Button - Distinct circular style with gradient */
+.sidebar-search-btn {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--gradient-from) 60%, transparent),
+    color-mix(in srgb, var(--gradient-via) 60%, transparent),
+    color-mix(in srgb, var(--gradient-to) 60%, transparent)
+  );
+  color: var(--sidebar-foreground);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-search-btn:hover {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--gradient-from) 80%, transparent),
+    color-mix(in srgb, var(--gradient-via) 80%, transparent),
+    color-mix(in srgb, var(--gradient-to) 80%, transparent)
+  );
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 30%, transparent);
+}

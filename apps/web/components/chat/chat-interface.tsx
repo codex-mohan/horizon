@@ -28,6 +28,7 @@ export interface Message {
   _groupId?: string;
   _isLastInGroup?: boolean;
   _retryTargetId?: string;
+  _isIncomplete?: boolean;
 }
 
 export interface AttachedFile {

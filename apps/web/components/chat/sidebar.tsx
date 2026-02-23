@@ -26,12 +26,16 @@ import {
   Layers,
   LogOut,
   MessageSquare,
+  Search,
   Settings,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { useAuthStore } from "@/lib/stores/auth";
+import { useConversationStore } from "@/lib/stores/conversation";
 import { ChangeAvatarDialog } from "./change-avatar-dialog";
+import { ConversationSearch } from "./conversation-search";
 import { ExpandedSidebar } from "./expanded-sidebar";
 import { UserSettingsDialog } from "./user-settings-dialog";
 
@@ -44,8 +48,11 @@ interface SidebarProps {
 
 export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse }: SidebarProps) {
   const { user, logout } = useAuthStore();
+  const router = useRouter();
+  const { setCurrentThreadId } = useConversationStore();
   const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false);
   const [isChangeAvatarOpen, setIsChangeAvatarOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const topSections = [
     { id: "conversations", icon: MessageSquare, label: "Conversations" },
     { id: "my-items", icon: FolderOpen, label: "My Items" },
@@ -67,13 +74,13 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    className="flex size-9 items-center justify-center p-1.5 transition-all duration-200 hover:scale-110 hover:bg-primary/40"
+                    className="sidebar-icon-btn flex size-9 items-center justify-center p-1.5 transition-all duration-200 hover:scale-110"
                     variant="ghost"
                   >
                     <img
                       alt="Horizon Logo"
                       className="size-full max-h-[36px] max-w-[36px] object-contain"
-                      src="/horizon-icon.png"
+                      src="/horizon-icon.svg"
                     />
                   </Button>
                 </TooltipTrigger>
@@ -89,14 +96,30 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
 
           <div className="flex flex-1 flex-col items-center gap-1">
             <TooltipProvider>
+              {/* Search Button - Special styling */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    className="sidebar-search-btn flex size-9 items-center justify-center rounded-full transition-all duration-200 hover:scale-110"
+                    onClick={() => setIsSearchOpen(true)}
+                    size="icon"
+                    variant="ghost"
+                  >
+                    <Search className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="animate-scale-in" side="right">
+                  <p>Search</p>
+                </TooltipContent>
+              </Tooltip>
+
               {topSections.map((section, index) => (
                 <Tooltip key={section.id}>
                   <TooltipTrigger asChild>
                     <Button
                       className={cn(
-                        "flex size-9 items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-primary/40",
-                        activeSection === section.id &&
-                          "hover-glow scale-105 bg-primary/30 text-primary-foreground",
+                        "sidebar-icon-btn flex size-9 items-center justify-center transition-all duration-200 hover:scale-110",
+                        activeSection === section.id && "sidebar-icon-active",
                         "stagger-item"
                       )}
                       onClick={() => onSectionChange(section.id)}
@@ -119,21 +142,6 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    className="flex size-9 items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-primary/40"
-                    size="icon"
-                    variant="ghost"
-                  >
-                    <HelpCircle className="size-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="animate-scale-in" side="right">
-                  <p>Help</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
                   <div>
                     <ThemeSwitcher />
                   </div>
@@ -146,12 +154,12 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    className="hover-glow flex size-8 items-center justify-center rounded-full p-0 transition-all duration-200 hover:scale-110"
+                    className="sidebar-icon-btn flex size-8 items-center justify-center rounded-full p-0 transition-all duration-200 hover:scale-110"
                     size="icon"
                     variant="ghost"
                   >
                     <Avatar className="size-8 transition-transform duration-200">
-                      <AvatarImage src={user?.avatarUrl || "/horizon-icon.png"} />
+                      <AvatarImage src={user?.avatarUrl || "/horizon-icon.svg"} />
                       <AvatarFallback className="bg-linear-to-br from-primary to-accent text-foreground text-xs">
                         {user?.displayName ? user.displayName.substring(0, 2).toUpperCase() : "U"}
                       </AvatarFallback>
@@ -177,6 +185,10 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
                   <DropdownMenuItem onClick={() => setIsUserSettingsOpen(true)}>
                     <Settings className="mr-2 size-4" />
                     <span>Account Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <HelpCircle className="mr-2 size-4" />
+                    <span>Help</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -209,6 +221,16 @@ export function Sidebar({ isExpanded, activeSection, onSectionChange, onCollapse
       <ChangeAvatarDialog
         isOpen={isChangeAvatarOpen}
         onClose={() => setIsChangeAvatarOpen(false)}
+      />
+
+      <ConversationSearch
+        onOpenChange={setIsSearchOpen}
+        onSelect={(threadId) => {
+          setCurrentThreadId(threadId);
+          router.push(`/chat/${threadId}`);
+          setIsSearchOpen(false);
+        }}
+        open={isSearchOpen}
       />
     </>
   );

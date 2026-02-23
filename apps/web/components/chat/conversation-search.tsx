@@ -3,26 +3,42 @@
 import { cn } from "@workspace/ui/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { MessageSquare, Search, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { Thread } from "@/lib/threads";
+import { useAuthStore } from "@/lib/stores/auth";
+import { createThreadsClient, type Thread } from "@/lib/threads";
 
 interface ConversationSearchProps {
   open: boolean;
   onOpenChange: React.Dispatch<React.SetStateAction<boolean>>;
-  threads: Thread[];
   onSelect: (threadId: string) => void;
 }
 
-export function ConversationSearch({
-  open,
-  onOpenChange,
-  threads,
-  onSelect,
-}: ConversationSearchProps) {
+export function ConversationSearch({ open, onOpenChange, onSelect }: ConversationSearchProps) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [threads, setThreads] = useState<Thread[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { user } = useAuthStore();
+  const apiUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
+  const threadsClient = useMemo(() => createThreadsClient(apiUrl), [apiUrl]);
+
+  useEffect(() => {
+    const fetchThreads = async () => {
+      if (!user) return;
+      try {
+        const fetchedThreads = await threadsClient.listThreads(user.id);
+        setThreads(fetchedThreads);
+      } catch (error) {
+        console.error("[ConversationSearch] Failed to fetch threads:", error);
+      }
+    };
+
+    if (open) {
+      fetchThreads();
+    }
+  }, [open, user, threadsClient]);
 
   const filteredThreads = threads.filter((thread) => {
     const title = (thread.metadata?.title as string) || "Untitled Conversation";

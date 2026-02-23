@@ -199,8 +199,6 @@ export const ChatInput = memo(function ChatInput({
     [attachedFiles, onAttachedFilesChange]
   );
 
-  const wordCount = useMemo(() => text.trim().split(/\s+/).filter(Boolean).length, [text]);
-
   const approvalMode = settings.toolApprovalMode || "dangerous_only";
   const ModeIcon = APPROVAL_MODE_CONFIG[approvalMode]?.icon || Shield;
 
@@ -457,12 +455,6 @@ export const ChatInput = memo(function ChatInput({
                 <p>Voice input</p>
               </TooltipContent>
             </Tooltip>
-
-            <div className="h-5 w-px bg-border/50" />
-
-            <span className="min-w-[60px] text-right text-muted-foreground text-xs">
-              {wordCount} words
-            </span>
 
             {isLoading ? (
               <Button

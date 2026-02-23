@@ -83,12 +83,12 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
       />
 
       {/* Dialog */}
-      <div className="fade-in zoom-in-95 fixed top-1/2 left-1/2 z-[100] w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 animate-in duration-200">
-        <div className="glass-strong flex h-[600px] overflow-hidden rounded-2xl border border-border/50 shadow-2xl">
+      <div className="fade-in zoom-in-95 fixed top-1/2 left-1/2 z-[100] w-full max-w-xl -translate-x-1/2 -translate-y-1/2 animate-in duration-200">
+        <div className="glass-strong flex max-h-[80vh] overflow-hidden rounded-xl border border-border/50 shadow-2xl">
           {/* Sidebar */}
-          <div className="flex w-64 flex-col border-border/50 border-r bg-muted/20 p-4">
-            <div className="mb-6 px-2">
-              <h2 className="flex items-center gap-2 font-display font-semibold text-lg">
+          <div className="flex w-56 flex-col border-border/50 border-r bg-muted/20 p-4">
+            <div className="mb-5 px-1">
+              <h2 className="flex items-center gap-2 font-display font-semibold text-base">
                 <Settings className="size-5 text-primary" />
                 Settings
               </h2>
@@ -96,7 +96,7 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
 
             <nav className="flex-1 space-y-1">
               <Button
-                className="w-full justify-start gap-3"
+                className="w-full justify-start gap-2.5 h-9 text-sm"
                 onClick={() => setActiveTab("profile")}
                 variant={activeTab === "profile" ? "secondary" : "ghost"}
               >
@@ -104,7 +104,7 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
                 Profile
               </Button>
               <Button
-                className="w-full justify-start gap-3"
+                className="w-full justify-start gap-2.5 h-9 text-sm"
                 onClick={() => setActiveTab("security")}
                 variant={activeTab === "security" ? "secondary" : "ghost"}
               >
@@ -112,7 +112,7 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
                 Security
               </Button>
               <Button
-                className="w-full justify-start gap-3"
+                className="w-full justify-start gap-2.5 h-9 text-sm"
                 onClick={() => setActiveTab("notifications")}
                 variant={activeTab === "notifications" ? "secondary" : "ghost"}
               >
@@ -123,7 +123,7 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
 
             <div className="mt-auto border-border/30 border-t pt-4">
               <Button
-                className="w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="w-full justify-start gap-2.5 h-9 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
                 disabled={isLoggingOut}
                 onClick={handleLogout}
                 variant="ghost"
@@ -136,8 +136,8 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
 
           {/* Content Area */}
           <div className="flex min-w-0 flex-1 flex-col bg-background/30">
-            <div className="flex items-center justify-between border-border/30 border-b p-6 pb-4">
-              <h3 className="font-semibold text-xl capitalize">{activeTab}</h3>
+            <div className="flex items-center justify-between border-border/30 border-b px-5 py-4">
+              <h3 className="font-medium text-base capitalize">{activeTab}</h3>
               <Button
                 className="hover:bg-destructive/10 hover:text-destructive"
                 onClick={onClose}
@@ -148,37 +148,50 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
               </Button>
             </div>
 
-            <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-6">
+            <div className="custom-scrollbar flex-1 space-y-5 overflow-y-auto p-5">
               {activeTab === "profile" && (
-                <div className="space-y-6">
+                <div className="space-y-5">
                   <div className="flex items-center gap-4">
-                    <Avatar className="size-20 ring-4 ring-primary/10">
+                    <Avatar className="size-16 ring-2 ring-primary/10">
                       <AvatarImage src={user?.avatarUrl || undefined} />
-                      <AvatarFallback className="bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] font-display text-2xl text-white">
+                      <AvatarFallback className="bg-gradient-to-br from-[var(--gradient-from)] to-[var(--gradient-to)] font-display text-lg text-white">
                         {user?.displayName?.substring(0, 2).toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h4 className="font-medium text-lg">{user?.displayName}</h4>
+                      <h4 className="font-medium text-base">{user?.displayName}</h4>
                       <p className="text-muted-foreground text-sm">@{user?.username}</p>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="display-name">Display Name</Label>
+                      <Label className="text-sm" htmlFor="display-name">
+                        Display Name
+                      </Label>
                       <Input
+                        className="h-9 text-sm"
                         id="display-name"
                         onChange={(e) => setDisplayName(e.target.value)}
                         value={displayName}
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input className="bg-muted/50" disabled id="username" value={username} />
-                      <p className="text-muted-foreground text-xs">Username cannot be changed.</p>
+                      <Label className="text-sm" htmlFor="username">
+                        Username
+                      </Label>
+                      <Input
+                        className="h-9 text-sm bg-muted/50"
+                        disabled
+                        id="username"
+                        value={username}
+                      />
                     </div>
-                    <Button disabled={isLoading} onClick={handleUpdateProfile}>
+                    <Button
+                      className="h-9 text-sm"
+                      disabled={isLoading}
+                      onClick={handleUpdateProfile}
+                    >
                       {isLoading ? "Saving..." : "Save Changes"}
                     </Button>
                   </div>
@@ -186,12 +199,15 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
               )}
 
               {activeTab === "security" && (
-                <div className="space-y-6">
+                <div className="space-y-5">
                   <div className="space-y-4">
-                    <h4 className="font-medium">Change Password</h4>
+                    <h4 className="text-sm font-medium">Change Password</h4>
                     <div className="grid gap-2">
-                      <Label htmlFor="current-password">Current Password</Label>
+                      <Label className="text-sm" htmlFor="current-password">
+                        Current Password
+                      </Label>
                       <Input
+                        className="h-9 text-sm"
                         id="current-password"
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         type="password"
@@ -199,15 +215,22 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="new-password">New Password</Label>
+                      <Label className="text-sm" htmlFor="new-password">
+                        New Password
+                      </Label>
                       <Input
+                        className="h-9 text-sm"
                         id="new-password"
                         onChange={(e) => setNewPassword(e.target.value)}
                         type="password"
                         value={newPassword}
                       />
                     </div>
-                    <Button onClick={handleUpdatePassword} variant="outline">
+                    <Button
+                      className="h-9 text-sm"
+                      onClick={handleUpdatePassword}
+                      variant="outline"
+                    >
                       Update Password
                     </Button>
                   </div>
@@ -215,22 +238,25 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
                   <Separator />
 
                   <div className="space-y-4">
-                    <h4 className="font-medium text-destructive">Danger Zone</h4>
-                    <Button variant="destructive">Delete Account</Button>
+                    <h4 className="text-sm font-medium text-destructive">Danger Zone</h4>
+                    <Button className="h-9 text-sm" variant="destructive">
+                      Delete Account
+                    </Button>
                   </div>
                 </div>
               )}
 
               {activeTab === "notifications" && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/10 p-4">
                     <div className="space-y-0.5">
-                      <Label className="text-base">Email Notifications</Label>
+                      <Label className="text-sm font-medium">Email Notifications</Label>
                       <p className="text-muted-foreground text-sm">
                         Receive emails about your activity
                       </p>
                     </div>
                     <Button
+                      className="h-8 text-sm"
                       onClick={() => setEmailNotifs(!emailNotifs)}
                       size="sm"
                       variant={emailNotifs ? "default" : "outline"}
@@ -241,12 +267,13 @@ export function UserSettingsDialog({ isOpen, onClose }: UserSettingsDialogProps)
 
                   <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/10 p-4">
                     <div className="space-y-0.5">
-                      <Label className="text-base">Push Notifications</Label>
+                      <Label className="text-sm font-medium">Push Notifications</Label>
                       <p className="text-muted-foreground text-sm">
                         Receive push notifications on this device
                       </p>
                     </div>
                     <Button
+                      className="h-8 text-sm"
                       onClick={() => setPushNotifs(!pushNotifs)}
                       size="sm"
                       variant={pushNotifs ? "default" : "outline"}

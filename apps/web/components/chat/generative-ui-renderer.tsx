@@ -60,11 +60,7 @@ export function GenerativeUIRenderer({ toolCalls, isLoading = false }: Generativ
   return (
     <div className="space-y-3">
       {specialTools.map((toolCall) => (
-        <div
-          key={`${toolCall.id}-${toolCall.status}-${toolCall.startedAt || 0}-${toolCall.completedAt || 0}-${toolCall.error || ""}-${typeof toolCall.result === "string" ? toolCall.result.slice(0, 100) : ""}`}
-        >
-          {renderGenerativeUI(toolCall, isLoading)}
-        </div>
+        <div key={toolCall.id}>{renderGenerativeUI(toolCall, isLoading)}</div>
       ))}
     </div>
   );
