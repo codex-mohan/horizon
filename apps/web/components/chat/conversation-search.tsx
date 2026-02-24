@@ -1,11 +1,29 @@
 "use client";
 
+import { Button } from "@workspace/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import { cn } from "@workspace/ui/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, Search, X } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  MessageSquare,
+  MoreHorizontal,
+  Pencil,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { useAuthStore } from "@/lib/stores/auth";
+import { useConversationStore } from "@/lib/stores/conversation";
 import { createThreadsClient, type Thread } from "@/lib/threads";
 
 interface ConversationSearchProps {
@@ -20,7 +38,14 @@ export function ConversationSearch({ open, onOpenChange, onSelect }: Conversatio
   const [threads, setThreads] = useState<Thread[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
   const { user } = useAuthStore();
+  const { currentThreadId, setCurrentThreadId } = useConversationStore();
   const apiUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
   const threadsClient = useMemo(() => createThreadsClient(apiUrl), [apiUrl]);
 
@@ -39,6 +64,50 @@ export function ConversationSearch({ open, onOpenChange, onSelect }: Conversatio
       fetchThreads();
     }
   }, [open, user, threadsClient]);
+
+  const handleDeleteThread = async (threadId: string) => {
+    setDeletingId(threadId);
+    try {
+      await threadsClient.deleteThread(threadId);
+      setThreads((prev) => prev.filter((t) => t.thread_id !== threadId));
+      toast.success("Conversation deleted");
+
+      if (currentThreadId === threadId) {
+        setCurrentThreadId(null);
+      }
+    } catch (error) {
+      console.error("Failed to delete thread:", error);
+      toast.error("Failed to delete conversation");
+    } finally {
+      setDeletingId(null);
+      setPendingDeleteId(null);
+    }
+  };
+
+  const handleRenameThread = async (threadId: string, newTitle: string) => {
+    if (!newTitle.trim()) {
+      toast.error("Title cannot be empty");
+      return;
+    }
+
+    setIsRenaming(true);
+    try {
+      await threadsClient.updateThread(threadId, { title: newTitle });
+      setThreads((prev) =>
+        prev.map((t) =>
+          t.thread_id === threadId ? { ...t, metadata: { ...t.metadata, title: newTitle } } : t
+        )
+      );
+      toast.success("Conversation renamed");
+      setRenamingId(null);
+      setRenameValue("");
+    } catch (error) {
+      console.error("Failed to rename thread:", error);
+      toast.error("Failed to rename conversation");
+    } finally {
+      setIsRenaming(false);
+    }
+  };
 
   const filteredThreads = threads.filter((thread) => {
     const title = (thread.metadata?.title as string) || "Untitled Conversation";
@@ -95,7 +164,7 @@ export function ConversationSearch({ open, onOpenChange, onSelect }: Conversatio
       if (e.key === "Enter" && filteredThreads.length > 0) {
         e.preventDefault();
         const thread = filteredThreads[selectedIndex];
-        if (thread) {
+        if (thread && !renamingId && !pendingDeleteId) {
           onSelect(thread.thread_id);
           onOpenChange(false);
         }
@@ -105,7 +174,7 @@ export function ConversationSearch({ open, onOpenChange, onSelect }: Conversatio
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, filteredThreads, selectedIndex, onSelect, onOpenChange]);
+  }, [open, filteredThreads, selectedIndex, onSelect, onOpenChange, renamingId, pendingDeleteId]);
 
   if (!open) return null;
 
@@ -154,34 +223,174 @@ export function ConversationSearch({ open, onOpenChange, onSelect }: Conversatio
                 <div className="mb-2 px-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
                   Conversations
                 </div>
-                {filteredThreads.map((thread, index) => {
-                  const title = (thread.metadata?.title as string) || "Untitled Conversation";
-                  return (
-                    <button
-                      className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-                        index === selectedIndex ? "bg-primary/10 text-primary" : "hover:bg-muted/50"
-                      )}
-                      key={thread.thread_id}
-                      onClick={() => {
-                        onSelect(thread.thread_id);
-                        onOpenChange(false);
-                      }}
-                      onMouseEnter={() => setSelectedIndex(index)}
-                      type="button"
-                    >
-                      <MessageSquare className="size-4 shrink-0 opacity-70" />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium">{title}</div>
-                        <div className="text-muted-foreground text-xs">
-                          {formatDistanceToNow(new Date(thread.updated_at), {
-                            addSuffix: true,
-                          })}
+                <ul className="space-y-1">
+                  {filteredThreads.map((thread, index) => {
+                    const title = (thread.metadata?.title as string) || "Untitled Conversation";
+                    const isRenamingThis = renamingId === thread.thread_id;
+                    const isPendingDelete = pendingDeleteId === thread.thread_id;
+                    const isDeletingThis = deletingId === thread.thread_id;
+
+                    return (
+                      <li
+                        className={cn(
+                          "group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                          index === selectedIndex
+                            ? "bg-primary/10 text-primary"
+                            : "hover:bg-muted/50"
+                        )}
+                        key={thread.thread_id}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                      >
+                        <button
+                          className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
+                          disabled={isRenamingThis || isPendingDelete}
+                          onClick={() => {
+                            if (!isRenamingThis && !isPendingDelete) {
+                              onSelect(thread.thread_id);
+                              onOpenChange(false);
+                            }
+                          }}
+                          type="button"
+                        >
+                          <MessageSquare className="size-4 shrink-0 opacity-70" />
+                          {isRenamingThis ? (
+                            <input
+                              className="w-full rounded border border-primary/50 bg-background/80 px-2 py-1 text-sm outline-none focus:border-primary"
+                              onChange={(e) => setRenameValue(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => {
+                                e.stopPropagation();
+                                if (e.key === "Enter") {
+                                  handleRenameThread(thread.thread_id, renameValue);
+                                } else if (e.key === "Escape") {
+                                  setRenamingId(null);
+                                  setRenameValue("");
+                                }
+                              }}
+                              type="text"
+                              value={renameValue}
+                            />
+                          ) : (
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate font-medium">{title}</div>
+                              <div className="text-muted-foreground text-xs">
+                                {formatDistanceToNow(new Date(thread.updated_at), {
+                                  addSuffix: true,
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </button>
+
+                        <div className="flex items-center gap-1">
+                          {isRenamingThis ? (
+                            <>
+                              <Button
+                                className="size-6"
+                                disabled={isRenaming || !renameValue.trim()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRenameThread(thread.thread_id, renameValue);
+                                }}
+                                size="icon"
+                                variant="ghost"
+                              >
+                                {isRenaming ? (
+                                  <Loader2 className="size-3 animate-spin text-primary" />
+                                ) : (
+                                  <Check className="size-3 text-primary" />
+                                )}
+                              </Button>
+                              <Button
+                                className="size-6"
+                                disabled={isRenaming}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRenamingId(null);
+                                  setRenameValue("");
+                                }}
+                                size="icon"
+                                variant="ghost"
+                              >
+                                <X className="size-3 text-destructive" />
+                              </Button>
+                            </>
+                          ) : isPendingDelete ? (
+                            <>
+                              <Button
+                                className="size-6"
+                                disabled={isDeletingThis}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteThread(thread.thread_id);
+                                }}
+                                size="icon"
+                                variant="ghost"
+                              >
+                                {isDeletingThis ? (
+                                  <Loader2 className="size-3 animate-spin text-primary" />
+                                ) : (
+                                  <Check className="size-3 text-primary" />
+                                )}
+                              </Button>
+                              <Button
+                                className="size-6"
+                                disabled={isDeletingThis}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPendingDeleteId(null);
+                                }}
+                                size="icon"
+                                variant="ghost"
+                              >
+                                <X className="size-3 text-destructive" />
+                              </Button>
+                            </>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  className="opacity-0 transition-opacity group-hover:opacity-100"
+                                  onClick={(e) => e.stopPropagation()}
+                                  size="icon-sm"
+                                  variant="ghost"
+                                >
+                                  <MoreHorizontal className="size-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="end"
+                                className="animate-scale-in"
+                                style={{ zIndex: 100000 }}
+                              >
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRenamingId(thread.thread_id);
+                                    setRenameValue((thread.metadata?.title as string) || "");
+                                  }}
+                                >
+                                  <Pencil className="mr-2 size-4" />
+                                  Rename
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPendingDeleteId(thread.thread_id);
+                                  }}
+                                >
+                                  <Trash2 className="mr-2 size-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
-                      </div>
-                    </button>
-                  );
-                })}
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             )}
           </div>
