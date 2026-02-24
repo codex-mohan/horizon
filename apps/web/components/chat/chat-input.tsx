@@ -41,7 +41,7 @@ import {
   Wrench,
 } from "lucide-react";
 import type React from "react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useClipboardPaste } from "@/hooks/use-clipboard-paste";
 import { type AttachedFile, processFiles } from "@/lib/file-processing";
@@ -61,7 +61,6 @@ export interface ChatInputProps {
   onSettingsOpen: () => void;
   showToolCalls: boolean;
   onToggleToolCalls: () => void;
-  isLightTheme: boolean;
   attachedFiles: AttachedFile[];
   onAttachedFilesChange: (files: AttachedFile[]) => void;
   disabled?: boolean;
@@ -127,7 +126,6 @@ export const ChatInput = memo(function ChatInput({
   onSettingsOpen,
   showToolCalls,
   onToggleToolCalls,
-  isLightTheme,
   attachedFiles,
   onAttachedFilesChange,
   disabled = false,
@@ -360,6 +358,26 @@ export const ChatInput = memo(function ChatInput({
 
                 <DropdownMenuSeparator />
 
+                <DropdownMenuItem
+                  className="flex items-center justify-between"
+                  onClick={onToggleToolCalls}
+                >
+                  <div className="flex items-center gap-2">
+                    <Terminal className="size-4" />
+                    <span>Show Tool Calls</span>
+                  </div>
+                  <span
+                    className={cn(
+                      "text-xs",
+                      showToolCalls ? "text-emerald-500" : "text-muted-foreground"
+                    )}
+                  >
+                    {showToolCalls ? "On" : "Off"}
+                  </span>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
                 <div className="flex items-center gap-2 px-2 py-1.5 text-muted-foreground text-xs">
                   <ModeIcon className="size-3" />
                   <span>
@@ -368,32 +386,6 @@ export const ChatInput = memo(function ChatInput({
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* Tool calls toggle */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className="transition-transform duration-200 hover:scale-110"
-                  onClick={onToggleToolCalls}
-                  size="icon-sm"
-                  variant="ghost"
-                >
-                  <Terminal
-                    className={cn(
-                      "size-4",
-                      showToolCalls
-                        ? "text-primary"
-                        : isLightTheme
-                          ? "text-slate-400"
-                          : "text-muted-foreground"
-                    )}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="z-100 animate-scale-in" side="top">
-                <p>Tool Calls {showToolCalls ? "On" : "Off"}</p>
-              </TooltipContent>
-            </Tooltip>
 
             {/* Settings */}
             <Tooltip>

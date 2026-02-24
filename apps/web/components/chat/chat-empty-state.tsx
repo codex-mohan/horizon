@@ -1,10 +1,10 @@
 "use client";
 
 import { Badge } from "@workspace/ui/components/badge";
+import { suggestedPrompts } from "@/lib/message-grouping";
 import { ChatInput, type AttachedFile as ChatInputAttachedFile } from "./chat-input";
 import type { AttachedFile } from "./chat-interface";
 import { FileBadge } from "./file-badge";
-import { suggestedPrompts } from "@/lib/message-grouping";
 
 interface ChatEmptyStateProps {
   attachedFiles: AttachedFile[];
@@ -14,7 +14,6 @@ interface ChatEmptyStateProps {
   onSettingsOpen: () => void;
   showToolCalls: boolean;
   onToggleToolCalls: () => void;
-  isLightTheme: boolean;
   onAttachedFilesChange: (files: AttachedFile[]) => void;
   onRemoveFile: (fileId: string) => void;
 }
@@ -36,7 +35,6 @@ export function ChatEmptyState({
   onSettingsOpen,
   showToolCalls,
   onToggleToolCalls,
-  isLightTheme,
   onAttachedFilesChange,
   onRemoveFile,
 }: ChatEmptyStateProps) {
@@ -70,7 +68,6 @@ export function ChatEmptyState({
 
         <ChatInput
           attachedFiles={attachedFiles}
-          isLightTheme={isLightTheme}
           isLoading={isLoading}
           onAttachedFilesChange={onAttachedFilesChange}
           onSettingsOpen={onSettingsOpen}

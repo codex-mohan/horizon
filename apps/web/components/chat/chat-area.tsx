@@ -736,7 +736,6 @@ export function ChatArea({
           ) : (
             <ChatEmptyState
               attachedFiles={attachedFiles}
-              isLightTheme={isLightTheme}
               isLoading={chat.isLoading}
               onAttachedFilesChange={onAttachedFilesChange}
               onRemoveFile={handleRemoveFile}
@@ -776,7 +775,6 @@ export function ChatArea({
       {hasMessages && (
         <ChatInputArea
           attachedFiles={attachedFiles}
-          isLightTheme={isLightTheme}
           isLoading={chat.isLoading}
           onAttachedFilesChange={onAttachedFilesChange}
           onRemoveFile={handleRemoveFile}

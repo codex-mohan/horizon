@@ -12,7 +12,6 @@ interface ChatInputAreaProps {
   onSettingsOpen: () => void;
   showToolCalls: boolean;
   onToggleToolCalls: () => void;
-  isLightTheme: boolean;
   onAttachedFilesChange: (files: AttachedFile[]) => void;
   onRemoveFile: (fileId: string) => void;
 }
@@ -33,7 +32,6 @@ export function ChatInputArea({
   onSettingsOpen,
   showToolCalls,
   onToggleToolCalls,
-  isLightTheme,
   onAttachedFilesChange,
   onRemoveFile,
 }: ChatInputAreaProps) {
@@ -57,7 +55,6 @@ export function ChatInputArea({
 
         <ChatInput
           attachedFiles={attachedFiles}
-          isLightTheme={isLightTheme}
           isLoading={isLoading}
           onAttachedFilesChange={onAttachedFilesChange}
           onSettingsOpen={onSettingsOpen}
