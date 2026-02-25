@@ -3,7 +3,7 @@
 import { Button } from "@workspace/ui/components/button";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { cn } from "@workspace/ui/lib/utils";
-import { ChevronDown, ChevronUp, Pencil, User } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Pencil, User } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import MarkdownView from "@/components/markdown-view";
 import { useTheme } from "@/components/theme/theme-provider";
@@ -67,6 +67,10 @@ export const ChatBubble = React.memo(
     const handleEditClick = useCallback(() => {
       setIsEditing(true);
       setEditContent(message.content);
+    }, [message.content]);
+
+    const handleCopy = useCallback(() => {
+      void navigator.clipboard.writeText(message.content);
     }, [message.content]);
 
     return (
@@ -152,9 +156,9 @@ export const ChatBubble = React.memo(
                   "relative wrap-break-word rounded-xl px-4 py-2 font-body leading-relaxed",
                   isUser
                     ? cn(
-                      isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
-                      "text-foreground"
-                    )
+                        isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
+                        "text-foreground"
+                      )
                     : "w-full min-w-[120px] text-foreground"
                 )}
               >
@@ -174,8 +178,8 @@ export const ChatBubble = React.memo(
                 <div
                   className={cn(
                     isLongMessage &&
-                    !isExpanded &&
-                    "max-h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]"
+                      !isExpanded &&
+                      "max-h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]"
                   )}
                 >
                   {isUser ? (
@@ -202,8 +206,8 @@ export const ChatBubble = React.memo(
                 )}
               </div>
 
-              {/* User message action bar — edit only */}
-              {isUser && showActions && onEdit && (
+              {/* User message action bar — edit and copy */}
+              {isUser && showActions && (
                 <div
                   className={cn(
                     "flex items-center gap-1 transition-opacity duration-200",
@@ -213,18 +217,29 @@ export const ChatBubble = React.memo(
                 >
                   <Button
                     className="transition-all duration-200 hover:scale-110"
-                    disabled={isLoading}
-                    onClick={handleEditClick}
+                    onClick={handleCopy}
                     size="icon-sm"
                     variant="ghost"
-                    title={
-                      isLastGroup
-                        ? "Edit message (creates new branch)"
-                        : "Edit message (replaces conversation from here)"
-                    }
+                    title="Copy message"
                   >
-                    <Pencil className="size-4" />
+                    <Copy className="size-4" />
                   </Button>
+                  {onEdit && (
+                    <Button
+                      className="transition-all duration-200 hover:scale-110"
+                      disabled={isLoading}
+                      onClick={handleEditClick}
+                      size="icon-sm"
+                      variant="ghost"
+                      title={
+                        isLastGroup
+                          ? "Edit message (creates new branch)"
+                          : "Edit message (replaces conversation from here)"
+                      }
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  )}
                 </div>
               )}
             </>
