@@ -46,7 +46,7 @@ export async function AgentNode(
 
   if (modelConfig && modelConfig.provider && modelConfig.modelName) {
     console.log(
-      `[AgentNode] Using runtime model config: ${modelConfig.provider}/${modelConfig.modelName}`
+      `[AgentNode] Using runtime model config: ${modelConfig.provider}/${modelConfig.modelName} (reasoning: ${modelConfig.enableReasoning})`
     );
     llm = await createRuntimeLLM({
       provider: modelConfig.provider,
@@ -55,6 +55,7 @@ export async function AgentNode(
       maxTokens: modelConfig.maxTokens ?? agentConfig.MAX_TOKENS,
       apiKey: modelConfig.apiKey,
       baseUrl: modelConfig.baseUrl,
+      enableReasoning: modelConfig.enableReasoning,
     });
     modelName = modelConfig.modelName;
   } else {

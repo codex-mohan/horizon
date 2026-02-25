@@ -50,9 +50,12 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
     maxTokens = 4096,
     apiKey,
     baseUrl,
+    enableReasoning = false,
   } = runtimeConfig;
 
-  console.log(`[LLM] Creating runtime LLM: ${provider}/${modelName}`);
+  console.log(
+    `[LLM] Creating runtime LLM: ${provider}/${modelName} (reasoning: ${enableReasoning})`
+  );
 
   switch (provider) {
     case "openai":
