@@ -58,21 +58,23 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
   );
 
   switch (provider) {
-    case "openai":
+    case "openai": {
       if (!apiKey) {
         throw new Error("OPENAI_API_KEY is required for OpenAI provider");
       }
       return new ChatOpenAI({
         modelName,
-        temperature,
-        maxTokens,
+        temperature: enableReasoning ? undefined : temperature,
+        maxTokens: enableReasoning ? undefined : maxTokens,
         openAIApiKey: apiKey,
         configuration: {
           baseURL: baseUrl,
         },
+        reasoningEffort: enableReasoning ? "medium" : undefined,
       });
+    }
 
-    case "anthropic":
+    case "anthropic": {
       if (!apiKey) {
         throw new Error("ANTHROPIC_API_KEY is required for Anthropic provider");
       }
@@ -81,8 +83,9 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
         temperature,
         anthropicApiKey: apiKey,
       });
+    }
 
-    case "google":
+    case "google": {
       if (!apiKey) {
         throw new Error("GOOGLE_API_KEY is required for Google provider");
       }
@@ -92,15 +95,17 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
         maxOutputTokens: maxTokens,
         apiKey,
       });
+    }
 
-    case "ollama":
+    case "ollama": {
       return new ChatOllama({
         model: modelName,
         temperature,
         baseUrl: baseUrl || "http://localhost:11434",
       });
+    }
 
-    case "groq":
+    case "groq": {
       if (!apiKey) {
         throw new Error("GROQ_API_KEY is required for Groq provider");
       }
@@ -109,20 +114,23 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
         temperature,
         apiKey,
       });
+    }
 
-    case "nvidia_nim":
+    case "nvidia_nim": {
       if (!apiKey) {
         throw new Error("NVIDIA_NIM_API_KEY is required for NVIDIA NIM provider");
       }
       return new ChatOpenAI({
         modelName,
-        temperature,
-        maxTokens,
+        temperature: enableReasoning ? undefined : temperature,
+        maxTokens: enableReasoning ? undefined : maxTokens,
         openAIApiKey: apiKey,
         configuration: {
           baseURL: baseUrl || "https://integrate.api.nvidia.com/v1",
         },
+        reasoningEffort: enableReasoning ? "medium" : undefined,
       });
+    }
 
     default:
       throw new Error(`Unsupported model provider: ${provider}`);
