@@ -2,7 +2,7 @@
 
 import type { Message as LangGraphMessage } from "@langchain/langgraph-sdk";
 import { cn } from "@workspace/ui/lib/utils";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTheme } from "@/components/theme/theme-provider";
@@ -657,7 +657,14 @@ export function ChatArea({
             <div className="mx-auto w-full max-w-3xl space-y-6">
               {/* Error Display */}
               {chatError && (
-                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+                <div className="relative rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+                  <button
+                    aria-label="Close error"
+                    className="absolute top-2 right-2 rounded-md p-1 opacity-60 hover:bg-destructive/20 hover:opacity-100"
+                    onClick={() => setChatError(null)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                   <p className="font-medium text-sm">Error</p>
                   <p className="text-xs opacity-80">{chatError}</p>
                 </div>

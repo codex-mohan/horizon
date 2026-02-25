@@ -199,7 +199,11 @@ export const ModelSelector = memo(function ModelSelector({
                   <span className="text-muted-foreground text-xs">Extended thinking</span>
                 </div>
               </div>
-              <Switch checked={config.enableReasoning} onCheckedChange={setEnableReasoning} />
+              <Switch
+                className="bg-zinc-600 data-[state=checked]:bg-emerald-500"
+                checked={config.enableReasoning}
+                onCheckedChange={setEnableReasoning}
+              />
             </div>
             <DropdownMenuSeparator />
           </>
