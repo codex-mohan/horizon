@@ -110,7 +110,14 @@ export const PROVIDER_INFO: Record<
   },
 };
 
-export const REASONING_MODELS = ["o1-preview", "o1-mini", "deepseek-ai/deepseek-r1", "deepseek-r1"];
+export const REASONING_MODELS = [
+  "o1-preview",
+  "o1-mini",
+  "deepseek-ai/deepseek-r1",
+  "deepseek-r1",
+  "qwen3.5",
+  "qwen3.5-397b",
+];
 
 export function supportsReasoning(modelName: string, provider: ModelProvider): boolean {
   if (PROVIDER_INFO[provider].supportsReasoning) {

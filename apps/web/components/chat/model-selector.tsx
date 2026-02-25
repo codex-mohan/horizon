@@ -106,7 +106,7 @@ export const ModelSelector = memo(function ModelSelector({
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
-          <TooltipContent className="z-100 animate-scale-in" side="top">
+          <TooltipContent className="z-[100] animate-scale-in" side="top">
             <p>
               {currentProviderInfo.name}: {config.modelName}
             </p>
@@ -114,7 +114,7 @@ export const ModelSelector = memo(function ModelSelector({
         </Tooltip>
       </TooltipProvider>
 
-      <DropdownMenuContent align="end" className="z-100 w-72 animate-scale-in">
+      <DropdownMenuContent align="end" className="z-[100] w-72 animate-scale-in">
         <DropdownMenuLabel className="flex items-center gap-2 text-xs">
           <Cpu className="size-3.5" />
           Select Provider & Model
@@ -126,7 +126,7 @@ export const ModelSelector = memo(function ModelSelector({
             <ProviderIcon className="size-4" provider={config.provider} />
             <span>Provider: {currentProviderInfo.name}</span>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="z-100 w-48">
+          <DropdownMenuSubContent className="z-[110] min-w-[160px]" sideOffset={8}>
             {(Object.keys(PROVIDER_INFO) as ModelProvider[]).map((provider) => {
               const info = PROVIDER_INFO[provider];
               const isSelected = config.provider === provider;
@@ -157,7 +157,7 @@ export const ModelSelector = memo(function ModelSelector({
           onValueChange={(value) => handleModelSelect(value)}
           value={config.modelName}
         >
-          <div className="max-h-48 overflow-y-auto">
+          <div className="custom-scrollbar max-h-48 overflow-y-auto">
             {DEFAULT_MODELS[config.provider].map((model) => {
               const hasReasoning = REASONING_MODELS.some((rm) =>
                 model.toLowerCase().includes(rm.toLowerCase())
@@ -176,7 +176,7 @@ export const ModelSelector = memo(function ModelSelector({
                           <TooltipTrigger>
                             <Brain className="size-3 text-muted-foreground" />
                           </TooltipTrigger>
-                          <TooltipContent className="z-[110]">Supports reasoning</TooltipContent>
+                          <TooltipContent className="z-[120]">Supports reasoning</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     )}
