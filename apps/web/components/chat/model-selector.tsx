@@ -176,7 +176,7 @@ export const ModelSelector = memo(function ModelSelector({
                           <TooltipTrigger>
                             <Brain className="size-3 text-muted-foreground" />
                           </TooltipTrigger>
-                          <TooltipContent>Supports reasoning</TooltipContent>
+                          <TooltipContent className="z-[110]">Supports reasoning</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     )}

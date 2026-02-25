@@ -1,14 +1,6 @@
 "use client";
 
 import { Button } from "@workspace/ui/components/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
@@ -28,6 +20,7 @@ import {
   Key,
   Settings2,
   Sparkles,
+  X,
   Zap,
 } from "lucide-react";
 import { memo, useState } from "react";
@@ -235,18 +228,41 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
     }
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="z-100 flex max-h-[85vh] w-[500px] flex-col overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 py-4">
-          <DialogTitle className="flex items-center gap-2">
+    <div
+      className={cn(
+        "fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm transition-all duration-300 ease-out",
+        open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      )}
+    >
+      <div className="absolute inset-0" onClick={() => onOpenChange(false)} />
+
+      <div
+        className={cn(
+          "glass-strong relative z-10 flex w-[90vw] max-w-[500px] flex-col overflow-hidden rounded-xl border-border shadow-2xl transition-all duration-300 ease-out max-h-[85vh]",
+          open ? "scale-100 translate-y-0 opacity-100" : "scale-95 -translate-y-8 opacity-0"
+        )}
+      >
+        <div className="flex items-center justify-between border-border border-b bg-card/50 px-6 py-4">
+          <div className="flex items-center gap-2">
             <Settings2 className="size-5" />
-            Provider Configuration
-          </DialogTitle>
-          <DialogDescription>
-            Configure your AI model providers and settings. Add API keys to enable providers.
-          </DialogDescription>
-        </DialogHeader>
+            <h2 className="font-display text-sm font-semibold">Provider Configuration</h2>
+          </div>
+          <Button
+            className="transition-transform duration-200 hover:scale-110"
+            onClick={() => onOpenChange(false)}
+            size="icon-sm"
+            variant="ghost"
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
+
+        <p className="border-border border-b bg-card/30 px-6 py-2 text-muted-foreground text-xs">
+          Configure your AI model providers and settings. Add API keys to enable providers.
+        </p>
 
         <Tabs className="flex-1 overflow-hidden" onValueChange={setActiveTab} value={activeTab}>
           <div className="border-b px-6 pt-2">
@@ -387,7 +403,7 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="border-t px-6 py-4">
+        <div className="border-t bg-card/10 px-6 py-4">
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <Key className="size-3" />
@@ -397,8 +413,8 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
               Done
             </Button>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 });
