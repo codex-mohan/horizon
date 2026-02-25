@@ -14,6 +14,7 @@ interface ChatInputAreaProps {
   onToggleToolCalls: () => void;
   onAttachedFilesChange: (files: AttachedFile[]) => void;
   onRemoveFile: (fileId: string) => void;
+  onOpenProviderConfig: () => void;
 }
 
 /**
@@ -34,6 +35,7 @@ export function ChatInputArea({
   onToggleToolCalls,
   onAttachedFilesChange,
   onRemoveFile,
+  onOpenProviderConfig,
 }: ChatInputAreaProps) {
   return (
     <div className="border-border/50 border-t px-4 py-2.5">
@@ -58,6 +60,7 @@ export function ChatInputArea({
           isLoading={isLoading}
           onAttachedFilesChange={onAttachedFilesChange}
           onSettingsOpen={onSettingsOpen}
+          onOpenProviderConfig={onOpenProviderConfig}
           onStop={onStop}
           onSubmit={onSubmit}
           onToggleToolCalls={onToggleToolCalls}

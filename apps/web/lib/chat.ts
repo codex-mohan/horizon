@@ -13,6 +13,7 @@ import { Client, type Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ToolApprovalMode } from "@/lib/stores/chat-settings";
+import { useModelConfig } from "@/lib/stores/model-config";
 
 export interface ChatError {
   type: "rate_limit" | "server_error" | "network_error" | "unknown";
@@ -583,6 +584,18 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       if (currentToolApproval) {
         config.configurable.tool_approval = currentToolApproval;
       }
+
+      const modelConfigState = useModelConfig.getState();
+      const { config: modelConfig } = modelConfigState;
+      config.configurable.model_config = {
+        provider: modelConfig.provider,
+        modelName: modelConfig.modelName,
+        temperature: modelConfig.temperature,
+        maxTokens: modelConfig.maxTokens,
+        enableReasoning: modelConfig.enableReasoning,
+        apiKey: modelConfig.providers[modelConfig.provider]?.apiKey,
+        baseUrl: modelConfig.providers[modelConfig.provider]?.baseUrl,
+      };
 
       if (Object.keys(config.configurable).length > 0) {
         submitOptions.config = config;

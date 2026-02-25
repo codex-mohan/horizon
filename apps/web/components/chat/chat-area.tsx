@@ -28,6 +28,7 @@ import { ChatInputArea } from "./chat-input-area";
 import type { AttachedFile, Message } from "./chat-interface";
 import { ChatLoadingIndicator } from "./chat-loading-indicator";
 import { MessageGroup } from "./message-group";
+import { ProviderConfigDialog } from "./provider-config-dialog";
 import type { ToolApprovalData } from "./tool-approval-banner";
 import type { ToolCall } from "./tool-call-message";
 
@@ -73,6 +74,7 @@ export function ChatArea({
   const [currentToolCalls, setCurrentToolCalls] = useState<ToolCall[]>([]);
   const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const [isProviderConfigOpen, setIsProviderConfigOpen] = useState(false);
 
   // Holds the generated title for the current first message until chat.threadId arrives
   const pendingTitleRef = useRef<string | null>(null);
@@ -738,6 +740,7 @@ export function ChatArea({
               attachedFiles={attachedFiles}
               isLoading={chat.isLoading}
               onAttachedFilesChange={onAttachedFilesChange}
+              onOpenProviderConfig={() => setIsProviderConfigOpen(true)}
               onRemoveFile={handleRemoveFile}
               onSettingsOpen={onSettingsOpen}
               onStop={handleStop}
@@ -777,6 +780,7 @@ export function ChatArea({
           attachedFiles={attachedFiles}
           isLoading={chat.isLoading}
           onAttachedFilesChange={onAttachedFilesChange}
+          onOpenProviderConfig={() => setIsProviderConfigOpen(true)}
           onRemoveFile={handleRemoveFile}
           onSettingsOpen={onSettingsOpen}
           onStop={handleStop}
@@ -785,6 +789,9 @@ export function ChatArea({
           showToolCalls={settings.showToolCalls}
         />
       )}
+
+      {/* Provider Configuration Dialog */}
+      <ProviderConfigDialog onOpenChange={setIsProviderConfigOpen} open={isProviderConfigOpen} />
     </div>
   );
 }

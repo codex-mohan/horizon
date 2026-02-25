@@ -16,17 +16,9 @@ interface ChatEmptyStateProps {
   onToggleToolCalls: () => void;
   onAttachedFilesChange: (files: AttachedFile[]) => void;
   onRemoveFile: (fileId: string) => void;
+  onOpenProviderConfig: () => void;
 }
 
-/**
- * ChatEmptyState - Empty state component displayed when no messages exist
- *
- * Features:
- * - Welcome message with branding
- * - Suggested prompts for quick actions
- * - File attachment display
- * - Chat input for starting conversation
- */
 export function ChatEmptyState({
   attachedFiles,
   onSubmit,
@@ -37,6 +29,7 @@ export function ChatEmptyState({
   onToggleToolCalls,
   onAttachedFilesChange,
   onRemoveFile,
+  onOpenProviderConfig,
 }: ChatEmptyStateProps) {
   return (
     <div className="w-full max-w-3xl animate-slide-up space-y-8">
@@ -70,6 +63,7 @@ export function ChatEmptyState({
           attachedFiles={attachedFiles}
           isLoading={isLoading}
           onAttachedFilesChange={onAttachedFilesChange}
+          onOpenProviderConfig={onOpenProviderConfig}
           onSettingsOpen={onSettingsOpen}
           onStop={onStop}
           onSubmit={onSubmit}

@@ -51,6 +51,7 @@ import {
   type ToolApprovalMode,
   useChatSettings,
 } from "@/lib/stores/chat-settings";
+import { ModelSelector } from "./model-selector";
 
 export type { AttachedFile };
 
@@ -65,22 +66,8 @@ export interface ChatInputProps {
   onAttachedFilesChange: (files: AttachedFile[]) => void;
   disabled?: boolean;
   placeholder?: string;
+  onOpenProviderConfig: () => void;
 }
-
-const modelGroups = {
-  "NVIDIA NIM": [
-    "qwen/qwen3.5-397b-a17b",
-    "meta/llama-3.1-70b-instruct",
-    "meta/llama-3.3-70b-instruct",
-    "nvidia/llama-3.1-nemotron-70b-instruct",
-    "mistralai/mixtral-8x7b-instruct-v0.1",
-  ],
-  OpenAI: ["gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
-  Anthropic: ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-haiku-20240307"],
-  Google: ["gemini-1.5-pro", "gemini-1.5-flash"],
-  Groq: ["llama-3.3-70b-versatile", "mixtral-8x7b-32768"],
-  Local: ["ollama/llama3", "ollama/mistral"],
-} as const;
 
 const APPROVAL_MODE_CONFIG: Record<
   ToolApprovalMode,
@@ -130,9 +117,9 @@ export const ChatInput = memo(function ChatInput({
   onAttachedFilesChange,
   disabled = false,
   placeholder = "Ask me anything...",
+  onOpenProviderConfig,
 }: ChatInputProps) {
   const [text, setText] = useState("");
-  const [selectedModel, setSelectedModel] = useState("qwen/qwen3.5-397b-a17b");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -407,32 +394,9 @@ export const ChatInput = memo(function ChatInput({
         </div>
 
         <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className="h-7 text-xs transition-transform duration-200 hover:scale-105"
-                  size="sm"
-                  variant="ghost"
-                >
-                  {selectedModel}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="z-100 w-48 animate-scale-in">
-                {Object.entries(modelGroups).map(([group, models]) => (
-                  <div key={group}>
-                    <DropdownMenuLabel className="text-xs">{group}</DropdownMenuLabel>
-                    {models.map((model) => (
-                      <DropdownMenuItem key={model} onClick={() => setSelectedModel(model)}>
-                        {model}
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                  </div>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <ModelSelector onOpenSettings={onOpenProviderConfig} />
 
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -447,32 +411,32 @@ export const ChatInput = memo(function ChatInput({
                 <p>Voice input</p>
               </TooltipContent>
             </Tooltip>
-
-            {isLoading ? (
-              <Button
-                className="h-9 bg-destructive/10 px-4 text-destructive hover:bg-destructive/20"
-                onClick={onStop}
-                size="sm"
-                variant="ghost"
-              >
-                <Loader2 className="mr-1 size-4 animate-spin" />
-                Stop
-              </Button>
-            ) : (
-              <GradientButton
-                className="p-0 text-white"
-                disabled={!text.trim()}
-                glowIntensity="high"
-                height={9}
-                icon={<Send className="size-4" />}
-                iconOnly
-                onClick={handleSubmit}
-                radius="full"
-                useThemeGradient
-                width={9}
-              />
-            )}
           </TooltipProvider>
+
+          {isLoading ? (
+            <Button
+              className="h-9 bg-destructive/10 px-4 text-destructive hover:bg-destructive/20"
+              onClick={onStop}
+              size="sm"
+              variant="ghost"
+            >
+              <Loader2 className="mr-1 size-4 animate-spin" />
+              Stop
+            </Button>
+          ) : (
+            <GradientButton
+              className="p-0 text-white"
+              disabled={!text.trim()}
+              glowIntensity="high"
+              height={9}
+              icon={<Send className="size-4" />}
+              iconOnly
+              onClick={handleSubmit}
+              radius="full"
+              useThemeGradient
+              width={9}
+            />
+          )}
         </div>
       </div>
 
