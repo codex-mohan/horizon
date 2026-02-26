@@ -199,15 +199,8 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
   open,
   onOpenChange,
 }: ProviderConfigDialogProps) {
-  const {
-    config,
-    setProvider,
-    setProviderApiKey,
-    setProviderBaseUrl,
-    setProviderEnabled,
-    setTemperature,
-    setMaxTokens,
-  } = useModelConfig();
+  const { config, setProvider, setProviderApiKey, setProviderBaseUrl, setProviderEnabled } =
+    useModelConfig();
   const [expandedProviders, setExpandedProviders] = useState<Set<ModelProvider>>(new Set());
   const [activeTab, setActiveTab] = useState("simple");
 
@@ -306,49 +299,26 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
               <div className="space-y-6 p-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-medium text-sm">Model Parameters</h3>
+                    <h3 className="font-medium text-sm">Advanced Settings</h3>
                     <p className="text-muted-foreground text-xs">
-                      Fine-tune the behavior of your selected model.
+                      These settings are configured in the main Settings dialog.
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-md bg-muted/50 p-3 text-muted-foreground text-xs">
                     <div className="space-y-1.5">
-                      <Label className="text-xs" htmlFor="temperature">
-                        Temperature
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          className="h-8"
-                          id="temperature"
-                          max={2}
-                          min={0}
-                          onChange={(e) => setTemperature(Number(e.target.value))}
-                          step={0.1}
-                          type="number"
-                          value={config.temperature}
-                        />
-                        <span className="w-8 text-right text-muted-foreground text-xs">
-                          {config.temperature}
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <span>Temperature</span>
+                        <span>Use main Settings dialog</span>
                       </div>
-                      <p className="text-muted-foreground text-xs">
-                        Higher = more creative, Lower = more focused
-                      </p>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs" htmlFor="max-tokens">
-                        Max Tokens
-                      </Label>
-                      <Input
-                        className="h-8"
-                        id="max-tokens"
-                        onChange={(e) => setMaxTokens(Number(e.target.value))}
-                        type="number"
-                        value={config.maxTokens}
-                      />
-                      <p className="text-muted-foreground text-xs">Maximum response length</p>
+                      <div className="flex items-center justify-between">
+                        <span>Max Tokens</span>
+                        <span>Use main Settings dialog</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Top P / Top K</span>
+                        <span>Use main Settings dialog</span>
+                      </div>
                     </div>
                   </div>
                 </div>

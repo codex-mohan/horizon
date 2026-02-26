@@ -527,7 +527,9 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     onInterrupt: handleInterrupt,
     onCustomEvent: handleCustomEvent,
     throttle: 30,
+    hasPendingTasks,
     fetchStateHistory,
+    recursionLimit: 100,
   } as any);
 
   // The SDK exposes interrupt as a property on stream - use it as a fallback
@@ -590,8 +592,6 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       config.configurable.model_config = {
         provider: modelConfig.provider,
         modelName: modelConfig.modelName,
-        temperature: modelConfig.temperature,
-        maxTokens: modelConfig.maxTokens,
         enableReasoning: modelConfig.enableReasoning,
         apiKey: modelConfig.providers[modelConfig.provider]?.apiKey,
         baseUrl: modelConfig.providers[modelConfig.provider]?.baseUrl,

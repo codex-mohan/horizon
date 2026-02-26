@@ -129,6 +129,9 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
           baseURL: baseUrl || "https://integrate.api.nvidia.com/v1",
         },
         reasoningEffort: enableReasoning ? "medium" : undefined,
+        modelKwargs: {
+          "chat_template_kwargs": { "thinking": enableReasoning }
+        }
       });
     }
 
