@@ -10,8 +10,8 @@
       "devDependencies": {
         "@biomejs/biome": "2.3.13",
         "@workspace/typescript-config": "workspace:*",
-        "baseline-browser-mapping": "^2.10.0",
-        "turbo": "^2.6.3",
+        "baseline-browser-mapping": "latest",
+        "turbo": "^2.8.11",
         "typescript": "5.7.3",
         "ultracite": "7.1.5",
       },
@@ -29,6 +29,7 @@
         "@langchain/google-genai": "^0.1.0",
         "@langchain/groq": "^0.1.0",
         "@langchain/langgraph": "^0.2.0",
+        "@langchain/langgraph-checkpoint": "~0.0.18",
         "@langchain/langgraph-cli": "^1.1.11",
         "@langchain/ollama": "^0.1.0",
         "@langchain/openai": "^0.3.0",

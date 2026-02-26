@@ -11,7 +11,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "dev:web": "bun --cwd apps/web dev",
-    "dev:backend": "cd apps/backend && langgraph dev",
+    "dev:backend": "cd apps/backend && bunx @langchain/langgraph-cli dev",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "format": "ultracite fix",
@@ -26,7 +26,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.3.13",
     "@workspace/typescript-config": "workspace:*",
-    "baseline-browser-mapping": "^2.10.0",
+    "baseline-browser-mapping": "latest",
     "turbo": "^2.8.11",
     "typescript": "5.7.3",
     "ultracite": "7.1.5"
