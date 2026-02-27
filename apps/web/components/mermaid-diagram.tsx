@@ -18,7 +18,7 @@ import {
 import mermaid from "mermaid";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
@@ -38,6 +38,42 @@ const useCodeMirrorExtensions = () => {
   );
 };
 
+const MERMAID_KEYWORDS = [
+  "graph",
+  "flowchart",
+  "sequencediagram",
+  "classdiagram",
+  "statediagram",
+  "erdiagram",
+  "pie",
+  "gantt",
+  "gitgraph",
+  "journey",
+  "mindmap",
+  "requirement",
+  "zenuml",
+  "C4Context",
+];
+
+const isValidMermaidContent = (code: string): boolean => {
+  const trimmed = code.trim().toLowerCase();
+  if (!trimmed) return false;
+
+  const hasKeyword = MERMAID_KEYWORDS.some(
+    (kw) => trimmed.startsWith(kw) || trimmed.includes(`${kw} `)
+  );
+  if (!hasKeyword) return false;
+
+  const hasArrowOrColon =
+    trimmed.includes("-->") || trimmed.includes("---") || trimmed.includes("==>");
+  const hasNodeDefinition = /^\w+[[(]/.test(trimmed) || /^\s*[[(]/.test(trimmed);
+
+  return hasArrowOrColon || hasNodeDefinition;
+};
+
+const DEBOUNCE_DELAY = 400;
+const MIN_LENGTH_FOR_VALIDATION = 10;
+
 const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
   const { theme } = useTheme();
   const [svg, setSvg] = useState<string | null>(null);
@@ -45,21 +81,56 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [_retryId, setRetryId] = useState(0);
+
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRenderedCodeRef = useRef<string>("");
+  const codeRef = useRef(code);
+  codeRef.current = code;
 
   const codeMirrorExtensions = useCodeMirrorExtensions();
 
   useEffect(() => {
-    const renderDiagram = async () => {
-      if (!code.trim()) {
-        setSvg(null);
-        setRenderError(null);
-        return;
-      }
+    // We intentionally don't include 'code' in the dependency array because we use
+    // lastRenderedCodeRef to skip re-rendering the same content. The effect still
+    // runs when code changes because it's passed as a parameter to this effect.
+    const currentCode = code;
 
-      setIsRendering(true);
+    if (!currentCode.trim()) {
+      setSvg(null);
       setRenderError(null);
+      setIsStreaming(false);
+      return;
+    }
 
+    if (currentCode.length < MIN_LENGTH_FOR_VALIDATION) {
+      setIsStreaming(true);
+      setRenderError(null);
+      setSvg(null);
+      return;
+    }
+
+    if (!isValidMermaidContent(currentCode)) {
+      setIsStreaming(true);
+      setRenderError(null);
+      setSvg(null);
+      return;
+    }
+
+    if (currentCode === lastRenderedCodeRef.current && !renderError) {
+      return;
+    }
+
+    setIsStreaming(false);
+    setIsRendering(true);
+    setRenderError(null);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(async () => {
       try {
         mermaid.initialize({
           startOnLoad: false,
@@ -70,24 +141,46 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
 
         const { svg: renderedSvg } = await mermaid.render(
           `mermaid-graph-${Date.now()}`.toString(),
-          code
+          currentCode
         );
+        lastRenderedCodeRef.current = currentCode;
         setSvg(renderedSvg);
       } catch (e) {
-        console.error("Mermaid rendering failed:", e);
-        // Ensure the error message is clean and can be displayed
-        let message = e instanceof Error ? e.message : "An unknown error occurred.";
-        // Sanitize newlines but also potentially break up very long error messages
-        message = message.replace(/[\r\n]+/g, " ").replace(/(.{80})/g, "$1\n"); // Add newline every 80 chars as a soft break hint
-        setRenderError(message);
+        const currentLatestCode = codeRef.current;
+        if (currentLatestCode !== currentCode) {
+          setIsRendering(false);
+          return;
+        }
+
+        const isIncompleteSyntax =
+          e instanceof Error &&
+          (e.message.includes("Unexpected token") ||
+            e.message.includes("Parse error") ||
+            e.message.includes("Syntax error") ||
+            e.message.includes("mismatched") ||
+            e.message.includes("expected"));
+
+        if (isIncompleteSyntax) {
+          setIsStreaming(true);
+          setRenderError(null);
+        } else {
+          console.error("Mermaid rendering failed:", e);
+          let message = e instanceof Error ? e.message : "An unknown error occurred.";
+          message = message.replace(/[\r\n]+/g, " ").replace(/(.{80})/g, "$1\n");
+          setRenderError(message);
+        }
         setSvg(null);
       } finally {
         setIsRendering(false);
       }
-    };
+    }, DEBOUNCE_DELAY);
 
-    renderDiagram();
-  }, [code, theme]);
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [code, theme, renderError]);
 
   const handleCopyCode = useCallback(() => {
     navigator.clipboard.writeText(code);
@@ -225,7 +318,12 @@ const MermaidDiagram: React.FC<{ code: string }> = React.memo(({ code }) => {
                       dangerouslySetInnerHTML={{ __html: svg }}
                     />
                   )}
-                  {!(isRendering || renderError || svg) && hasContent && (
+                  {isStreaming && hasContent && !svg && !renderError && (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <div className="animate-pulse">Waiting for complete diagram...</div>
+                    </div>
+                  )}
+                  {!isStreaming && !(isRendering || renderError || svg) && hasContent && (
                     <div className="text-muted-foreground">Preparing diagram...</div>
                   )}
                   {!hasContent && (

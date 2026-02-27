@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FiLink } from "react-icons/fi";
 
-// A cool SVG spinner for the loading state
+const DEBOUNCE_DELAY = 300;
+const MIN_URL_LENGTH = 15;
+
 const Spinner = () => (
   <svg
     className="animate-spin"
@@ -24,34 +26,55 @@ const SmartLink: React.FC<{ href: string; children: React.ReactNode }> = ({ href
   const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState<string | null>(null);
 
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
+
   useEffect(() => {
-    // Fetch the title when the component mounts
+    isMountedRef.current = true;
+
     const fetchTitle = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`/api/get-title?url=${encodeURIComponent(href)}`);
-        // We don't throw an error here, just proceed. If it fails, we'll fallback.
-        if (response.ok) {
-          const data = await response.json();
-          // Use the fetched title, but fallback to the href if it's empty
-          setTitle(data.title || href);
-        } else {
-          setTitle(href);
-        }
-      } catch (_err) {
-        setTitle(href); // On error, just use the URL itself
-      } finally {
+      if (!href.startsWith("http") || href.length < MIN_URL_LENGTH) {
+        setTitle(href);
         setIsLoading(false);
+        return;
       }
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(async () => {
+        if (!isMountedRef.current) return;
+
+        setIsLoading(true);
+        try {
+          const response = await fetch(`/api/get-title?url=${encodeURIComponent(href)}`);
+          if (isMountedRef.current && response.ok) {
+            const data = await response.json();
+            setTitle(data.title || href);
+          } else if (isMountedRef.current) {
+            setTitle(href);
+          }
+        } catch {
+          if (isMountedRef.current) {
+            setTitle(href);
+          }
+        } finally {
+          if (isMountedRef.current) {
+            setIsLoading(false);
+          }
+        }
+      }, DEBOUNCE_DELAY);
     };
 
-    // Only fetch for http/https links
-    if (href.startsWith("http")) {
-      fetchTitle();
-    } else {
-      setTitle(href);
-      setIsLoading(false);
-    }
+    fetchTitle();
+
+    return () => {
+      isMountedRef.current = false;
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [href]);
 
   return (
