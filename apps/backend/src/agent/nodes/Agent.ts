@@ -83,10 +83,6 @@ export async function AgentNode(
     throw new Error("LLM does not support tool binding");
   }
 
-  const baseLlmWithTools = llm.bindTools(tools);
-
-  const llmWithTools = baseLlmWithTools;
-
   const invocationConfig: Record<string, unknown> = {};
 
   if (modelSettings) {
@@ -97,6 +93,11 @@ export async function AgentNode(
     if (modelSettings.presencePenalty !== undefined)
       invocationConfig.presence_penalty = modelSettings.presencePenalty;
   }
+
+  const llmWithTools = llm.bindTools(
+    tools,
+    Object.keys(invocationConfig).length > 0 ? invocationConfig : undefined
+  );
 
   let systemPrompt =
     `${agentConfig.CHARACTER}\n\n` +
@@ -160,10 +161,7 @@ export async function AgentNode(
     return msg;
   });
 
-  const response = await llmWithTools.invoke(
-    sanitizedMessages,
-    Object.keys(invocationConfig).length > 0 ? invocationConfig : undefined
-  );
+  const response = await llmWithTools.invoke(sanitizedMessages);
 
   console.log("[AgentNode] Complete");
   return { messages: [response], model_calls: 1 };

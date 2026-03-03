@@ -221,16 +221,19 @@ const GradientSlider = React.forwardRef<HTMLDivElement, GradientSliderProps>(
 
     return (
       <div
-        className={`relative flex touch-none select-none items-center ${isHorizontal ? "w-full" : "h-full min-h-44 w-auto flex-col"
-          } ${disabled ? "cursor-not-allowed opacity-50" : ""} ${className}`}
+        className={`relative flex touch-none select-none items-center ${
+          isHorizontal ? "w-full" : "h-full min-h-44 w-auto flex-col"
+        } ${disabled ? "cursor-not-allowed opacity-50" : ""} ${className}`}
         ref={ref}
         {...props}
       >
         {/* Track */}
         <div
-          className={`relative overflow-hidden rounded-full border border-white/20 ${isHorizontal ? "w-full" : "h-full"
-            } ${isHorizontal ? trackClassName || "h-2" : trackClassName || "w-1.5"
-            } ${disabled ? "" : "cursor-pointer"}`}
+          className={`relative overflow-hidden rounded-full border border-white/20 ${
+            isHorizontal ? "w-full" : "h-full"
+          } ${
+            isHorizontal ? trackClassName || "h-2" : trackClassName || "w-1.5"
+          } ${disabled ? "" : "cursor-pointer"}`}
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
           ref={trackRef}
@@ -243,12 +246,13 @@ const GradientSlider = React.forwardRef<HTMLDivElement, GradientSliderProps>(
           aria-valuemax={max}
           aria-valuemin={min}
           aria-valuenow={value}
-          className={`absolute block rounded-full bg-white ${thumbClassName || "h-4 w-4"
-            } ${isDragging ? "" : "transition-all duration-100"
-            } ${disabled
+          className={`absolute block rounded-full bg-white ${thumbClassName || "h-4 w-4"} ${
+            isDragging ? "" : "transition-all duration-100"
+          } ${
+            disabled
               ? "pointer-events-none opacity-40"
               : "cursor-grab active:cursor-grabbing hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent"
-            } ${isDragging ? "scale-110" : ""}`}
+          } ${isDragging ? "scale-110" : ""}`}
           onKeyDown={handleKeyDown}
           onMouseDown={handleThumbMouseDown}
           onTouchStart={handleThumbTouchStart}
@@ -257,9 +261,7 @@ const GradientSlider = React.forwardRef<HTMLDivElement, GradientSliderProps>(
             [isHorizontal ? "left" : "bottom"]: `${percentage}%`,
             transform: isHorizontal ? "translateX(-50%)" : "translateY(50%)",
             border: "1.5px solid rgba(255,255,255,0.25)",
-            boxShadow: isDragging
-              ? "0 1px 6px rgba(0,0,0,0.35)"
-              : "0 1px 3px rgba(0,0,0,0.25)",
+            boxShadow: isDragging ? "0 1px 6px rgba(0,0,0,0.35)" : "0 1px 3px rgba(0,0,0,0.25)",
           }}
           tabIndex={disabled ? -1 : 0}
         />

@@ -103,11 +103,16 @@ export function GenericTool({
 
         <div className="flex items-center gap-2">
           <ToolStatusBadge status={status} />
-          {hasExpandable && (
-            expanded
-              ? <ChevronUp className={cn("h-3.5 w-3.5", isLight ? "text-muted-foreground" : "text-slate-500")} />
-              : <ChevronDown className={cn("h-3.5 w-3.5", isLight ? "text-muted-foreground" : "text-slate-500")} />
-          )}
+          {hasExpandable &&
+            (expanded ? (
+              <ChevronUp
+                className={cn("h-3.5 w-3.5", isLight ? "text-muted-foreground" : "text-slate-500")}
+              />
+            ) : (
+              <ChevronDown
+                className={cn("h-3.5 w-3.5", isLight ? "text-muted-foreground" : "text-slate-500")}
+              />
+            ))}
         </div>
       </button>
 
@@ -129,7 +134,12 @@ export function GenericTool({
               {/* Arguments */}
               {Object.keys(args).length > 0 && (
                 <div>
-                  <p className={cn("mb-1.5 text-xs font-medium uppercase tracking-wider", isLight ? "text-muted-foreground" : "text-slate-500")}>
+                  <p
+                    className={cn(
+                      "mb-1.5 text-xs font-medium uppercase tracking-wider",
+                      isLight ? "text-muted-foreground" : "text-slate-500"
+                    )}
+                  >
                     Arguments
                   </p>
                   <div className="group relative">
@@ -152,7 +162,11 @@ export function GenericTool({
                       )}
                       onClick={handleCopyArgs}
                     >
-                      {copiedArgs ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedArgs ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -161,14 +175,22 @@ export function GenericTool({
               {/* Result / Error / Loading */}
               {(result || error || isLoading) && (
                 <div>
-                  <p className={cn("mb-1.5 text-xs font-medium uppercase tracking-wider", isLight ? "text-muted-foreground" : "text-slate-500")}>
+                  <p
+                    className={cn(
+                      "mb-1.5 text-xs font-medium uppercase tracking-wider",
+                      isLight ? "text-muted-foreground" : "text-slate-500"
+                    )}
+                  >
                     {error ? "Error" : "Result"}
                   </p>
                   {isLoading && !result && !error ? (
                     <div className="flex items-center gap-3 p-3">
                       <ModernSpinner size="sm" />
                       <ShimmerText
-                        className={cn("text-sm", isLight ? "text-muted-foreground" : "text-slate-400")}
+                        className={cn(
+                          "text-sm",
+                          isLight ? "text-muted-foreground" : "text-slate-400"
+                        )}
                         text="Processing..."
                       />
                     </div>

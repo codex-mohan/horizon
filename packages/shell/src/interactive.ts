@@ -567,7 +567,7 @@ export class InteractiveShell {
     });
 
     // Restore state
-    shell.state = {
+    (shell as any).state = {
       ...state,
       startTime: new Date(state.startTime),
       lastActivity: new Date(state.lastActivity),

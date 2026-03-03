@@ -9,6 +9,7 @@ import MarkdownView from "@/components/markdown-view";
 import { useTheme } from "@/components/theme/theme-provider";
 import type { Message } from "./chat-interface";
 import { FileBadge } from "./file-badge";
+import { ReasoningBlock } from "./reasoning-block";
 
 interface ChatBubbleProps {
   message: Message;
@@ -156,38 +157,38 @@ export const ChatBubble = React.memo(
                   "relative wrap-break-word rounded-xl px-4 py-2 font-body leading-relaxed",
                   isUser
                     ? cn(
-                        isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
-                        "text-foreground"
-                      )
+                      isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
+                      "text-foreground"
+                    )
                     : "w-full min-w-[120px] text-foreground"
                 )}
               >
                 {/* Reasoning Block (assistant only) */}
                 {message.reasoning && (
                   <div className="mb-4">
-                    <div className="mb-2 font-medium text-amber-400/80 text-xs">Reasoning</div>
-                    <div className="rounded-2xl border border-amber-500/20 bg-amber-950/50 px-4 py-3">
-                      <div className="whitespace-pre-wrap text-amber-100/90 text-sm">
-                        {message.reasoning}
-                      </div>
-                    </div>
+                    <ReasoningBlock
+                      isStreaming={message.streaming}
+                      reasoning={message.reasoning}
+                    />
                   </div>
                 )}
 
-                {/* Message Content */}
-                <div
-                  className={cn(
-                    isLongMessage &&
+                {/* Message Content - only render if there's content */}
+                {message.content && message.content.trim().length > 0 && (
+                  <div
+                    className={cn(
+                      isLongMessage &&
                       !isExpanded &&
                       "max-h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]"
-                  )}
-                >
-                  {isUser ? (
-                    <div className="whitespace-pre-wrap">{message.content}</div>
-                  ) : (
-                    <MarkdownView text={message.content} />
-                  )}
-                </div>
+                    )}
+                  >
+                    {isUser ? (
+                      <div className="whitespace-pre-wrap">{message.content}</div>
+                    ) : (
+                      <MarkdownView text={message.content} />
+                    )}
+                  </div>
+                )}
 
                 {isLongMessage && (
                   <div className="mt-2 flex justify-center border-t border-foreground/10 pt-2">

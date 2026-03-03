@@ -23,7 +23,7 @@ import {
 } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
 import { Brain, ChevronDown, Cpu, Settings2, Sparkles, Zap } from "lucide-react";
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   DEFAULT_MODELS,
   type ModelProvider,
@@ -32,6 +32,7 @@ import {
   supportsReasoning,
   useModelConfig,
 } from "@/lib/stores/model-config";
+import { useOllamaStore } from "@/lib/stores/ollama-store";
 
 export interface ModelSelectorProps {
   onOpenSettings?: () => void;
@@ -60,8 +61,25 @@ export const ModelSelector = memo(function ModelSelector({
   onOpenSettings,
   compact = false,
 }: ModelSelectorProps) {
-  const { config, setProvider, setModelName, setEnableReasoning } = useModelConfig();
+  const {
+    config,
+    setProvider,
+    setModelName,
+    setEnableReasoning,
+    setReasoningEffort,
+    setThinkingBudget,
+  } = useModelConfig();
   const [isOpen, setIsOpen] = useState(false);
+  const { models: ollamaModels, fetchModels, isLoadingModels } = useOllamaStore();
+
+  useEffect(() => {
+    if (config.provider === "ollama") {
+      fetchModels();
+    }
+  }, [config.provider, fetchModels]);
+
+  const availableModels =
+    config.provider === "ollama" ? ollamaModels : DEFAULT_MODELS[config.provider];
 
   const currentProviderInfo = PROVIDER_INFO[config.provider];
   const modelSupportsReasoning = supportsReasoning(config.modelName, config.provider);
@@ -74,7 +92,15 @@ export const ModelSelector = memo(function ModelSelector({
     setModelName(model);
   };
 
-  const displayModelName = getModelDisplayName(config.modelName);
+  const isOllamaEmpty =
+    config.provider === "ollama" && !isLoadingModels && availableModels.length === 0;
+  const isOllamaLoading = config.provider === "ollama" && isLoadingModels;
+
+  const displayModelName = isOllamaLoading
+    ? "Loading models..."
+    : isOllamaEmpty
+      ? "No models installed"
+      : getModelDisplayName(config.modelName);
 
   return (
     <DropdownMenu onOpenChange={setIsOpen}>
@@ -106,7 +132,7 @@ export const ModelSelector = memo(function ModelSelector({
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
-          <TooltipContent className="z-[100] animate-scale-in" side="top">
+          <TooltipContent className="z-100 animate-scale-in" side="top">
             <p>
               {currentProviderInfo.name}: {config.modelName}
             </p>
@@ -114,7 +140,7 @@ export const ModelSelector = memo(function ModelSelector({
         </Tooltip>
       </TooltipProvider>
 
-      <DropdownMenuContent align="end" className="z-[100] w-72 animate-scale-in">
+      <DropdownMenuContent align="end" className="z-100 w-72 animate-scale-in">
         <DropdownMenuLabel className="flex items-center gap-2 text-xs">
           <Cpu className="size-3.5" />
           Select Provider & Model
@@ -122,17 +148,20 @@ export const ModelSelector = memo(function ModelSelector({
         <DropdownMenuSeparator />
 
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="flex items-center gap-2">
-            <ProviderIcon className="size-4" provider={config.provider} />
-            <span>Provider: {currentProviderInfo.name}</span>
+          <DropdownMenuSubTrigger className="flex items-center justify-between cursor-pointer">
+            <div className="flex items-center gap-2">
+              <ProviderIcon className="size-4" provider={config.provider} />
+              <span>Provider: {currentProviderInfo.name}</span>
+            </div>
+            <span className="ml-auto text-xs text-muted-foreground">→</span>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="z-[110] min-w-[160px]" sideOffset={8}>
+          <DropdownMenuSubContent className="z-200 min-w-[180px]" sideOffset={4}>
             {(Object.keys(PROVIDER_INFO) as ModelProvider[]).map((provider) => {
               const info = PROVIDER_INFO[provider];
               const isSelected = config.provider === provider;
               return (
                 <DropdownMenuItem
-                  className="flex items-center justify-between"
+                  className="flex items-center justify-between cursor-pointer"
                   key={provider}
                   onClick={() => handleProviderSelect(provider)}
                 >
@@ -158,32 +187,42 @@ export const ModelSelector = memo(function ModelSelector({
           value={config.modelName}
         >
           <div className="custom-scrollbar max-h-48 overflow-y-auto">
-            {DEFAULT_MODELS[config.provider].map((model) => {
-              const hasReasoning = REASONING_MODELS.some((rm) =>
-                model.toLowerCase().includes(rm.toLowerCase())
-              );
-              return (
-                <DropdownMenuRadioItem
-                  className="flex items-center gap-2 pr-8"
-                  key={model}
-                  value={model}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="truncate">{getModelDisplayName(model)}</span>
-                    {hasReasoning && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Brain className="size-3 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="z-[120]">Supports reasoning</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </div>
-                </DropdownMenuRadioItem>
-              );
-            })}
+            {config.provider === "ollama" && isLoadingModels ? (
+              <div className="py-3 text-center text-xs text-muted-foreground">
+                Loading models...
+              </div>
+            ) : availableModels.length === 0 ? (
+              <div className="py-3 text-center text-xs text-muted-foreground">
+                No models installed
+              </div>
+            ) : (
+              availableModels.map((model) => {
+                const hasReasoning = REASONING_MODELS.some((rm) =>
+                  model.toLowerCase().includes(rm.toLowerCase())
+                );
+                return (
+                  <DropdownMenuRadioItem
+                    className="flex items-center gap-2 pr-8"
+                    key={model}
+                    value={model}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">{getModelDisplayName(model)}</span>
+                      {hasReasoning && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Brain className="size-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent className="z-120">Supports reasoning</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                  </DropdownMenuRadioItem>
+                );
+              })
+            )}
           </div>
         </DropdownMenuRadioGroup>
 
@@ -205,6 +244,40 @@ export const ModelSelector = memo(function ModelSelector({
                 onCheckedChange={setEnableReasoning}
               />
             </div>
+            {config.enableReasoning && (
+              <div className="px-3 pb-3 animate-in fade-in slide-in-from-top-2">
+                {config.provider === "anthropic" ? (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs text-muted-foreground">Thinking Budget (tokens)</span>
+                    <input
+                      type="number"
+                      className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      value={config.thinkingBudget}
+                      onChange={(e) => setThinkingBudget(Number(e.target.value))}
+                      min={1024}
+                      step={1024}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs text-muted-foreground">Reasoning Effort</span>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {["none", "low", "medium", "high"].map((effort) => (
+                        <Button
+                          key={effort}
+                          variant={config.reasoningEffort === effort ? "default" : "outline"}
+                          size="sm"
+                          className="h-6 text-[10px] px-2"
+                          onClick={() => setReasoningEffort(effort)}
+                        >
+                          {effort.charAt(0).toUpperCase() + effort.slice(1)}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <DropdownMenuSeparator />
           </>
         )}

@@ -253,7 +253,7 @@ export class MemoryClient {
     const queryVector = await this.embeddings?.embedQuery(query.query);
 
     // Get semantic search results
-    let results = await this.store.search(queryVector, query);
+    let results = await this.store.search(queryVector || [], query);
 
     // Apply recency weighting if specified
     if (query.recency_weight && query.recency_weight > 0) {
@@ -281,7 +281,7 @@ export class MemoryClient {
     }
 
     const queryVector = await this.embeddings?.embedQuery("recent conversations");
-    const results = await this.store.search(queryVector, query);
+    const results = await this.store.search(queryVector || [], query);
 
     return results
       .map((r) => r.entry)

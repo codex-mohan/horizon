@@ -52,7 +52,7 @@ export const metadata: Metadata = {
       {
         url: "/horizon-icon.svg",
         type: "image/svg+xml",
-      }
+      },
     ],
     apple: "/horizon-icon.svg",
   },

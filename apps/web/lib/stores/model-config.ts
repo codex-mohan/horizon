@@ -15,6 +15,8 @@ export interface ModelConfig {
   temperature: number;
   maxTokens: number;
   enableReasoning: boolean;
+  reasoningEffort: string;
+  thinkingBudget: number;
   providers: Record<ModelProvider, ProviderConfig>;
 }
 
@@ -25,6 +27,8 @@ interface ModelConfigState {
   setTemperature: (temperature: number) => void;
   setMaxTokens: (maxTokens: number) => void;
   setEnableReasoning: (enable: boolean) => void;
+  setReasoningEffort: (effort: string) => void;
+  setThinkingBudget: (budget: number) => void;
   setProviderApiKey: (provider: ModelProvider, apiKey: string) => void;
   setProviderBaseUrl: (provider: ModelProvider, baseUrl: string | undefined) => void;
   setProviderEnabled: (provider: ModelProvider, enabled: boolean) => void;
@@ -135,13 +139,15 @@ export const useModelConfig = create<ModelConfigState>()(
         temperature: 0.7,
         maxTokens: 4096,
         enableReasoning: false,
+        reasoningEffort: "medium",
+        thinkingBudget: 1024,
         providers: {
           nvidia_nim: { apiKey: "", baseUrl: "https://integrate.api.nvidia.com/v1", enabled: true },
           openai: { apiKey: "", baseUrl: undefined, enabled: false },
           anthropic: { apiKey: "", baseUrl: undefined, enabled: false },
           groq: { apiKey: "", baseUrl: undefined, enabled: false },
           google: { apiKey: "", baseUrl: undefined, enabled: false },
-          ollama: { apiKey: "", baseUrl: "http://localhost:11434", enabled: false },
+          ollama: { apiKey: "", baseUrl: "http://localhost:11434", enabled: true },
         },
       },
       setProvider: (provider) =>
@@ -170,6 +176,14 @@ export const useModelConfig = create<ModelConfigState>()(
       setEnableReasoning: (enableReasoning) =>
         set((state) => ({
           config: { ...state.config, enableReasoning },
+        })),
+      setReasoningEffort: (reasoningEffort) =>
+        set((state) => ({
+          config: { ...state.config, reasoningEffort },
+        })),
+      setThinkingBudget: (thinkingBudget) =>
+        set((state) => ({
+          config: { ...state.config, thinkingBudget },
         })),
       setProviderApiKey: (provider, apiKey) =>
         set((state) => ({

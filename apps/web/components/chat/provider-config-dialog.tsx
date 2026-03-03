@@ -1,11 +1,12 @@
 "use client";
 
 import { Button } from "@workspace/ui/components/button";
+import { GlassProgress } from "@workspace/ui/components/glass-progress";
+import { GradientButton } from "@workspace/ui/components/gradient-button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { Switch } from "@workspace/ui/components/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { cn } from "@workspace/ui/lib/utils";
 import {
   AlertCircle,
@@ -14,16 +15,19 @@ import {
   ChevronDown,
   ChevronUp,
   Cpu,
+  Download,
   Eye,
   EyeOff,
   Globe,
   Key,
+  Loader2,
+  RefreshCcw,
   Settings2,
   Sparkles,
   X,
   Zap,
 } from "lucide-react";
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   DEFAULT_MODELS,
   type ModelProvider,
@@ -31,6 +35,7 @@ import {
   type ProviderConfig,
   useModelConfig,
 } from "@/lib/stores/model-config";
+import { useOllamaStore } from "@/lib/stores/ollama-store";
 
 export interface ProviderConfigDialogProps {
   open: boolean;
@@ -59,6 +64,7 @@ interface ProviderCardProps {
   onBaseUrlChange: (baseUrl: string | undefined) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  dynamicModelCount?: number;
 }
 
 const ProviderCard = memo(function ProviderCard({
@@ -71,17 +77,18 @@ const ProviderCard = memo(function ProviderCard({
   onBaseUrlChange,
   isExpanded,
   onToggleExpand,
+  dynamicModelCount,
 }: ProviderCardProps) {
   const info = PROVIDER_INFO[provider];
   const [showApiKey, setShowApiKey] = useState(false);
-  const isConfigured = !info.requiresApiKey || config.apiKey.length > 0;
+  const isConfigured = !info.requiresApiKey || (config?.apiKey && config.apiKey.length > 0);
 
   return (
     <div
       className={cn(
         "rounded-lg border transition-all duration-200",
         isSelected ? "border-primary/50 bg-primary/5" : "border-border/50",
-        config.enabled && isConfigured && "bg-emerald-500/5"
+        config?.enabled && isConfigured && "bg-emerald-500/5"
       )}
     >
       <div className="flex items-center justify-between p-3">
@@ -101,14 +108,14 @@ const ProviderCard = memo(function ProviderCard({
           <div className="flex flex-col">
             <span className="font-medium text-sm">{info.name}</span>
             <span className="text-muted-foreground text-xs">
-              {config.enabled ? (isConfigured ? "Configured" : "API key required") : "Disabled"}
+              {config?.enabled ? (isConfigured ? "Configured" : "API key required") : "Disabled"}
             </span>
           </div>
         </button>
 
         <div className="flex items-center gap-2">
-          {config.enabled && isConfigured && <Check className="size-4 text-emerald-500" />}
-          <Switch checked={config.enabled} onCheckedChange={onToggleEnabled} />
+          {config?.enabled && isConfigured && <Check className="size-4 text-emerald-500" />}
+          <Switch checked={config?.enabled} onCheckedChange={onToggleEnabled} />
         </div>
       </div>
 
@@ -137,7 +144,7 @@ const ProviderCard = memo(function ProviderCard({
                       onChange={(e) => onApiKeyChange(e.target.value)}
                       placeholder={`Enter your ${info.name} API key`}
                       type={showApiKey ? "text" : "password"}
-                      value={config.apiKey}
+                      value={config?.apiKey || ""}
                     />
                     <button
                       className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
@@ -175,18 +182,20 @@ const ProviderCard = memo(function ProviderCard({
                         ? "https://integrate.api.nvidia.com/v1"
                         : "Custom endpoint URL"
                   }
-                  value={config.baseUrl || ""}
+                  value={config?.baseUrl || ""}
                 />
               </div>
 
               <div className="rounded-md bg-muted/50 p-2">
                 <p className="text-muted-foreground text-xs">
-                  Available models: {DEFAULT_MODELS[provider].length} models
+                  Available models: {dynamicModelCount ?? DEFAULT_MODELS[provider].length} models
                 </p>
                 <p className="mt-1 text-muted-foreground text-xs">
                   Supports reasoning: {info.supportsReasoning ? "Yes" : "No"}
                 </p>
               </div>
+
+              {provider === "ollama" && <OllamaModelsSection baseUrl={config.baseUrl} />}
             </div>
           )}
         </>
@@ -201,8 +210,8 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
 }: ProviderConfigDialogProps) {
   const { config, setProvider, setProviderApiKey, setProviderBaseUrl, setProviderEnabled } =
     useModelConfig();
+  const { models: ollamaModels } = useOllamaStore();
   const [expandedProviders, setExpandedProviders] = useState<Set<ModelProvider>>(new Set());
-  const [activeTab, setActiveTab] = useState("simple");
 
   const toggleProviderExpand = (provider: ModelProvider) => {
     const newExpanded = new Set(expandedProviders);
@@ -226,7 +235,7 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm transition-all duration-300 ease-out",
+        "fixed inset-0 z-100 flex items-center justify-center bg-background/80 backdrop-blur-sm transition-all duration-300 ease-out",
         open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       )}
     >
@@ -234,7 +243,7 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
 
       <div
         className={cn(
-          "glass-strong relative z-10 flex w-[90vw] max-w-[500px] flex-col overflow-hidden rounded-xl border-border shadow-2xl transition-all duration-300 ease-out max-h-[85vh]",
+          "glass-strong relative z-10 flex w-[90vw] max-w-[500px] h-[600px] flex-col overflow-hidden rounded-xl border-border shadow-2xl transition-all duration-300 ease-out max-h-[85vh]",
           open ? "scale-100 translate-y-0 opacity-100" : "scale-95 -translate-y-8 opacity-0"
         )}
       >
@@ -257,121 +266,29 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
           Configure your AI model providers and settings. Add API keys to enable providers.
         </p>
 
-        <Tabs className="flex-1 overflow-hidden" onValueChange={setActiveTab} value={activeTab}>
-          <div className="border-b px-6 pt-2">
-            <TabsList className="h-9">
-              <TabsTrigger className="text-xs" value="simple">
-                Simple
-              </TabsTrigger>
-              <TabsTrigger className="text-xs" value="advanced">
-                Advanced
-              </TabsTrigger>
-            </TabsList>
+        <ScrollArea className="flex-1 overflow-y-auto">
+          <div className="space-y-3 p-6">
+            <p className="text-muted-foreground text-sm">
+              Select a provider and expand it to configure API keys and custom settings.
+            </p>
+
+            {(Object.keys(PROVIDER_INFO) as ModelProvider[]).map((provider) => (
+              <ProviderCard
+                config={config.providers[provider]}
+                isExpanded={expandedProviders.has(provider)}
+                isSelected={config.provider === provider}
+                key={provider}
+                dynamicModelCount={provider === "ollama" ? ollamaModels.length : undefined}
+                onApiKeyChange={(key) => setProviderApiKey(provider, key)}
+                onBaseUrlChange={(url) => setProviderBaseUrl(provider, url)}
+                onToggleEnabled={(enabled) => setProviderEnabled(provider, enabled)}
+                onToggleExpand={() => toggleProviderExpand(provider)}
+                onSelect={() => handleSelectProvider(provider)}
+                provider={provider}
+              />
+            ))}
           </div>
-
-          <TabsContent className="m-0 flex-1 overflow-hidden" value="simple">
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-3 p-6">
-                <p className="text-muted-foreground text-sm">
-                  Select a provider and enter your API key to get started.
-                </p>
-
-                {(Object.keys(PROVIDER_INFO) as ModelProvider[]).map((provider) => (
-                  <ProviderCard
-                    config={config.providers[provider]}
-                    isExpanded={expandedProviders.has(provider)}
-                    isSelected={config.provider === provider}
-                    key={provider}
-                    onApiKeyChange={(key) => setProviderApiKey(provider, key)}
-                    onBaseUrlChange={(url) => setProviderBaseUrl(provider, url)}
-                    onToggleEnabled={(enabled) => setProviderEnabled(provider, enabled)}
-                    onToggleExpand={() => toggleProviderExpand(provider)}
-                    onSelect={() => handleSelectProvider(provider)}
-                    provider={provider}
-                  />
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent className="m-0 flex-1 overflow-hidden" value="advanced">
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-6 p-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium text-sm">Advanced Settings</h3>
-                    <p className="text-muted-foreground text-xs">
-                      These settings are configured in the main Settings dialog.
-                    </p>
-                  </div>
-
-                  <div className="rounded-md bg-muted/50 p-3 text-muted-foreground text-xs">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span>Temperature</span>
-                        <span>Use main Settings dialog</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Max Tokens</span>
-                        <span>Use main Settings dialog</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Top P / Top K</span>
-                        <span>Use main Settings dialog</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium text-sm">Custom Endpoints</h3>
-                    <p className="text-muted-foreground text-xs">
-                      Configure custom API endpoints for each provider.
-                    </p>
-                  </div>
-
-                  {(Object.keys(PROVIDER_INFO) as ModelProvider[]).map((provider) => (
-                    <div className="space-y-1.5" key={provider}>
-                      <Label className="text-xs" htmlFor={`${provider}-advanced-url`}>
-                        <div className="flex items-center gap-2">
-                          <ProviderIcon className="size-3" provider={provider} />
-                          {PROVIDER_INFO[provider].name} Base URL
-                        </div>
-                      </Label>
-                      <Input
-                        className="h-8 text-xs"
-                        id={`${provider}-advanced-url`}
-                        onChange={(e) => setProviderBaseUrl(provider, e.target.value || undefined)}
-                        placeholder={
-                          provider === "ollama"
-                            ? "http://localhost:11434"
-                            : provider === "nvidia_nim"
-                              ? "https://integrate.api.nvidia.com/v1"
-                              : "Leave empty for default"
-                        }
-                        value={config.providers[provider].baseUrl || ""}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="mt-0.5 size-4 text-amber-500" />
-                    <div>
-                      <p className="font-medium text-sm text-amber-500">Advanced Settings</p>
-                      <p className="mt-1 text-xs text-amber-500/80">
-                        These settings override defaults. Use with caution as incorrect values may
-                        cause errors.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
+        </ScrollArea>
 
         <div className="border-t bg-card/10 px-6 py-4">
           <div className="flex w-full items-center justify-between">
@@ -384,6 +301,130 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
             </Button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+});
+
+interface OllamaModelsSectionProps {
+  baseUrl?: string;
+}
+
+const OllamaModelsSection = memo(function OllamaModelsSection({
+  baseUrl,
+}: OllamaModelsSectionProps) {
+  const {
+    models,
+    isLoadingModels,
+    modelsError,
+    pullProgress,
+    isPulling,
+    pullError,
+    pullComplete,
+    fetchModels,
+    pullModel,
+    clearPullState,
+  } = useOllamaStore();
+  const [pullModelName, setPullModelName] = useState("");
+
+  useEffect(() => {
+    if (baseUrl) {
+      fetchModels(`/api/ollama?baseUrl=${encodeURIComponent(baseUrl)}`);
+    } else {
+      fetchModels();
+    }
+  }, [baseUrl, fetchModels]);
+
+  const handlePull = async () => {
+    if (!pullModelName.trim()) return;
+    const url = baseUrl ? `/api/ollama?baseUrl=${encodeURIComponent(baseUrl)}` : undefined;
+    await pullModel(pullModelName.trim(), url);
+  };
+
+  const progressPercent = pullProgress?.total
+    ? Math.round(((pullProgress.completed || 0) / pullProgress.total) * 100)
+    : 0;
+
+  return (
+    <div className="space-y-3 border-t pt-3">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Installed Models</Label>
+        <Button
+          className="h-6 px-2 text-xs"
+          onClick={() => {
+            const url = baseUrl ? `/api/ollama?baseUrl=${encodeURIComponent(baseUrl)}` : undefined;
+            fetchModels(url);
+          }}
+          size="sm"
+          variant="ghost"
+        >
+          <RefreshCcw className={cn("mr-1 size-3", isLoadingModels && "animate-spin")} />
+          Refresh
+        </Button>
+      </div>
+
+      {isLoadingModels ? (
+        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+          <Loader2 className="size-3 animate-spin" />
+          Loading models...
+        </div>
+      ) : modelsError ? (
+        <p className="text-amber-500 text-xs">{modelsError}</p>
+      ) : models.length === 0 ? (
+        <p className="text-muted-foreground text-xs">No models installed</p>
+      ) : (
+        <div className="max-h-24 space-y-1 overflow-y-auto rounded-md bg-muted/30 p-2">
+          {models.map((model) => (
+            <div className="flex items-center gap-2 text-xs" key={model}>
+              <Check className="size-3 text-emerald-500" />
+              <span className="truncate">{model}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label className="text-xs" htmlFor="pull-model">
+          Pull New Model
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            className="h-7 text-xs"
+            id="pull-model"
+            onChange={(e) => setPullModelName(e.target.value)}
+            placeholder="e.g., llama3.2:latest"
+            value={pullModelName}
+          />
+          <GradientButton
+            className="h-7 px-3"
+            disabled={!pullModelName.trim() || isPulling}
+            height={7}
+            onClick={handlePull}
+            width={12}
+          >
+            {isPulling ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <Download className="size-3" />
+            )}
+          </GradientButton>
+        </div>
+        {isPulling && pullProgress && (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground truncate">{pullProgress.status}</span>
+              <span className="text-muted-foreground">{progressPercent}%</span>
+            </div>
+            <GlassProgress className="h-1" value={progressPercent} />
+          </div>
+        )}
+        {pullError && <p className="text-amber-500 text-xs">{pullError}</p>}
+        {pullComplete && <p className="text-emerald-500 text-xs">Model pulled successfully!</p>}
+        {(pullComplete || pullError) && (
+          <Button className="text-xs" onClick={clearPullState} variant="ghost">
+            Dismiss
+          </Button>
+        )}
       </div>
     </div>
   );

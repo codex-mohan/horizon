@@ -116,7 +116,6 @@ const ensureKatexCSS = () => {
   `;
 };
 
-
 // FIXED: Use direct language extensions instead of langs object
 const getLanguageExtension = (lang: string) => {
   if (!lang) {
@@ -437,7 +436,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
         );
       },
       p: ({ children }: any) => (
-        <p className="my-3 wrap-break-word font-body text-[1.0625rem] text-foreground/90 leading-relaxed last:mb-0">
+        <p className="my-3 wrap-break-word font-body text-base text-foreground/90 leading-relaxed last:mb-0">
           {children}
         </p>
       ),
@@ -456,17 +455,9 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
           {children}
         </h3>
       ),
-      ul: (props: any) => (
-        <ul
-          className="my-3 list-disc pl-5 text-[1.0625rem] [&>li]:mt-1.5"
-          {...props}
-        />
-      ),
+      ul: (props: any) => <ul className="my-3 list-disc pl-5 text-base [&>li]:mt-1.5" {...props} />,
       ol: (props: any) => (
-        <ol
-          className="my-3 list-decimal pl-5 text-[1.0625rem] [&>li]:mt-1.5"
-          {...props}
-        />
+        <ol className="my-3 list-decimal pl-5 text-base [&>li]:mt-1.5" {...props} />
       ),
       li: (props: any) => <li className="pl-1 leading-relaxed" {...props} />,
       blockquote: (props: any) => (
@@ -535,7 +526,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
                 </button>
               )}
               <div className="overflow-x-auto">
-                <table className="w-full text-base" ref={tableRef} {...props}>
+                <table className="w-full text-sm" ref={tableRef} {...props}>
                   {children}
                 </table>
               </div>
@@ -545,8 +536,8 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
       },
       thead: (props: any) => <thead className="bg-muted" {...props} />,
       tr: (props: any) => <tr className="m-0 p-0 odd:bg-muted/30 even:bg-muted/60" {...props} />,
-      th: (props: any) => <th className="px-4 py-2 text-left font-bold" {...props} />,
-      td: (props: any) => <td className="px-4 py-2 text-left" {...props} />,
+      th: (props: any) => <th className="px-2 py-1 text-left font-bold" {...props} />,
+      td: (props: any) => <td className="px-2 py-1 text-left" {...props} />,
       a: ({ node, href, children, ...props }: any) => {
         const videoId = href ? getYouTubeVideoId(href) : null;
 
@@ -562,7 +553,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
                 src={`https://www.youtube.com/embed/${videoId}`}
                 title="YouTube video player"
               />
-            </div >
+            </div>
           );
         }
 

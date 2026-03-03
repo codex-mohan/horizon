@@ -121,7 +121,7 @@ export const MessageGroup = React.memo(function MessageGroup({
               toolSteps.map((step, stepIdx) => (
                 <div className="space-y-2" key={`step-${stepIdx}`}>
                   {/* Intro text for this round (if any) */}
-                  {step.introMessage && step.introMessage.content && (
+                  {step.introMessage && (step.introMessage.content || step.introMessage.reasoning) && (
                     <ChatBubble
                       isLastGroup={isLastGroup}
                       isLoading={false}

@@ -1,5 +1,5 @@
-import type { BaseMessage } from "@langchain/core/messages";
-import { Annotation, messagesStateReducer } from "@langchain/langgraph";
+import { MessagesValue, ReducedValue, StateSchema } from "@langchain/langgraph";
+import { z } from "zod/v4";
 
 /**
  * UI Message Definition for Generative UI
@@ -21,7 +21,7 @@ export interface UIMessage {
  * Reducer for UI messages
  * Handles adding new messages and updating existing ones (for streaming)
  */
-function uiMessageReducer(existing: UIMessage[], updates: UIMessage | UIMessage[]): UIMessage[] {
+function _uiMessageReducer(existing: UIMessage[], updates: UIMessage | UIMessage[]): UIMessage[] {
   const updatesArray = Array.isArray(updates) ? updates : [updates];
   const existingMap = new Map(existing.map((msg) => [msg.id, msg]));
 
@@ -71,104 +71,135 @@ export interface MiddlewareMetrics {
 }
 
 /**
- * Agent State Definition (Simplified)
+ * Agent State Definition using StateSchema for LangSmith compatibility
  *
  * Core state for the agent graph:
- * - Message history
+ * - Message history (using MessagesValue for LangSmith chat support)
  * - Model/tool tracking
  * - Execution metrics
  * - UI streaming
  * - Routing flags
  */
-export const AgentStateAnnotation = Annotation.Root({
-  // Core messages - MUST be visible in LangSmith
-  messages: Annotation<BaseMessage[]>({
-    reducer: messagesStateReducer,
-    default: () => [],
-  }),
+export const AgentStateAnnotation = new StateSchema({
+  // Core messages - MUST be visible in LangSmith, use MessagesValue for chat support
+  messages: MessagesValue,
 
   // Model tracking
-  model_calls: Annotation<number>({
-    reducer: (x: any, y: any) => (x ?? 0) + (y ?? 0),
-    default: () => 0,
-  }),
+  model_calls: z.number().default(0),
 
   // Token usage
-  token_usage: Annotation<{ input: number; output: number; total: number }>({
-    reducer: (x: any, y: any) => ({
-      input: (x?.input ?? 0) + (y?.input ?? 0),
-      output: (x?.output ?? 0) + (y?.output ?? 0),
-      total: (x?.total ?? 0) + (y?.total ?? 0),
-    }),
-    default: () => ({ input: 0, output: 0, total: 0 }),
-  }),
+  token_usage: z.object({
+    input: z.number().default(0),
+    output: z.number().default(0),
+    total: z.number().default(0),
+  }).default(() => ({ input: 0, output: 0, total: 0 })),
 
   // Metadata (for memory context, etc.)
-  metadata: Annotation<Record<string, any>>({
-    reducer: (x: any, y: any) => ({ ...x, ...y }),
-    default: () => ({}),
-  }),
+  metadata: z.record(z.string(), z.any()).default(() => ({})),
 
-  // Tool tracking (for logging/debugging)
-  executed_tool_calls: Annotation<ToolCall[]>({
-    reducer: (x: any, y: any) => [...(x ?? []), ...(y ?? [])],
-    default: () => [],
-  }),
+  // Tool tracking (for logging/debugging) - use ReducedValue for array accumulation
+  executed_tool_calls: new ReducedValue(
+    z.array(z.any()).default(() => []),
+    {
+      inputSchema: z.any(),
+      reducer: (current, updates) => {
+        const updatesArray = Array.isArray(updates) ? updates as ToolCall[] : [updates as ToolCall];
+        return [...(current as ToolCall[]), ...updatesArray];
+      }
+    }
+  ),
 
   // Execution metadata
-  start_time: Annotation<number>({
-    reducer: (x: any, y: any) => y ?? x ?? 0,
-    default: () => 0,
-  }),
-
-  end_time: Annotation<number>({
-    reducer: (x: any, y: any) => y ?? x ?? 0,
-    default: () => 0,
-  }),
+  start_time: z.number().default(0),
+  end_time: z.number().default(0),
 
   // Middleware metrics
-  middleware_metrics: Annotation<MiddlewareMetrics>({
-    reducer: (x: any, y: any) => ({
-      token_usage: {
-        input: (x?.token_usage?.input ?? 0) + (y?.token_usage?.input ?? 0),
-        output: (x?.token_usage?.output ?? 0) + (y?.token_usage?.output ?? 0),
-        total: (x?.token_usage?.total ?? 0) + (y?.token_usage?.total ?? 0),
-      },
-      rate_limit_hits: (x?.rate_limit_hits ?? 0) + (y?.rate_limit_hits ?? 0),
-      retries: (x?.retries ?? 0) + (y?.retries ?? 0),
-      pii_detected: y?.pii_detected ?? x?.pii_detected ?? false,
-      pii_types: [...(x?.pii_types ?? []), ...(y?.pii_types ?? [])],
-      processing_time_ms: y?.processing_time_ms ?? x?.processing_time_ms ?? 0,
-    }),
-    default: () => ({
+  middleware_metrics: new ReducedValue(
+    z.object({
+      token_usage: z.object({
+        input: z.number(),
+        output: z.number(),
+        total: z.number(),
+      }),
+      rate_limit_hits: z.number(),
+      retries: z.number(),
+      pii_detected: z.boolean(),
+      pii_types: z.array(z.string()),
+      processing_time_ms: z.number(),
+    }).default(() => ({
       token_usage: { input: 0, output: 0, total: 0 },
       rate_limit_hits: 0,
       retries: 0,
       pii_detected: false,
       pii_types: [],
       processing_time_ms: 0,
-    }),
-  }),
+    })),
+    {
+      inputSchema: z.any(),
+      reducer: (current, updates) => {
+        const c = current as MiddlewareMetrics;
+        const u = updates as Partial<MiddlewareMetrics>;
+        return {
+          token_usage: {
+            input: (c.token_usage?.input ?? 0) + (u.token_usage?.input ?? 0),
+            output: (c.token_usage?.output ?? 0) + (u.token_usage?.output ?? 0),
+            total: (c.token_usage?.total ?? 0) + (u.token_usage?.total ?? 0),
+          },
+          rate_limit_hits: (c.rate_limit_hits ?? 0) + (u.rate_limit_hits ?? 0),
+          retries: (c.retries ?? 0) + (u.retries ?? 0),
+          pii_detected: u.pii_detected ?? c.pii_detected ?? false,
+          pii_types: [...(c.pii_types ?? []), ...(u.pii_types ?? [])],
+          processing_time_ms: u.processing_time_ms ?? c.processing_time_ms ?? 0,
+        };
+      }
+    }
+  ),
 
   // Error tracking
-  errors: Annotation<string[]>({
-    reducer: (x: any, y: any) => [...(x ?? []), ...(y ?? [])],
-    default: () => [],
-  }),
+  errors: new ReducedValue(
+    z.array(z.string()).default(() => []),
+    {
+      inputSchema: z.any(),
+      reducer: (current, updates) => {
+        const updatesArray = Array.isArray(updates) ? updates as string[] : [updates as string];
+        return [...(current as string[]), ...updatesArray];
+      }
+    }
+  ),
 
   // UI state for generative UI
-  ui: Annotation<UIMessage[]>({
-    reducer: uiMessageReducer,
-    default: () => [],
-  }),
+  ui: new ReducedValue(
+    z.array(z.any()).default(() => []),
+    {
+      inputSchema: z.any(),
+      reducer: (current, updates) => {
+        const updatesArray = Array.isArray(updates) ? updates as UIMessage[] : [updates as UIMessage];
+        const existingMap = new Map((current as UIMessage[]).map((msg) => [msg.id, msg]));
+        for (const update of updatesArray) {
+          const existing = existingMap.get(update.id);
+          if (existing) {
+            existingMap.set(update.id, {
+              ...existing,
+              props: { ...existing.props, ...update.props },
+              metadata: { ...existing.metadata, ...update.metadata },
+            });
+          } else {
+            existingMap.set(update.id, update);
+          }
+        }
+        return Array.from(existingMap.values());
+      }
+    }
+  ),
 
   // Tool rejection flag for routing decisions
-  tools_rejected: Annotation<boolean>({
-    reducer: (_: any, y: any) => y ?? false,
-    default: () => false,
-  }),
+  tools_rejected: z.boolean().default(false),
 });
 
+/**
+ * AgentState type derived from the schema.
+ * This provides proper typing for the graph state.
+ */
 export type AgentState = typeof AgentStateAnnotation.State;
 
 export type ToolApprovalMode = "always_ask" | "dangerous_only" | "never_ask";

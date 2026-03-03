@@ -593,6 +593,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         provider: modelConfig.provider,
         modelName: modelConfig.modelName,
         enableReasoning: modelConfig.enableReasoning,
+        reasoningEffort: modelConfig.reasoningEffort,
+        thinkingBudget: modelConfig.thinkingBudget,
         apiKey: modelConfig.providers[modelConfig.provider]?.apiKey,
         baseUrl: modelConfig.providers[modelConfig.provider]?.baseUrl,
       };

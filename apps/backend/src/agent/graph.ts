@@ -1,5 +1,4 @@
 import type { AIMessage } from "@langchain/core/messages";
-import type { RunnableConfig } from "@langchain/core/runnables";
 import { END, START, StateGraph } from "@langchain/langgraph";
 import { FileSystemCheckpointer } from "./fs-checkpointer.js";
 import { AgentNode } from "./nodes/agent.js";
@@ -9,6 +8,9 @@ import { initializeMemory, MemoryRetrieval } from "./nodes/memory-retrieval.js";
 import { StartMiddleware } from "./nodes/start-middleware.js";
 import { ToolExecution } from "./nodes/tool-execution.js";
 import { type AgentState, AgentStateAnnotation } from "./state.js";
+
+// Re-export state annotation for LangSmith introspection
+export { AgentStateAnnotation };
 
 initializeMemory();
 
@@ -57,9 +59,11 @@ const routeAfterApproval = (state: AgentState): "ToolExecution" | "AgentNode" =>
  */
 const shouldContinue = (state: AgentState): "AgentNode" | "EndMiddleware" => {
   const envLimit = process.env.MAX_MODEL_CALLS ? parseInt(process.env.MAX_MODEL_CALLS, 10) : 50;
-  const maxCalls = state.metadata?.max_model_calls || envLimit;
+  const metadata = state.metadata as Record<string, unknown> | undefined;
+  const maxCalls = (metadata?.max_model_calls as number) || envLimit;
+  const modelCalls = state.model_calls as number;
 
-  if (state.model_calls >= maxCalls) {
+  if (modelCalls >= maxCalls) {
     console.warn(`[Graph] Max model calls (${maxCalls}) reached`);
     return "EndMiddleware";
   }

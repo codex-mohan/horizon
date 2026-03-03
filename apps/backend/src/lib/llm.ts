@@ -74,9 +74,10 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
         configuration: {
           baseURL: baseUrl,
         },
-        modelKwargs: (enableReasoning && reasoningEffort && reasoningEffort !== "none")
-          ? { reasoning_effort: reasoningEffort }
-          : undefined,
+        modelKwargs:
+          enableReasoning && reasoningEffort && reasoningEffort !== "none"
+            ? { reasoning_effort: reasoningEffort }
+            : undefined,
       });
     }
 
@@ -88,7 +89,9 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
         modelName,
         temperature: enableReasoning ? undefined : temperature,
         anthropicApiKey: apiKey,
-        thinking: enableReasoning ? { type: "enabled", budget_tokens: thinkingBudget || 1024 } : undefined,
+        thinking: enableReasoning
+          ? { type: "enabled", budget_tokens: thinkingBudget || 1024 }
+          : undefined,
       }) as any;
     }
 
@@ -143,8 +146,11 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
         openAIApiKey: apiKey,
         configuration: {
           baseURL: baseUrl || "https://integrate.api.nvidia.com/v1",
+          defaultHeaders: {
+            Authorization: `Bearer ${apiKey}`,
+          },
         },
-        modelKwargs: enableReasoning ? { enable_thinking: true } : undefined,
+        modelKwargs,
       }) as any;
 
       return chatModel;

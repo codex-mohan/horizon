@@ -6,14 +6,14 @@ import type { AgentState, UIMessage } from "../state.js";
 import { toolMap } from "../tools/index.js";
 
 async function emitUIEvent(config: RunnableConfig, uiMessage: UIMessage): Promise<void> {
-    const streamEvents = (config as any).streamEvents;
-    if (streamEvents && typeof streamEvents === "function") {
-        await streamEvents({
-            event: "ui",
-            data: uiMessage,
-        });
-    }
-    console.log(`[UI Event] ${uiMessage.name}: ${uiMessage.props.status}`);
+  const streamEvents = (config as any).streamEvents;
+  if (streamEvents && typeof streamEvents === "function") {
+    await streamEvents({
+      event: "ui",
+      data: uiMessage,
+    });
+  }
+  console.log(`[UI Event] ${uiMessage.name}: ${uiMessage.props.status}`);
 }
 
 /**
@@ -25,200 +25,190 @@ async function emitUIEvent(config: RunnableConfig, uiMessage: UIMessage): Promis
  * - Finds the AI message with tool calls and executes tools not already handled
  */
 export async function ToolExecution(
-    state: AgentState,
-    config: RunnableConfig
+  state: AgentState,
+  config: RunnableConfig
 ): Promise<Partial<AgentState>> {
-    // Find the last AI message with tool calls
-    const aiMessage = [...state.messages]
-        .reverse()
-        .find((msg) => msg._getType() === "ai" && (msg as AIMessage).tool_calls?.length);
+  // Find the last AI message with tool calls
+  const aiMessage = [...state.messages]
+    .reverse()
+    .find((msg) => msg._getType() === "ai" && (msg as AIMessage).tool_calls?.length);
 
-    if (!aiMessage) {
-        console.log("[ToolExecution] No AI message with tool calls found, skipping");
-        return {};
+  if (!aiMessage) {
+    console.log("[ToolExecution] No AI message with tool calls found, skipping");
+    return {};
+  }
+
+  const toolCalls = (aiMessage as AIMessage).tool_calls || [];
+
+  if (toolCalls.length === 0) {
+    console.log("[ToolExecution] No tool calls found, skipping");
+    return {};
+  }
+
+  // Get tool_call_ids that already have ToolMessage responses (from ApprovalGate rejections)
+  const existingToolCallIds = new Set(
+    state.messages
+      .filter((msg: any) => msg._getType() === "tool")
+      .map((msg: any) => (msg as ToolMessage).tool_call_id)
+  );
+
+  // Filter out tools that already have responses (were rejected)
+  const toolsToExecute = toolCalls.filter((tc) => !existingToolCallIds.has(tc.id || ""));
+
+  if (toolsToExecute.length === 0) {
+    console.log("[ToolExecution] All tools already have responses, skipping");
+    return {};
+  }
+
+  const toolMessages: ToolMessage[] = [];
+  const uiMessages: UIMessage[] = [];
+  let totalRetries = 0;
+
+  console.log(`[ToolExecution] Executing ${toolsToExecute.length} tool(s)`);
+
+  for (const toolCall of toolsToExecute) {
+    const toolName = toolCall.name;
+    const toolArgs = toolCall.args || {};
+    const toolCallId = toolCall.id || uuidv4();
+
+    const tool = toolMap[toolName];
+    const uiMessageId = uuidv4();
+
+    if (!tool) {
+      console.error(`[ToolExecution] Tool "${toolName}" not found`);
+
+      const errorUIMessage: UIMessage = {
+        id: uiMessageId,
+        name: toolName,
+        props: {
+          toolName,
+          status: "failed",
+          args: toolArgs,
+          error: `Tool "${toolName}" not found`,
+          completedAt: Date.now(),
+        },
+        metadata: {
+          tool_call_id: toolCallId,
+          tool_name: toolName,
+        },
+      };
+
+      uiMessages.push(errorUIMessage);
+      await emitUIEvent(config, errorUIMessage);
+
+      toolMessages.push(
+        new ToolMessage(`Error: Tool "${toolName}" not found`, toolCallId, toolName)
+      );
+      continue;
     }
 
-    const toolCalls = (aiMessage as AIMessage).tool_calls || [];
+    // Emit start UI message
+    const startUIMessage: UIMessage = {
+      id: uiMessageId,
+      name: toolName,
+      props: {
+        toolName,
+        status: "executing",
+        args: toolArgs,
+        startedAt: Date.now(),
+      },
+      metadata: {
+        tool_call_id: toolCallId,
+        tool_name: toolName,
+      },
+    };
 
-    if (toolCalls.length === 0) {
-        console.log("[ToolExecution] No tool calls found, skipping");
-        return {};
-    }
+    uiMessages.push(startUIMessage);
+    await emitUIEvent(config, startUIMessage);
 
-    // Get tool_call_ids that already have ToolMessage responses (from ApprovalGate rejections)
-    const existingToolCallIds = new Set(
-        state.messages
-            .filter((msg: any) => msg._getType() === "tool")
-            .map((msg: any) => (msg as ToolMessage).tool_call_id)
-    );
+    let result: string;
+    let retries = 0;
+    const maxRetries = agentConfig.MAX_RETRIES || 3;
+    const startedAt = Date.now();
 
-    // Filter out tools that already have responses (were rejected)
-    const toolsToExecute = toolCalls.filter((tc) => !existingToolCallIds.has(tc.id || ""));
+    while (true) {
+      try {
+        console.log(`[ToolExecution] Invoking ${toolName}...`);
+        const toolResult = await (tool as any).invoke(toolArgs);
+        result = typeof toolResult === "string" ? toolResult : JSON.stringify(toolResult);
+        console.log(`[ToolExecution] ${toolName} completed`);
 
-    if (toolsToExecute.length === 0) {
-        console.log("[ToolExecution] All tools already have responses, skipping");
-        return {};
-    }
+        // Emit completion UI message
+        const completeUIMessage: UIMessage = {
+          id: uiMessageId,
+          name: toolName,
+          props: {
+            toolName,
+            status: "completed",
+            args: toolArgs,
+            result,
+            startedAt,
+            completedAt: Date.now(),
+          },
+          metadata: {
+            tool_call_id: toolCallId,
+            tool_name: toolName,
+          },
+        };
 
-    const toolMessages: ToolMessage[] = [];
-    const uiMessages: UIMessage[] = [];
-    let totalRetries = 0;
+        uiMessages.push(completeUIMessage);
+        await emitUIEvent(config, completeUIMessage);
 
-    console.log(`[ToolExecution] Executing ${toolsToExecute.length} tool(s)`);
+        break;
+      } catch (error) {
+        retries++;
+        totalRetries++;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(
+          `[ToolExecution] ${toolName} failed (${retries}/${maxRetries}): ${errorMessage}`
+        );
 
-    for (const toolCall of toolsToExecute) {
-        const toolName = toolCall.name;
-        const toolArgs = toolCall.args || {};
-        const toolCallId = toolCall.id || uuidv4();
+        if (retries >= maxRetries) {
+          result = `Error after ${retries} attempts: ${errorMessage}`;
 
-        const tool = toolMap[toolName];
-        const uiMessageId = uuidv4();
-
-        if (!tool) {
-            console.error(`[ToolExecution] Tool "${toolName}" not found`);
-
-            const errorUIMessage: UIMessage = {
-                id: uiMessageId,
-                name: toolName,
-                props: {
-                    toolName,
-                    status: "failed",
-                    args: toolArgs,
-                    error: `Tool "${toolName}" not found`,
-                    completedAt: Date.now(),
-                },
-                metadata: {
-                    tool_call_id: toolCallId,
-                    tool_name: toolName,
-                },
-            };
-
-            uiMessages.push(errorUIMessage);
-            await emitUIEvent(config, errorUIMessage);
-
-            toolMessages.push(
-                new ToolMessage(
-                    `Error: Tool "${toolName}" not found`,
-                    toolCallId,
-                    toolName
-                )
-            );
-            continue;
-        }
-
-        // Emit start UI message
-        const startUIMessage: UIMessage = {
+          const failUIMessage: UIMessage = {
             id: uiMessageId,
             name: toolName,
             props: {
-                toolName,
-                status: "executing",
-                args: toolArgs,
-                startedAt: Date.now(),
+              toolName,
+              status: "failed",
+              args: toolArgs,
+              error: errorMessage,
+              startedAt,
+              completedAt: Date.now(),
             },
             metadata: {
-                tool_call_id: toolCallId,
-                tool_name: toolName,
+              tool_call_id: toolCallId,
+              tool_name: toolName,
             },
-        };
+          };
 
-        uiMessages.push(startUIMessage);
-        await emitUIEvent(config, startUIMessage);
+          uiMessages.push(failUIMessage);
+          await emitUIEvent(config, failUIMessage);
 
-        let result: string;
-        let retries = 0;
-        const maxRetries = agentConfig.MAX_RETRIES || 3;
-        const startedAt = Date.now();
-
-        while (true) {
-            try {
-                console.log(`[ToolExecution] Invoking ${toolName}...`);
-                const toolResult = await (tool as any).invoke(toolArgs);
-                result = typeof toolResult === "string" ? toolResult : JSON.stringify(toolResult);
-                console.log(`[ToolExecution] ${toolName} completed`);
-
-                // Emit completion UI message
-                const completeUIMessage: UIMessage = {
-                    id: uiMessageId,
-                    name: toolName,
-                    props: {
-                        toolName,
-                        status: "completed",
-                        args: toolArgs,
-                        result,
-                        startedAt,
-                        completedAt: Date.now(),
-                    },
-                    metadata: {
-                        tool_call_id: toolCallId,
-                        tool_name: toolName,
-                    },
-                };
-
-                uiMessages.push(completeUIMessage);
-                await emitUIEvent(config, completeUIMessage);
-
-                break;
-            } catch (error) {
-                retries++;
-                totalRetries++;
-                const errorMessage = error instanceof Error ? error.message : String(error);
-                console.error(
-                    `[ToolExecution] ${toolName} failed (${retries}/${maxRetries}): ${errorMessage}`
-                );
-
-                if (retries >= maxRetries) {
-                    result = `Error after ${retries} attempts: ${errorMessage}`;
-
-                    const failUIMessage: UIMessage = {
-                        id: uiMessageId,
-                        name: toolName,
-                        props: {
-                            toolName,
-                            status: "failed",
-                            args: toolArgs,
-                            error: errorMessage,
-                            startedAt,
-                            completedAt: Date.now(),
-                        },
-                        metadata: {
-                            tool_call_id: toolCallId,
-                            tool_name: toolName,
-                        },
-                    };
-
-                    uiMessages.push(failUIMessage);
-                    await emitUIEvent(config, failUIMessage);
-
-                    break;
-                }
-
-                await new Promise((resolve) => setTimeout(resolve, 2 ** retries * 1000));
-            }
+          break;
         }
 
-        toolMessages.push(
-            new ToolMessage(
-                result,
-                toolCallId,
-                toolName
-            )
-        );
+        await new Promise((resolve) => setTimeout(resolve, 2 ** retries * 1000));
+      }
     }
 
-    console.log(`[ToolExecution] Completed ${toolMessages.length} tool(s)`);
+    toolMessages.push(new ToolMessage(result, toolCallId, toolName));
+  }
 
-    const updates: Partial<AgentState> = {
-        messages: toolMessages,
-        ui: uiMessages,
+  console.log(`[ToolExecution] Completed ${toolMessages.length} tool(s)`);
+
+  const updates: Partial<AgentState> = {
+    messages: toolMessages,
+    ui: uiMessages,
+  };
+
+  if (totalRetries > 0) {
+    updates.middleware_metrics = {
+      ...state.middleware_metrics,
+      retries: totalRetries,
     };
+  }
 
-    if (totalRetries > 0) {
-        updates.middleware_metrics = {
-            ...state.middleware_metrics,
-            retries: totalRetries,
-        };
-    }
-
-    return updates;
+  return updates;
 }

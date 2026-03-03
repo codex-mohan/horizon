@@ -11,7 +11,7 @@
 import type { AIMessage, Message as LangGraphMessage } from "@langchain/langgraph-sdk";
 import type { AttachedFile, Message } from "@/components/chat/chat-interface";
 import type { ToolCall } from "@/components/chat/tool-call-message";
-import { getReasoningFromMessage } from "@/lib/reasoning-utils";
+import { getReasoningFromMessage, getTextContent } from "@/lib/reasoning-utils";
 import { getToolUIConfig } from "@/lib/tool-config";
 
 /**
@@ -47,22 +47,7 @@ export interface MessageGroup {
 
 export type ChatHook = ReturnType<typeof import("@/lib/chat").useChat>;
 
-/**
- * Extract text content from multimodal message content
- */
-function extractTextContent(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .filter(
-        (block): block is { type: "text"; text: string } =>
-          block.type === "text" && typeof block.text === "string"
-      )
-      .map((block) => block.text)
-      .join("\n");
-  }
-  return "";
-}
+// (extractTextContent removed in favor of getTextContent from reasoning-utils)
 
 /**
  * Extract attachments from message's additional_kwargs
@@ -178,12 +163,8 @@ export function groupMessages(
     const metadata = chat.getMessagesMetadata(msg);
     const reasoning = getReasoningFromMessage(msg as AIMessage);
 
-    const content =
-      typeof msg.content === "string"
-        ? msg.content
-        : Array.isArray(msg.content)
-          ? extractTextContent(msg.content)
-          : JSON.stringify(msg.content);
+    // Let reasoning-utils handle text extraction and stripping
+    const content = getTextContent(msg);
 
     if (msg.type === "human") {
       // Push previous group if exists
@@ -238,7 +219,9 @@ export function groupMessages(
           // This AI message starts (or continues) a tool-call round.
           // Each distinct AI message with tool_calls is its own step — this
           // preserves multi-round ordering (no merging by ID dedup here).
-          const introMessage: Message | null = hasTextContent ? { ...aiMessage } : null;
+          // Show intro message if there's text content OR reasoning (even if content is empty)
+          const hasReasoning = !!reasoning;
+          const introMessage: Message | null = (hasTextContent || hasReasoning) ? { ...aiMessage } : null;
 
           // Deduplicate tool calls against ALL previous steps to be safe
           const seenIds = new Set(
@@ -263,11 +246,11 @@ export function groupMessages(
               }
             }
           }
-        } else if (hasTextContent) {
-          // Plain text content with no tool calls → this is the final assistant response
+        } else if (hasTextContent || reasoning) {
+          // Plain text content or reasoning with no tool calls → this is the final assistant response
           currentGroup.assistantMessage = aiMessage;
         } else {
-          // Edge case: AI message with no content and no tool_calls
+          // Edge case: AI message with no content, no reasoning, and no tool_calls
           // Could be an empty streaming tick — ignore unless it's the only AI message
           if (!currentGroup.assistantMessage && currentGroup.toolSteps.length === 0) {
             currentGroup.assistantMessage = aiMessage;
@@ -289,8 +272,9 @@ export function groupMessages(
           reasoning,
         };
 
+        const hasReasoning = !!reasoning;
         const introMessage: Message | null =
-          hasTextContent && hasToolCalls ? { ...aiMessage } : null;
+          (hasTextContent || hasReasoning) && hasToolCalls ? { ...aiMessage } : null;
 
         currentGroup = {
           id: `group-${msg.id || i}`,
