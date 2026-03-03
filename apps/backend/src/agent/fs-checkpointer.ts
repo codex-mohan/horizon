@@ -131,4 +131,11 @@ export class FileSystemCheckpointer extends BaseCheckpointSaver {
   async putWrites(_config: RunnableConfig, _writes: any[], _taskId: string): Promise<void> {
     // No-op for simple dev persistence
   }
+
+  async deleteThread(thread_id: string): Promise<void> {
+    if (this.checkpoints[thread_id]) {
+      delete this.checkpoints[thread_id];
+      this.save();
+    }
+  }
 }

@@ -116,11 +116,11 @@ export async function ApprovalGate(
         // Return ToolMessage for all tools needing approval
         const toolMessages = toolsNeedingApproval.map(
             (tc) =>
-                new ToolMessage({
-                    content: "Tool execution rejected: No valid approval received",
-                    tool_call_id: tc.id || `unknown_${Date.now()}`,
-                    name: tc.name,
-                })
+                new ToolMessage(
+                    "Tool execution rejected: No valid approval received",
+                    tc.id || `unknown_${Date.now()}`,
+                    tc.name
+                )
         );
         return {
             messages: toolMessages,
@@ -145,11 +145,11 @@ export async function ApprovalGate(
 
             // Return ToolMessage so LLM knows the tool was rejected
             toolMessages.push(
-                new ToolMessage({
-                    content: `Tool execution rejected by user. ${decision?.message || "User declined to execute this tool."}`,
-                    tool_call_id: tc.id || `unknown_${Date.now()}_${i}`,
-                    name: tc.name,
-                })
+                new ToolMessage(
+                    `Tool execution rejected by user. ${decision?.message || "User declined to execute this tool."}`,
+                    tc.id || `unknown_${Date.now()}_${i}`,
+                    tc.name
+                )
             );
         } else if (decision.type === "approve") {
             console.log("[ApprovalGate] Tool approved:", tc.name);

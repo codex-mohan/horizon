@@ -5,6 +5,21 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
 import { v4 as uuidv4 } from "uuid";
+
+interface OllamaModel {
+  name: string;
+  model: string;
+  modified_at: string;
+  size: number;
+}
+
+interface OllamaPullProgress {
+  status: string;
+  digest?: string;
+  total?: number;
+  completed?: number;
+}
+
 import { graph } from "./agent/graph.js";
 import type { ToolApprovalConfig } from "./agent/state.js";
 import { TOOL_CATEGORIES } from "./agent/tools/index.js";
@@ -142,11 +157,19 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
   const command = body.command;
 
   console.log(`[POST /runs/stream] Thread: ${threadId}`);
-  console.log(`[POST /runs/stream] Full body:`, JSON.stringify(body).slice(0, 1000));
+  console.log(`[POST /runs/stream] Full body:`, JSON.stringify(body).slice(0, 2000));
+  console.log(`[POST /runs/stream] config object:`, JSON.stringify(config));
+  console.log(`[POST /runs/stream] config.configurable:`, JSON.stringify(config.configurable));
+  console.log(`[POST /runs/stream] body.model_config:`, JSON.stringify(body.model_config));
+  console.log(`[POST /runs/stream] body.configurable:`, JSON.stringify(body.configurable));
   console.log(`[POST /runs/stream] Has Command: ${!!command}`);
   console.log(`[POST /runs/stream] Command:`, command ? JSON.stringify(command) : "null");
 
   const streamMode = body.stream_mode || ["updates", "messages", "custom"];
+
+  // Try multiple paths to find model_config - LangGraph SDK might send it differently
+  const modelConfigFromBody =
+    body.configurable?.model_config ?? body.model_config ?? config?.configurable?.model_config;
 
   const toolApprovalConfig: ToolApprovalConfig =
     config.configurable?.tool_approval || getDefaultToolApprovalConfig();
@@ -156,6 +179,7 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
       thread_id: threadId,
       user_id: config.configurable?.user_id,
       tool_approval: toolApprovalConfig,
+      model_config: modelConfigFromBody,
     },
     streamMode,
   };
@@ -285,6 +309,7 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
   const runConfig = {
     configurable: {
       thread_id: threadId,
+      model_config: body.config?.configurable?.model_config,
       ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
     },
     streamMode: body.stream_mode || ["updates", "messages", "custom"],
@@ -292,15 +317,15 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
 
   try {
     if (approval) {
-      const toolMessage = new ToolMessage({
-        name: APPROVAL_TOOL_NAME,
-        content: JSON.stringify({
+      const toolMessage = new ToolMessage(
+        JSON.stringify({
           approved: approval.approved,
           reason: approval.reason,
           approved_tools: approval.approved_tools,
         }),
-        tool_call_id: APPROVAL_TOOL_NAME,
-      });
+        APPROVAL_TOOL_NAME,
+        APPROVAL_TOOL_NAME
+      );
 
       console.log("[POST /runs/resume] Injecting approval ToolMessage");
       await graph.updateState(
@@ -369,6 +394,7 @@ app.post("/threads/:threadId/runs", async (c) => {
       thread_id: threadId,
       user_id: config.configurable?.user_id,
       tool_approval: toolApprovalConfig,
+      model_config: config.configurable?.model_config,
       ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
     },
   };
@@ -389,6 +415,93 @@ app.post("/threads/:threadId/runs", async (c) => {
     console.error("Run error:", err);
     return c.json({ error: err.message }, 500);
   }
+});
+
+app.get("/ollama/models", async (c) => {
+  const baseUrl = agentConfig.OLLAMA_BASE_URL || "http://localhost:11434";
+
+  try {
+    const response = await fetch(`${baseUrl}/api/tags`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) {
+      return c.json({ error: "Failed to fetch models from Ollama" });
+    }
+
+    const data = (await response.json()) as { models: OllamaModel[] };
+    const models = data.models.map((m) => m.name);
+
+    return c.json({ models });
+  } catch (error) {
+    console.error("Ollama list models error:", error);
+    return c.json({ error: "Failed to connect to Ollama" }, { status: 500 });
+  }
+});
+
+app.post("/ollama/pull", async (c) => {
+  const baseUrl = agentConfig.OLLAMA_BASE_URL || "http://localhost:11434";
+
+  const body = await c.req.json().catch(() => ({}));
+  const modelName = body.model as string | undefined;
+
+  if (!modelName) {
+    return c.json({ error: "Model name is required" }, 400);
+  }
+
+  return streamSSE(c, async (stream) => {
+    try {
+      const response = await fetch(`${baseUrl}/api/pull`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: modelName, stream: true }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        stream.write(
+          JSON.stringify({ status: "error", error: `Failed to pull model: ${errorText}` }) + "\n"
+        );
+        return;
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        stream.write(JSON.stringify({ status: "error", error: "No response body" }) + "\n");
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const data = JSON.parse(line) as OllamaPullProgress;
+              stream.write(JSON.stringify(data) + "\n");
+            } catch {
+              stream.write(JSON.stringify({ status: line }) + "\n");
+            }
+          }
+        }
+      }
+
+      stream.write(JSON.stringify({ status: "complete", model: modelName }) + "\n");
+    } catch (error) {
+      const err = error as Error;
+      console.error("Ollama pull error:", err);
+      stream.write(JSON.stringify({ status: "error", error: err.message }) + "\n");
+    }
+  });
 });
 
 app.get("/config", (c) => {

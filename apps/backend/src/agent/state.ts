@@ -89,13 +89,13 @@ export const AgentStateAnnotation = Annotation.Root({
 
   // Model tracking
   model_calls: Annotation<number>({
-    reducer: (x, y) => (x ?? 0) + (y ?? 0),
+    reducer: (x: any, y: any) => (x ?? 0) + (y ?? 0),
     default: () => 0,
   }),
 
   // Token usage
   token_usage: Annotation<{ input: number; output: number; total: number }>({
-    reducer: (x, y) => ({
+    reducer: (x: any, y: any) => ({
       input: (x?.input ?? 0) + (y?.input ?? 0),
       output: (x?.output ?? 0) + (y?.output ?? 0),
       total: (x?.total ?? 0) + (y?.total ?? 0),
@@ -105,30 +105,30 @@ export const AgentStateAnnotation = Annotation.Root({
 
   // Metadata (for memory context, etc.)
   metadata: Annotation<Record<string, any>>({
-    reducer: (x, y) => ({ ...x, ...y }),
+    reducer: (x: any, y: any) => ({ ...x, ...y }),
     default: () => ({}),
   }),
 
   // Tool tracking (for logging/debugging)
   executed_tool_calls: Annotation<ToolCall[]>({
-    reducer: (x, y) => [...(x ?? []), ...(y ?? [])],
+    reducer: (x: any, y: any) => [...(x ?? []), ...(y ?? [])],
     default: () => [],
   }),
 
   // Execution metadata
   start_time: Annotation<number>({
-    reducer: (x, y) => y ?? x ?? 0,
+    reducer: (x: any, y: any) => y ?? x ?? 0,
     default: () => 0,
   }),
 
   end_time: Annotation<number>({
-    reducer: (x, y) => y ?? x ?? 0,
+    reducer: (x: any, y: any) => y ?? x ?? 0,
     default: () => 0,
   }),
 
   // Middleware metrics
   middleware_metrics: Annotation<MiddlewareMetrics>({
-    reducer: (x, y) => ({
+    reducer: (x: any, y: any) => ({
       token_usage: {
         input: (x?.token_usage?.input ?? 0) + (y?.token_usage?.input ?? 0),
         output: (x?.token_usage?.output ?? 0) + (y?.token_usage?.output ?? 0),
@@ -152,7 +152,7 @@ export const AgentStateAnnotation = Annotation.Root({
 
   // Error tracking
   errors: Annotation<string[]>({
-    reducer: (x, y) => [...(x ?? []), ...(y ?? [])],
+    reducer: (x: any, y: any) => [...(x ?? []), ...(y ?? [])],
     default: () => [],
   }),
 
@@ -164,7 +164,7 @@ export const AgentStateAnnotation = Annotation.Root({
 
   // Tool rejection flag for routing decisions
   tools_rejected: Annotation<boolean>({
-    reducer: (_, y) => y ?? false,
+    reducer: (_: any, y: any) => y ?? false,
     default: () => false,
   }),
 });

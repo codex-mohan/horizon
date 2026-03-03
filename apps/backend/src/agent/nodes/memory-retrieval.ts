@@ -61,9 +61,9 @@ export async function MemoryRetrieval(
     }
 
     const content =
-        typeof lastUserMessage.content === "string"
-            ? lastUserMessage.content
-            : JSON.stringify(lastUserMessage.content);
+        typeof (lastUserMessage as any).content === "string"
+            ? (lastUserMessage as any).content
+            : JSON.stringify((lastUserMessage as any).content);
 
     console.log("[MemoryRetrieval] Searching...");
 

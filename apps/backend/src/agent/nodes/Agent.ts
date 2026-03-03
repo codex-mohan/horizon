@@ -36,17 +36,23 @@ export async function AgentNode(
   state: AgentState,
   _config: RunnableConfig
 ): Promise<Partial<AgentState>> {
-  console.log("[AgentNode] Processing with config:", _config.configurable?.model_config);
+  console.log("[AgentNode] Full config:", JSON.stringify(_config.configurable, null, 2));
 
   const modelConfig = _config.configurable?.model_config as RuntimeModelConfig | undefined;
   const modelSettings = _config.configurable?.model_settings as Record<string, unknown> | undefined;
+
+  console.log("[AgentNode] modelConfig:", modelConfig);
+  console.log(
+    "[AgentNode] modelConfig valid?",
+    !!(modelConfig && modelConfig.provider && modelConfig.modelName)
+  );
 
   let llm;
   let modelName: string;
 
   if (modelConfig && modelConfig.provider && modelConfig.modelName) {
     console.log(
-      `[AgentNode] Using runtime model config: ${modelConfig.provider}/${modelConfig.modelName} (reasoning: ${modelConfig.enableReasoning})`
+      `[AgentNode] Using runtime model config: ${modelConfig.provider}/${modelConfig.modelName} (enableReasoning: ${modelConfig.enableReasoning})`
     );
     llm = await createRuntimeLLM({
       provider: modelConfig.provider,
@@ -56,6 +62,8 @@ export async function AgentNode(
       apiKey: modelConfig.apiKey,
       baseUrl: modelConfig.baseUrl,
       enableReasoning: modelConfig.enableReasoning,
+      reasoningEffort: (modelConfig as any).reasoningEffort,
+      thinkingBudget: (modelConfig as any).thinkingBudget,
     });
     modelName = modelConfig.modelName;
   } else {
@@ -75,20 +83,19 @@ export async function AgentNode(
     throw new Error("LLM does not support tool binding");
   }
 
-  let llmWithTools = llm.bindTools(tools);
+  const baseLlmWithTools = llm.bindTools(tools);
+
+  const llmWithTools = baseLlmWithTools;
+
+  const invocationConfig: Record<string, unknown> = {};
 
   if (modelSettings) {
-    const callArgs: Record<string, unknown> = {};
-    if (modelSettings.topP !== undefined) callArgs.top_p = modelSettings.topP;
-    if (modelSettings.topK !== undefined) callArgs.top_k = modelSettings.topK;
+    if (modelSettings.topP !== undefined) invocationConfig.top_p = modelSettings.topP;
+    if (modelSettings.topK !== undefined) invocationConfig.top_k = modelSettings.topK;
     if (modelSettings.frequencyPenalty !== undefined)
-      callArgs.frequency_penalty = modelSettings.frequencyPenalty;
+      invocationConfig.frequency_penalty = modelSettings.frequencyPenalty;
     if (modelSettings.presencePenalty !== undefined)
-      callArgs.presence_penalty = modelSettings.presencePenalty;
-
-    if (Object.keys(callArgs).length > 0) {
-      llmWithTools = llmWithTools.bind(callArgs);
-    }
+      invocationConfig.presence_penalty = modelSettings.presencePenalty;
   }
 
   let systemPrompt =
@@ -127,7 +134,7 @@ export async function AgentNode(
   const supportsVision = isVisionModel(modelName);
   console.log("[AgentNode] Model:", modelName, "Vision support:", supportsVision);
 
-  const sanitizedMessages = messages.map((msg) => {
+  const sanitizedMessages = messages.map((msg: any) => {
     if (Array.isArray(msg.content)) {
       const hasImages = isMultimodalContent(msg.content);
 
@@ -153,7 +160,10 @@ export async function AgentNode(
     return msg;
   });
 
-  const response = await llmWithTools.invoke(sanitizedMessages);
+  const response = await llmWithTools.invoke(
+    sanitizedMessages,
+    Object.keys(invocationConfig).length > 0 ? invocationConfig : undefined
+  );
 
   console.log("[AgentNode] Complete");
   return { messages: [response], model_calls: 1 };

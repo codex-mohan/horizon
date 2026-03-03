@@ -14,6 +14,8 @@ export interface RuntimeModelConfig {
   apiKey?: string;
   baseUrl?: string;
   enableReasoning?: boolean;
+  reasoningEffort?: string;
+  thinkingBudget?: number;
 }
 
 export async function createLLM(config: AgentConfig = agentConfig): Promise<BaseChatModel> {
@@ -51,6 +53,8 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
     apiKey,
     baseUrl,
     enableReasoning = false,
+    reasoningEffort,
+    thinkingBudget,
   } = runtimeConfig;
 
   console.log(
@@ -70,7 +74,9 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
         configuration: {
           baseURL: baseUrl,
         },
-        reasoningEffort: enableReasoning ? "medium" : undefined,
+        modelKwargs: (enableReasoning && reasoningEffort && reasoningEffort !== "none")
+          ? { reasoning_effort: reasoningEffort }
+          : undefined,
       });
     }
 
@@ -80,9 +86,10 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
       }
       return new ChatAnthropic({
         modelName,
-        temperature,
+        temperature: enableReasoning ? undefined : temperature,
         anthropicApiKey: apiKey,
-      });
+        thinking: enableReasoning ? { type: "enabled", budget_tokens: thinkingBudget || 1024 } : undefined,
+      }) as any;
     }
 
     case "google": {
@@ -90,7 +97,7 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
         throw new Error("GOOGLE_API_KEY is required for Google provider");
       }
       return new ChatGoogleGenerativeAI({
-        modelName,
+        model: modelName,
         temperature,
         maxOutputTokens: maxTokens,
         apiKey,
@@ -100,7 +107,7 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
     case "ollama": {
       return new ChatOllama({
         model: modelName,
-        temperature,
+        temperature: enableReasoning ? undefined : temperature,
         baseUrl: baseUrl || "http://localhost:11434",
       });
     }
@@ -110,7 +117,7 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
         throw new Error("GROQ_API_KEY is required for Groq provider");
       }
       return new ChatGroq({
-        modelName,
+        model: modelName,
         temperature,
         apiKey,
       });
@@ -120,19 +127,27 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
       if (!apiKey) {
         throw new Error("NVIDIA_NIM_API_KEY is required for NVIDIA NIM provider");
       }
-      return new ChatOpenAI({
+      // NVIDIA NIM uses chat_template_kwargs with "enable_thinking" (not "thinking")
+      // and does NOT support OpenAI's "reasoningEffort" parameter.
+      // Temperature and maxTokens are fine to pass through to NIM.
+      const modelKwargs = enableReasoning
+        ? { chat_template_kwargs: { enable_thinking: true } }
+        : undefined;
+      console.log(`[LLM] NVIDIA NIM modelKwargs:`, modelKwargs);
+
+      // Cast to any to bypass TypeScript type checking for extra params
+      const chatModel = new ChatOpenAI({
         modelName,
-        temperature: enableReasoning ? undefined : temperature,
-        maxTokens: enableReasoning ? undefined : maxTokens,
+        temperature,
+        maxTokens,
         openAIApiKey: apiKey,
         configuration: {
           baseURL: baseUrl || "https://integrate.api.nvidia.com/v1",
         },
-        reasoningEffort: enableReasoning ? "medium" : undefined,
-        modelKwargs: {
-          "chat_template_kwargs": { "thinking": enableReasoning }
-        }
-      });
+        modelKwargs: enableReasoning ? { enable_thinking: true } : undefined,
+      }) as any;
+
+      return chatModel;
     }
 
     default:

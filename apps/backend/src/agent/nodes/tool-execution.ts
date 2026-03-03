@@ -48,8 +48,8 @@ export async function ToolExecution(
     // Get tool_call_ids that already have ToolMessage responses (from ApprovalGate rejections)
     const existingToolCallIds = new Set(
         state.messages
-            .filter((msg) => msg._getType() === "tool")
-            .map((msg) => (msg as ToolMessage).tool_call_id)
+            .filter((msg: any) => msg._getType() === "tool")
+            .map((msg: any) => (msg as ToolMessage).tool_call_id)
     );
 
     // Filter out tools that already have responses (were rejected)
@@ -97,11 +97,11 @@ export async function ToolExecution(
             await emitUIEvent(config, errorUIMessage);
 
             toolMessages.push(
-                new ToolMessage({
-                    content: `Error: Tool "${toolName}" not found`,
-                    tool_call_id: toolCallId,
-                    name: toolName,
-                })
+                new ToolMessage(
+                    `Error: Tool "${toolName}" not found`,
+                    toolCallId,
+                    toolName
+                )
             );
             continue;
         }
@@ -198,11 +198,11 @@ export async function ToolExecution(
         }
 
         toolMessages.push(
-            new ToolMessage({
-                content: result,
-                tool_call_id: toolCallId,
-                name: toolName,
-            })
+            new ToolMessage(
+                result,
+                toolCallId,
+                toolName
+            )
         );
     }
 
