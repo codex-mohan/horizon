@@ -27,7 +27,7 @@ export const ReasoningBlock = React.memo(function ReasoningBlock({
     return (
         <div
             className={cn(
-                "rounded-lg border border-border/50 bg-muted/30 overflow-hidden",
+                "w-full rounded-lg border border-border/50 bg-muted/30 overflow-hidden",
                 className
             )}
         >

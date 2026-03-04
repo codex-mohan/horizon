@@ -1,4 +1,5 @@
 import { MessagesValue, ReducedValue, StateSchema } from "@langchain/langgraph";
+import { type BaseMessage } from "@langchain/core/messages";
 import { z } from "zod/v4";
 
 /**
@@ -198,9 +199,22 @@ export const AgentStateAnnotation = new StateSchema({
 
 /**
  * AgentState type derived from the schema.
- * This provides proper typing for the graph state.
+ * Manually defined because Zod v4 does not properly satisfy LangGraph's 
+ * SerializableSchema type constraints during TS inference, resulting in 'unknown'.
  */
-export type AgentState = typeof AgentStateAnnotation.State;
+export interface AgentState {
+  messages: any[];
+  model_calls: number;
+  token_usage: { input: number; output: number; total: number };
+  metadata: Record<string, any>;
+  executed_tool_calls: ToolCall[];
+  start_time: number;
+  end_time: number;
+  middleware_metrics: MiddlewareMetrics;
+  errors: string[];
+  ui: UIMessage[];
+  tools_rejected: boolean;
+}
 
 export type ToolApprovalMode = "always_ask" | "dangerous_only" | "never_ask";
 

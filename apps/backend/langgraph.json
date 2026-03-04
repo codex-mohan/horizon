@@ -2,6 +2,5 @@
   "node_version": "20",
   "graphs": {
     "agent": "./src/agent/graph.ts:graph"
-  },
-  "state": "./src/agent/state.ts:AgentStateAnnotation"
+  }
 }
