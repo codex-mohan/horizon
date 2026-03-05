@@ -51,3 +51,7 @@ telemetry-id
 
 # Horizon user config (keep example)
 config/horizon.json
+
+# Reference projects (cloned repos for agent context)
+docs/REFERENCE_PROJECTS/*
+!docs/REFERENCE_PROJECTS/README.md

@@ -1,936 +1,1085 @@
-# Horizon - Agent Coding Guidelines
+# Horizon — Agent Coding Guidelines
 
-**IMPORTANT: This file must be updated whenever the project structure, architecture, or workflows change. If you make changes that affect how agents should work on this codebase, update this document immediately.**
+> **Last Updated:** 2026-03-05
+> **Maintained by:** AI coding agents working on Horizon
 
----
-
-## Project Overview
-
-**Horizon** is a sophisticated AI assistant platform that bridges large language models with local operating systems. It features a modern chat interface, multi-model support, long-term memory, and secure code execution capabilities.
-
-### High-Level Architecture
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Next.js 16    │────▶│  LangGraph Agent │────▶│     Qdrant      │
-│   (Web App)     │◄────│  (TypeScript)    │◄────│  (Vector DB)    │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-                               │
-                               ▼
-                        ┌──────────────────┐
-                        │  Tools (Web,     │
-                        │  Shell, Memory)  │
-                        └──────────────────┘
-```
+**This document is the single source of truth for AI coding agents working on this codebase. It must be updated whenever the project structure, architecture, configuration, or workflows change. If you make changes that affect how agents should work on this project, update this document immediately.**
 
 ---
 
-## Project Structure
+## 1. Project Overview
 
-### Repository Organization
+**Horizon** is a privacy-focused, agentic AI assistant platform that bridges large language models with the user's local operating system. It enables users to have natural conversations with AI that can execute system commands, browse the web, manage files, and automate workflows — all from a modern, glassmorphic chat interface.
 
-This is a **Turborepo monorepo** using **pnpm workspaces** with Bun runtime support.
+Think of it as an open, self-hosted alternative to products like Manus AI, but running entirely on your own PC. It is designed for power users, developers, and tinkerers who want deep OS-level integration with the intelligence of frontier LLMs, while retaining full control over their data and model choices.
 
-```
+### Tagline
+
+> *"Past the Event Horizon, everything is possible."*
+
+### Author
+
+Mohana Krishna ([@codex-mohan](https://github.com/codex-mohan))
+
+---
+
+## 2. Problem Statement & Solution
+
+### The Problem
+
+Most AI assistants operate in a sandboxed bubble — they can generate text but cannot interact with the user's actual operating system. They can't execute terminal commands, read/write local files, browse the web for live data, or automate multi-step workflows. This creates a frustrating gap between what AI *knows* and what it can *do*.
+
+### The Solution
+
+Horizon provides a unified interface where AI meets your OS:
+
+| Capability | Description |
+|---|---|
+| **System Operations** | Execute terminal commands, manage files, monitor system resources |
+| **Browser Automation** | Search the web (DuckDuckGo), extract and summarize page content |
+| **Multi-Model Support** | Switch between OpenAI, Anthropic, Google, Groq, NVIDIA NIM, or local Ollama models on-the-fly from the UI |
+| **Human-in-the-Loop** | Review and approve dangerous tool calls before they execute |
+| **Long-Term Memory** | Vector-based memory (Qdrant) for context that persists across conversations |
+| **Custom Assistants** | Create task-specific AI personas with custom prompts and model preferences |
+| **Privacy-First** | Run entirely locally with Ollama — no data leaves your machine |
+
+### Use Cases
+
+- **Developer Workflow Automation**: Ask the AI to scaffold a project, run tests, commit code, and explain errors — all through chat.
+- **Research & Summarization**: Search the web, extract content from URLs, and get structured summaries.
+- **System Administration**: Monitor system health, manage files, execute maintenance scripts with safety guardrails.
+- **Learning & Mentoring**: Custom assistants can act as tutors (e.g., Socratic coaching loops) for guided learning.
+
+---
+
+## 3. Project Structure
+
+This is a **Turborepo monorepo** using **Bun workspaces** (with `pnpm-workspace.yaml` for compatibility).
+
+```text
 Horizon/
 ├── apps/
-│   ├── web/                    # Next.js 16 frontend
-│   ├── backend/               # TypeScript LangGraph agent server
-│   ├── backend-py-legacy/     # Python FastAPI (legacy/reference)
-│   └── sandbox/               # Dockerized secure code execution
+│   ├── web/                          # Next.js 16 frontend (chat UI)
+│   │   ├── app/                      # App Router pages & API routes
+│   │   │   ├── api/auth/             # Auth API (login, register, me)
+│   │   │   ├── api/checkpoints/      # Checkpoint management
+│   │   │   ├── api/ollama/           # Ollama proxy endpoints
+│   │   │   ├── auth/page.tsx         # Auth page
+│   │   │   ├── chat/[threadId]/      # Dynamic conversation pages
+│   │   │   ├── layout.tsx            # Root layout (fonts, theme, toaster)
+│   │   │   └── page.tsx              # Home redirect
+│   │   ├── components/
+│   │   │   ├── chat/                 # Chat-specific components (31+ files)
+│   │   │   │   └── generative-ui/   # Tool call renderers (shell, web search, etc.)
+│   │   │   ├── theme/                # Theme provider & switcher
+│   │   │   ├── auth/                 # Auth components
+│   │   │   ├── settings/             # Settings dialogs
+│   │   │   ├── assistants/           # Assistant management
+│   │   │   ├── markdown-view.tsx     # Rich markdown renderer
+│   │   │   ├── mermaid-diagram.tsx   # Mermaid diagram component
+│   │   │   └── login-form.tsx        # Login/register form
+│   │   ├── lib/
+│   │   │   ├── stores/               # Zustand state stores
+│   │   │   │   ├── auth.ts           # Authentication state
+│   │   │   │   ├── model-config.ts   # Model/provider config (persisted)
+│   │   │   │   ├── chat-settings.ts  # UI preferences
+│   │   │   │   ├── assistants.ts     # Assistant management
+│   │   │   │   ├── conversation.ts   # Thread tracking
+│   │   │   │   └── ollama-store.ts   # Ollama model management
+│   │   │   ├── chat.ts               # Core chat hook (LangGraph SDK streaming)
+│   │   │   ├── threads.ts            # Thread management client
+│   │   │   ├── auth/                 # JWT utilities (jose)
+│   │   │   ├── db/                   # SQLite database (better-sqlite3, drizzle)
+│   │   │   ├── chat-utils.ts         # Chat helper utilities
+│   │   │   ├── message-grouping.ts   # Message grouping logic
+│   │   │   ├── file-loader.ts        # File parsing (PDF, DOCX, CSV, etc.)
+│   │   │   ├── tool-config.ts        # Tool display configuration
+│   │   │   └── codemirror-theme.ts   # CodeMirror editor theme
+│   │   ├── hooks/                    # Custom React hooks
+│   │   │   ├── use-clipboard-paste.ts
+│   │   │   └── use-mobile.ts
+│   │   └── public/                   # Static assets (logo, icons)
+│   │
+│   └── backend/                      # TypeScript LangGraph agent server
+│       ├── src/
+│       │   ├── agent/
+│       │   │   ├── graph.ts          # Main LangGraph graph builder
+│       │   │   ├── state.ts          # Agent state annotation (Annotation.Root)
+│       │   │   ├── fs-checkpointer.ts # FileSystem-based checkpointer
+│       │   │   ├── nodes/            # Graph nodes
+│       │   │   │   ├── agent.ts               # LLM inference with tools
+│       │   │   │   ├── start-middleware.ts     # Initialize execution, PII
+│       │   │   │   ├── memory-retrieval.ts     # Qdrant memory retrieval
+│       │   │   │   ├── approval-gate.ts        # Human-in-the-loop approval
+│       │   │   │   ├── tool-execution.ts       # Execute approved tools
+│       │   │   │   └── end-middleware.ts        # Finalize, metrics
+│       │   │   ├── tools/
+│       │   │   │   └── index.ts      # Tool registry & approval logic
+│       │   │   └── middleware/
+│       │   │       └── pii.ts        # PII detection patterns
+│       │   ├── assistants/           # Assistant CRUD system
+│       │   │   ├── types.ts          # Assistant schema
+│       │   │   ├── router.ts         # Hono routes for assistants
+│       │   │   └── db.ts             # JSON file storage
+│       │   ├── lib/
+│       │   │   ├── config.ts         # Env config (Zod schema)
+│       │   │   ├── config-loader.ts  # Horizon JSON config loader (XDG-style lookup)
+│       │   │   └── llm.ts            # LLM client factory (multi-provider)
+│       │   ├── middleware/
+│       │   │   └── rate-limit.ts     # IP-based rate limiting
+│       │   └── index.ts              # Hono server entry (routes, SSE streaming)
+│       └── langgraph.json            # LangGraph CLI config
+│
 ├── packages/
-│   ├── ui/                    # Shared shadcn/ui components
-│   ├── agent-memory/          # Qdrant-based memory system
-│   ├── agent-web/             # Web scraping/search tools
-│   ├── shell/                 # Cross-platform shell execution
-│   ├── typescript-config/     # Shared TS configurations
-│   └── eslint-config/         # Shared ESLint configurations
-├── docker-compose.yaml        # Development orchestration
-├── docker-compose.prod.yaml   # Production orchestration
-└── turbo.json                 # Turborepo task configuration
+│   ├── ui/                           # Shared shadcn/ui component library
+│   ├── agent-memory/                 # Qdrant vector memory system
+│   ├── agent-web/                    # Web search & content extraction
+│   ├── shell/                        # Cross-platform shell execution
+│   └── typescript-config/            # Shared TypeScript configs
+│
+├── config/
+│   ├── horizon.json                  # Local runtime config (gitignored)
+│   ├── horizon.example.json          # Config template
+│   ├── config.schema.json            # JSON Schema for validation
+│   └── README.md                     # Configuration docs
+│
+├── docs/
+│   ├── LIBRARY_DOCS/                 # Library-specific documentation
+│   │   ├── AGENT_IN_LOOP.md          # Human-in-the-loop patterns
+│   │   ├── LANGCHAIN_GENERATIVE_UI.md # Generative UI reference
+│   │   ├── LANGCHAIN_MODELS.md       # LangChain model usage
+│   │   └── LANGCHAIN_USESTREAM.md    # useStream hook patterns
+│   ├── REFERENCE_PROJECTS/           # Cloned repos for agent study (gitignored)
+│   │   └── README.md                 # Usage instructions
+│   ├── configuration.md              # Configuration guide
+│   ├── deployment.md                 # Deployment guide
+│   └── development.md                # Development guide
+│
+├── biome.json                        # Biome linter/formatter config
+├── turbo.json                        # Turborepo task configuration
+├── package.json                      # Root workspace config
+├── docker-compose.yaml               # Development orchestration
+├── docker-compose.prod.yaml          # Production orchestration
+└── TODO.md                           # Active feature roadmap
 ```
 
-### Applications
+### Key Structural Notes
 
-#### 1. apps/web - Next.js 16 Chat Interface
-
-**Technology Stack:**
-
-- Next.js 16.0.10 with App Router
-- React 19.2.0 + TypeScript 5.7.3
-- Tailwind CSS 4.1.9
-- Zustand 5.0.10 (state management)
-- LangGraph SDK for streaming
-
-**Key Features:**
-
-- Real-time streaming AI chat
-- Multi-theme glassmorphic UI (Horizon/Nebula/Aurora)
-- JWT authentication with local SQLite
-- File attachments (drag & drop, clipboard paste)
-- Assistant management (custom prompts, model selection)
-- Conversation branching (edit, retry, regenerate)
-- Tool call visualization with generative UI
-- Mobile-responsive design
-
-**Directory Structure:**
-
-```
-app/
-├── api/auth/              # Authentication API routes
-│   ├── login/route.ts
-│   ├── register/route.ts
-│   └── me/route.ts
-├── chat/
-│   ├── page.tsx           # Chat index (redirects to /chat/new)
-│   └── [threadId]/page.tsx # Dynamic conversation pages
-├── auth/page.tsx          # Authentication page
-├── layout.tsx             # Root layout with theme provider
-└── page.tsx               # Home (redirects to auth/chat)
-
-components/
-├── chat/                  # Chat-specific components
-│   ├── chat-area.tsx      # Main chat interface
-│   ├── chat-input.tsx     # Input with attachments
-│   ├── chat-bubble.tsx    # Message bubbles
-│   ├── sidebar.tsx        # Navigation sidebar
-│   ├── expanded-sidebar.tsx # Content panels
-│   └── activity-timeline.tsx # Real-time activity feed
-├── auth/                  # Authentication components
-└── ui/                    # Base UI components
-
-lib/
-├── stores/                # Zustand stores
-│   ├── auth.ts           # Authentication state
-│   ├── conversation.ts   # Thread tracking
-│   ├── chat-settings.ts  # UI preferences
-│   └── assistants.ts     # Assistant management
-├── chat.ts               # Core chat hook (LangGraph SDK)
-├── threads.ts            # Thread management client
-├── auth/                 # JWT utilities
-└── db/                   # Local database (JSON-based)
-```
-
-#### 2. apps/backend - TypeScript LangGraph Agent
-
-**Technology Stack:**
-
-- LangGraph.js (TypeScript)
-- Hono 4.7 web framework
-- @hono/node-server
-- Multiple LLM providers (OpenAI, Anthropic, Google, Groq, Ollama)
-- Qdrant vector database
-
-**Architecture:** Multi-node graph with conditional routing
-
-**Graph Flow:**
-
-```
-START → StartMiddleware → MemoryRetrieval → AgentNode → [Conditional]
-                                          ↓\n                                    [Has Tool Calls?]
-                                    ↓ YES          ↓ NO
-                              ApprovalGate      EndMiddleware
-                                    ↓                ↓
-                              [Approved Tools?]      END
-                              ↓ YES        ↓ NO
-                        ToolExecution    EndMiddleware
-                              ↓                ↓
-                        [Continue?]           END
-                        ↓ YES      ↓ NO (Max calls)
-                   AgentNode      EndMiddleware
-```
-
-**Directory Structure:**
-
-```
-src/
-├── agent/
-│   ├── graph.ts              # Main graph builder and wiring
-│   ├── state.ts              # Agent state schema (Annotation.Root)
-│   ├── fs-checkpointer.ts    # FileSystem checkpointer
-│   ├── nodes/                # Graph nodes
-│   │   ├── StartMiddleware.ts     # Initialize execution, PII detection
-│   │   ├── MemoryRetrieval.ts     # Retrieve memories from Qdrant
-│   │   ├── Agent.ts               # LLM inference with tools
-│   │   ├── ApprovalGate.ts        # Human-in-the-loop approval
-│   │   ├── ToolExecution.ts       # Execute approved tools
-│   │   └── EndMiddleware.ts       # Finalize, calculate metrics
-│   ├── tools/                # Tool definitions
-│   │   └── index.ts          # Tool registry
-│   └── middleware/           # Shared middleware logic
-│       └── pii.ts            # PII detection utilities
-├── assistants/               # Assistant management API
-│   ├── types.ts              # Assistant schema
-│   ├── router.ts             # CRUD routes
-│   └── db.ts                 # JSON file storage
-├── lib/
-│   ├── config.ts             # Environment configuration (Zod)
-│   ├── llm.ts                # LLM client factory
-│   └── utils.ts              # Utility functions
-├── middleware/
-│   └── rateLimit.ts          # IP-based rate limiting
-└── index.ts                  # Hono server entry point
-```
-
-**Key Components:**
-
-1. **Agent State** (`state.ts`): Comprehensive state management including messages, model calls, token usage, interrupt handling for human-in-the-loop, tool tracking, reasoning steps, and UI streaming.
-
-2. **Tools** (`tools/index.ts`):
-   - Web search (DuckDuckGo)
-   - URL content fetching (Cheerio)
-   - Shell execution with approval modes
-
-3. **Configuration** (`lib/config.ts`): Extensive environment-based configuration using Zod validation for model providers, feature flags, limits, and custom prompts.
-
-4. **API Endpoints:**
-   - `/health` - Service health check
-   - `/threads` - Thread management
-   - `/threads/:id/runs/stream` - Streaming runs with SSE
-   - `/threads/:id/runs/resume` - Resume after interrupt
-   - `/assistants` - Assistant CRUD operations
-   - `/config` - Non-sensitive configuration
-
-#### 3. Packages
-
-##### @horizon/ui - Shared UI Components
-
-- shadcn/ui-based components
-- Radix UI primitives
-- Tailwind CSS styling
-- Glassmorphic design tokens
-
-##### @horizon/agent-memory - Vector Memory System
-
-- Qdrant vector database client
-- MemoryClient for high-level operations
-- PreferenceExtractor for user learning
-- Hybrid retrieval (semantic + recency)
-- Support for multiple memory types (conversation, fact, preference, document, summary)
-
-##### @horizon/agent-web - Web Tools
-
-- DuckDuckGo search integration
-- URL content extraction with Cheerio
-- Content cleaning (removes scripts, styles, nav)
-
-##### @horizon/shell - Shell Execution
-
-- Cross-platform command execution (Bun/Node)
-- Approval modes: always, never, dangerous, custom
-- Dangerous pattern detection (rm -rf, sudo, DROP TABLE, etc.)
-- Configurable timeouts and output limits
+- There is **no `eslint-config` package** — linting is handled entirely by **Ultracite + Biome**.
+- There is **no `backend-py-legacy`** or `sandbox` directory — the Python backend has been removed.
+- The `packages/` workspace uses the `@horizon/*` scope for internal packages.
+- The `config/` directory holds runtime JSON configuration, **not** environment variables for model/API settings.
 
 ---
 
-## Build Commands
+## 4. Architecture
+
+### High-Level System Diagram
+
+```text
+┌───────────────────────┐       ┌──────────────────────────┐       ┌──────────────────┐
+│     Next.js 16        │──────▶│   LangGraph Agent        │──────▶│     Qdrant       │
+│     (Web App)         │◀──────│   (TypeScript + Hono)    │◀──────│   (Vector DB)    │
+│     Port 3000         │  SSE  │   Port 2024              │       │   Port 6333      │
+└───────────────────────┘       └──────────────────────────┘       └──────────────────┘
+         │                              │          │
+         │                              ▼          ▼
+         │                      ┌──────────┐  ┌──────────────┐
+         │                      │  Tools   │  │  Assistant   │
+         │                      │ (Web,    │  │  Manager     │
+         │                      │  Shell)  │  │  (JSON DB)   │
+         │                      └──────────┘  └──────────────┘
+         │
+         ▼
+┌───────────────────────┐
+│  SQLite (Auth DB)     │
+│  better-sqlite3       │
+│  + drizzle ORM        │
+└───────────────────────┘
+```
+
+### Data Flow
+
+1. **User** types a message in the Next.js chat UI.
+2. **Frontend** sends a streaming request to the backend via LangGraph SDK (`/threads/:id/runs/stream`).
+3. **Model config** (provider, API key, model name, temperature) is sent **per-request** from the frontend's Zustand store — **not** from backend env vars.
+4. **Backend** runs the LangGraph agent graph which goes through: Start → Memory Retrieval → Agent (LLM) → Conditional routing.
+5. If the LLM returns **tool calls**, they go through the **ApprovalGate**. Dangerous tools trigger a `NodeInterrupt` that pauses the stream and asks the user for approval.
+6. Once approved, **ToolExecution** runs the tools, and results are fed back to the Agent for another inference cycle.
+7. **EndMiddleware** finalizes the response and the stream completes.
+
+### LangGraph Agent Flow
+
+```text
+START ──▶ StartMiddleware ──▶ MemoryRetrieval ──▶ AgentNode ──▶ [Conditional]
+                                                                  │
+                                                          ┌───────┴────────┐
+                                                          │ Has Tool Calls?│
+                                                          ├───── YES ──────┤──── NO ──▶ EndMiddleware ──▶ END
+                                                          ▼                │
+                                                    ApprovalGate           │
+                                                          │                │
+                                                  ┌───────┴────────┐       │
+                                                  │ Tools Approved?│       │
+                                                  ├── YES ─┤── NO ┤       │
+                                                  ▼        ▼      │       │
+                                            ToolExecution  AgentNode      │
+                                                  │       (w/ feedback)   │
+                                                  ▼                       │
+                                            [Max Calls?] ─── YES ────────┘
+                                                  │
+                                                  NO
+                                                  ▼
+                                             AgentNode (loop)
+```
+
+### Important Architecture Decision: Model Config is Client-Driven
+
+**The model provider, API key, model name, and parameters are stored in the frontend (Zustand `model-config` store, persisted to `localStorage`) and sent to the backend on every request.** The backend's `config.ts` env vars serve only as **fallback defaults** — the runtime model is created from the per-request `RuntimeModelConfig` passed by the frontend.
+
+This means:
+
+- Users configure their API keys and model selection **entirely from the UI** (Settings → Provider Configuration).
+- The backend does **not** need env vars for `MODEL_PROVIDER`, `MODEL_NAME`, or `*_API_KEY` to function — these are relayed from the client.
+- Backend env vars like `MODEL_PROVIDER` / `MODEL_NAME` in `config.ts` are **fallback defaults** only, used if no runtime config is provided.
+
+---
+
+## 5. Tech Stack & Libraries
+
+### Core Runtime
+
+| Component | Technology | Version |
+|---|---|---|
+| **Package Manager** | Bun | 1.3.6+ |
+| **Language** | TypeScript | 5.7+ |
+| **Monorepo** | Turborepo | 2.8+ |
+| **Node Compatibility** | Node.js | ≥ 20 |
+
+### Frontend (`apps/web`)
+
+| Category | Technology | Notes |
+|---|---|---|
+| **Framework** | Next.js 16 (App Router) | Turbopack dev server |
+| **UI Library** | React 19 | Function components only |
+| **Styling** | Tailwind CSS 4 | PostCSS integration |
+| **Components** | shadcn/ui + Radix UI | Glassmorphic design tokens |
+| **State Management** | Zustand 5 | Persistent stores via `zustand/middleware` |
+| **Animations** | Framer Motion 12 | Micro-interactions & transitions |
+| **Markdown** | react-markdown + remark-gfm | Math (KaTeX), syntax highlighting |
+| **Code Editor** | CodeMirror 6 | Multi-language support |
+| **Diagrams** | Mermaid 11 | In-chat diagram rendering |
+| **Charts** | Recharts 2.15 | Data visualization |
+| **Auth** | jose (JWT) + bcryptjs | Local SQLite auth DB |
+| **Database** | better-sqlite3 + drizzle-orm | User accounts, sessions |
+| **File Parsing** | pdfjs-dist, mammoth, papaparse, xlsx | PDF, DOCX, CSV, Excel support |
+| **Toasts** | Sonner | Notification system |
+| **AI SDK** | @langchain/langgraph-sdk | Streaming chat client |
+| **Icons** | Lucide React, React Icons | Icon library |
+
+### Backend (`apps/backend`)
+
+| Category | Technology | Notes |
+|---|---|---|
+| **Web Framework** | Hono 4.12+ | Lightweight, fast, middleware-based |
+| **Server** | @hono/node-server | Node.js HTTP adapter |
+| **Agent Framework** | LangGraph.js 1.2+ | Stateful multi-node graph |
+| **LLM Providers** | @langchain/openai, @langchain/anthropic, @langchain/google-genai, @langchain/groq, @langchain/ollama | Multi-provider factory |
+| **Checkpointing** | Custom `FileSystemCheckpointer` | JSON file-based persistence |
+| **Validation** | Zod 3.25+ | Schema validation for config |
+| **Environment** | dotenv | Env var loading |
+
+### Shared Packages
+
+| Package | Purpose |
+|---|---|
+| `@horizon/ui` | shadcn/ui component library with glassmorphic design tokens |
+| `@horizon/agent-memory` | Qdrant vector DB client, memory types, semantic retrieval |
+| `@horizon/agent-web` | DuckDuckGo search, URL content extraction (Cheerio) |
+| `@horizon/shell` | Cross-platform shell execution with danger detection |
+| `@horizon/typescript-config` | Shared `tsconfig.json` presets |
+
+### Infrastructure
+
+| Component | Technology | Notes |
+|---|---|---|
+| **Containerization** | Docker Compose | Dev & production stacks |
+| **Vector Database** | Qdrant | Semantic memory storage |
+| **Cache** | Redis 7 | Optional session/cache store |
+| **Linting & Formatting** | Ultracite 7.1 + Biome 2.3 | Zero-config quality enforcement |
+
+---
+
+## 6. Coding Standards & Principles
+
+### Core Principles
+
+These principles govern all code written for Horizon. They are listed in order of priority:
+
+1. **DRY (Don't Repeat Yourself)**: Extract shared logic into utility functions, shared packages (`@horizon/*`), or custom hooks. Never duplicate business logic across the frontend and backend.
+
+2. **KISS (Keep It Simple, Stupid)**: Prefer straightforward, readable solutions over clever abstractions. If a simpler approach works, use it. Avoid premature optimization.
+
+3. **YAGNI (You Aren't Gonna Need It)**: Do not implement speculative features. Build only what is needed now, with clean extension points for the future.
+
+4. **Separation of Concerns**: Each module, component, and function should have a single, clear responsibility. The monorepo package structure enforces this at the architectural level.
+
+5. **Fail Fast, Fail Loud**: Validate inputs early (Zod schemas), use early returns for error cases, and throw descriptive `Error` objects — never silently swallow errors.
+
+6. **Explicit Over Implicit**: Use explicit TypeScript types, named exports, and clear function signatures. Avoid `any`; prefer `unknown` when the type is genuinely uncertain.
+
+### Ultracite & Biome (Linting & Formatting)
+
+This project uses **Ultracite**, a zero-config preset built on top of **Biome**, for all linting and formatting. There is **no ESLint or Prettier** — Biome handles everything.
+
+**Commands:**
+
+```bash
+# Check for issues (CI-safe)
+bun x ultracite check
+
+# Auto-fix all fixable issues
+bun x ultracite fix
+
+# Diagnose setup problems
+bun x ultracite doctor
+```
+
+**Always run `bun x ultracite fix` before committing.** Most formatting and lint issues are auto-fixable.
+
+**Active Biome Configuration** (`biome.json`):
+
+| Setting | Value |
+|---|---|
+| Indent Style | Spaces (2) |
+| Line Width | 100 |
+| Line Ending | LF |
+| Quote Style | Double quotes |
+| JSX Quote Style | Double quotes |
+| Semicolons | Always |
+| Trailing Commas | ES5 |
+
+**Intentionally Disabled Rules:**
+
+These rules are turned off in `biome.json` for project-specific reasons:
+
+- `noExcessiveCognitiveComplexity` — Some agent nodes have inherently complex routing logic.
+- `noForEach` — `.forEach()` is used in legacy code; prefer `for...of` in new code.
+- `noNestedTernary` — Acceptable in JSX conditional rendering.
+- `noBarrelFile` — Package index files re-export by design.
+- `noImgElement` — Some dynamic image sources bypass Next.js `<Image>`.
+- `noArrayIndexKey` — Accepted in static, non-reorderable lists.
+- `noSvgWithoutTitle` — Decorative SVGs don't need titles.
+
+### TypeScript Standards
+
+**Type Safety:**
+
+- Use explicit types for function parameters and return values.
+- Prefer `unknown` over `any`.
+- Use `as const` assertions for immutable values.
+- Use `interface` for object shapes, `type` for unions/intersections.
+- Use `Record<K, V>` for dynamic key object types, `T[]` for arrays (not `Array<T>`).
+
+**Modern Patterns:**
+
+- `const` by default, `let` only when reassignment is needed, **never** `var`.
+- Optional chaining (`?.`) and nullish coalescing (`??`) for safe property access.
+- Template literals over string concatenation.
+- Destructuring for object and array access.
+- Arrow functions for callbacks and short functions.
+- `for...of` over `.forEach()` in new code.
+- `async/await` over promise chains.
+
+**Naming Conventions:**
+
+| Type | Convention | Example |
+|---|---|---|
+| Components | PascalCase | `ChatInterface`, `ApprovalGate` |
+| Hooks | camelCase with `use` prefix | `useChat`, `useModelConfig` |
+| Functions/Variables | camelCase | `isLoading`, `processEvent` |
+| Constants | SCREAMING_SNAKE_CASE | `MAX_MODEL_CALLS`, `TOOL_CATEGORIES` |
+| Files (utilities) | kebab-case | `chat-utils.ts`, `config-loader.ts` |
+| Files (components) | kebab-case | `chat-area.tsx`, `model-selector.tsx` |
+| Files (graph nodes) | kebab-case | `approval-gate.ts`, `tool-execution.ts` |
+| Interfaces/Types | PascalCase | `AgentConfig`, `RuntimeModelConfig` |
+| Packages | kebab-case with `@horizon/` scope | `@horizon/agent-memory` |
+
+**Import Order:**
+
+```typescript
+// 1. React/Next.js
+import { useState, useEffect } from "react";
+import type { Metadata } from "next";
+
+// 2. External libraries
+import { Hono } from "hono";
+import { z } from "zod";
+
+// 3. Workspace packages (@horizon/*)
+import { ShellExecutor } from "@horizon/shell";
+import { Button } from "@workspace/ui/components/ui/button";
+
+// 4. App-level imports (@/*)
+import { useAuth } from "@/lib/stores/auth";
+import { useModelConfig } from "@/lib/stores/model-config";
+
+// 5. Relative imports
+import { ChatArea } from "./chat-area";
+import type { AgentState } from "../state.js";
+```
+
+### React & Next.js Standards
+
+- **Function components only** — no class components.
+- Mark client-side components with `"use client"` directive.
+- Hooks at the top level only, never conditionally.
+- Destructure props explicitly with TypeScript interfaces.
+- Early returns for conditional rendering and guard clauses.
+- Use `key` prop with unique IDs, not array indices (except for truly static lists).
+- Use semantic HTML (`<button>`, `<nav>`, `<main>`) over `<div>` with roles.
+- Use Next.js `<Image>` component where possible (exceptions noted in Biome config).
+- Use App Router metadata API for SEO (not `next/head`).
+- React 19: Use `ref` as a prop directly — no `React.forwardRef`.
+
+### Error Handling
+
+- Always wrap async operations in `try/catch` with **context-prefixed logging**:
+
+  ```typescript
+  console.error("[Chat] Failed to send message:", error);
+  ```
+
+- Throw `Error` objects with descriptive messages, not strings.
+- Use early returns to reduce nesting.
+- Don't catch errors just to rethrow them without adding context.
+- In production, remove `console.log` and `debugger` statements — use structured logging.
+
+### Security
+
+- Add `rel="noopener"` on `target="_blank"` links.
+- Avoid `dangerouslySetInnerHTML` unless absolutely necessary (markdown rendering is an accepted exception with proper sanitization).
+- Never use `eval()` or assign to `document.cookie` directly.
+- Validate and sanitize all user input — use Zod schemas on the backend.
+- Never commit API keys, secrets, or `.env` files.
+
+### Performance
+
+- Avoid spread syntax inside loop accumulators.
+- Use top-level regex literals, not inside loops.
+- Prefer specific named imports over namespace (`*`) imports.
+- Use `React.memo` / `useMemo` / `useCallback` judiciously — only when profiling shows a benefit.
+
+---
+
+## 7. UI/UX Architecture & Theming
+
+### Design Philosophy
+
+Horizon uses a **glassmorphic design language** — frosted glass panels, deep blurs, subtle gradients, and layered transparency. The goal is a premium, immersive feel that is both beautiful and functionally dense.
+
+### Theme System
+
+Horizon has a **custom theme provider** (not `next-themes`). It manages two orthogonal axes:
+
+| Axis | Options | Storage |
+|---|---|---|
+| **Theme** (color palette) | `horizon`, `nebula`, `aurora` | `localStorage: horizon-theme` |
+| **Mode** (light/dark) | `light`, `dark` | `localStorage: horizon-theme-mode` |
+
+**Implementation:**
+
+- `components/theme/theme-provider.tsx` — React Context providing `theme`, `themeMode`, `setTheme`, `setThemeMode`.
+- `components/theme/theme-switcher.tsx` — UI control for switching themes.
+- Theme is applied via `data-theme` attribute on `<html>` and `dark` class toggle.
+- A blocking `<script>` in `layout.tsx` prevents flash of incorrect theme (FOIT) on page load.
+
+**How to add a new theme:**
+
+1. Define CSS custom properties under a new `[data-theme="your-theme"]` selector in the shared UI styles.
+2. Add the theme name to the `Theme` type in `theme-provider.tsx`.
+3. Add a swatch/option in `theme-switcher.tsx`.
+
+### Typography
+
+The project uses four Google Fonts loaded via `next/font/google` in `layout.tsx`:
+
+| Font | CSS Variable | Usage |
+|---|---|---|
+| **Space Grotesk** | `--font-display` | Headings, brand elements |
+| **Playfair Display** | `--font-accent` | Quotes, timestamps, editorial moments |
+| **Source Sans 3** | `--font-body` | Body text, chat messages (default) |
+| **Source Code Pro** | `--font-mono` | Code blocks, technical content |
+
+### State Management Pattern
+
+All client-side state uses **Zustand** stores in `lib/stores/`:
+
+| Store | File | Persisted? | Purpose |
+|---|---|---|---|
+| `useModelConfig` | `model-config.ts` | ✅ localStorage | Provider, model, API keys, reasoning settings |
+| `useAuth` | `auth.ts` | ✅ localStorage | JWT token, user info |
+| `useChatSettings` | `chat-settings.ts` | ✅ localStorage | UI preferences (sidebar state, etc.) |
+| `useAssistants` | `assistants.ts` | ❌ | Assistant list, selection |
+| `useConversation` | `conversation.ts` | ❌ | Active thread tracking |
+| `useOllamaStore` | `ollama-store.ts` | ❌ | Local Ollama model list |
+
+### Generative UI (Tool Call Rendering)
+
+Tool calls are rendered with **custom React components** in `components/chat/generative-ui/`:
+
+| Tool | Renderer | Description |
+|---|---|---|
+| `shell_execute` | `shell-tool.tsx` | Terminal-style output with exit codes, duration |
+| `web_search` / `duckduckgo_search` | `web-search-tool.tsx` | Search result cards |
+| `fetch_url_content` | `fetch-url-tool.tsx` | Page content extraction display |
+| `get_weather` | `weather-tool.tsx` | Weather card |
+| *(fallback)* | `generic-tool.tsx` | JSON-based generic display |
+
+The `generative-ui-renderer.tsx` dispatches to the appropriate component based on tool name. The `loading-effects.tsx` provides animated loading states during tool execution.
+
+### Notification System
+
+Notifications use **Sonner** (`sonner` package) configured in `layout.tsx` with a `glass-strong` CSS class for glassmorphic styling. Toast notifications appear top-right, with rich colors and close buttons.
+
+---
+
+## 8. Backend Architecture
+
+### Server (`apps/backend/src/index.ts`)
+
+The backend is a **Hono 4** HTTP server running on `@hono/node-server`. It handles:
+
+- CORS configuration (allows `localhost:3000` and any origin in dev).
+- SSE streaming for agent runs.
+- Thread state management via LangGraph checkpointer.
+- Assistant CRUD via `assistantsRouter`.
+- Ollama model proxy endpoints.
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/health` | Health check |
+| `GET` | `/config` | Non-sensitive configuration |
+| `GET` | `/threads/:id/state` | Get thread state |
+| `GET` | `/threads/:id/history` | Get thread state history |
+| `POST` | `/threads/:id/runs/stream` | Stream an agent run (SSE) |
+| `POST` | `/threads/:id/runs/resume` | Resume after tool approval interrupt |
+| `*` | `/assistants/*` | Assistant CRUD (via router) |
+
+### LangGraph Graph Nodes
+
+Each node is a pure function `(state: AgentState) => Partial<AgentState>` in `src/agent/nodes/`:
+
+| Node | File | Responsibility |
+|---|---|---|
+| `StartMiddleware` | `start-middleware.ts` | Initialize execution context, PII detection |
+| `MemoryRetrieval` | `memory-retrieval.ts` | Retrieve relevant memories from Qdrant, inject as context |
+| `AgentNode` | `agent.ts` | LLM inference with tool bindings, creates runtime LLM from request config |
+| `ApprovalGate` | `approval-gate.ts` | Check tool approval policy; `NodeInterrupt` for dangerous tools |
+| `ToolExecution` | `tool-execution.ts` | Execute approved tool calls, return results |
+| `EndMiddleware` | `end-middleware.ts` | Finalize response, calculate metrics |
+
+### Tool System
+
+Tools are defined in `src/agent/tools/index.ts`:
+
+| Tool | Source | Description |
+|---|---|---|
+| `web_search` | `@horizon/agent-web` | DuckDuckGo web search |
+| `fetch_url_content` | `@horizon/agent-web` | Extract page content via Cheerio |
+| `duckduckgo_search` | `@horizon/agent-web` | Alternative search tool |
+| `shell_execute` | Local (wraps `@horizon/shell`) | Execute shell commands with structured JSON output |
+
+**Tool Approval Modes:**
+
+| Mode | Behavior |
+|---|---|
+| `never_ask` | Auto-approve all tools |
+| `always_ask` | Require user approval for every tool call |
+| `dangerous_only` **(default)** | Only require approval for dangerous tools (`shell_execute`, etc.) |
+
+**Tool Risk Categories:**
+
+- **Safe**: `web_search`, `fetch_url_content`, `duckduckgo_search`, `get_weather`
+- **Dangerous**: `shell_execute`, `file_write`, `file_delete`
+
+### Shell Execution Safety (`@horizon/shell`)
+
+The shell package has multiple safety layers:
+
+- **Dangerous pattern detection**: `rm -rf`, `sudo`, `chmod`, `mkfs`, `dd`, `npm install -g`, `git push --force`, `DROP TABLE`, etc.
+- **Configurable timeouts**: Default 30 seconds.
+- **Output limits**: 1MB max output, truncated with a flag.
+- **Working directory**: Restricted to the configured workspace path from `config/horizon.json`.
+
+### Configuration System
+
+**Two layers of configuration exist:**
+
+1. **Environment Variables** (`.env`): Server-level settings — port, feature flags, rate limits, prompt defaults, and **fallback** model config. Parsed by Zod in `lib/config.ts`.
+
+2. **Runtime JSON Config** (`config/horizon.json`): Workspace paths, agent behavior (retries, timeouts). Loaded by `lib/config-loader.ts` with XDG-style directory lookup:
+   - `HORIZON_CONFIG` env var → `config/horizon.json` → `./horizon.json` → parent directories → `~/.horizon/config.json` → `~/.config/horizon/config.json` → system-wide → auto-create from example → defaults.
+
+**Feature Flags** (from `.env`, all boolean):
+
+- `ENABLE_MEMORY` — Vector memory retrieval
+- `ENABLE_SUMMARIZATION` — Conversation summarization
+- `ENABLE_PII_DETECTION` — PII pattern detection
+- `ENABLE_RATE_LIMITING` — IP-based rate limiting
+- `ENABLE_TOKEN_TRACKING` — Token usage tracking
+- `ENABLE_MODEL_FALLBACK` — LLM fallback on failure
+- `ENABLE_TOOL_RETRY` — Retry failed tool executions
+- `ENABLE_TOOL_APPROVAL` — Human-in-the-loop tool approval
+- `ENABLE_TODO_LIST` / `ENABLE_TODO_PLANNER` — TODO features
+
+### LangGraph CLI
+
+The backend uses **@langchain/langgraph-cli** for development:
+
+```bash
+cd apps/backend
+bunx @langchain/langgraph-cli dev
+```
+
+This reads `langgraph.json` which points to `./src/agent/graph.ts:graph` as the compiled graph export.
+
+---
+
+## 9. Build Commands & Development Workflows
 
 ### Root Level (Turborepo)
 
 ```bash
-# Development
-bun dev              # Start all dev servers (web + backend)
-
-# Building
-bun build            # Build all packages
-
-# Linting
-bun lint             # Lint all packages
-
-# Testing
-bun test             # Run all tests
+bun dev                  # Start all dev servers (web + backend via Turbo)
+bun dev:web              # Start only the web frontend
+bun dev:backend          # Start only the backend (LangGraph CLI)
+bun build                # Build all packages
+bun lint                 # Check linting (ultracite check)
+bun lint:fix             # Fix linting issues (ultracite fix)
+bun format               # Alias for ultracite fix
+bun typecheck            # TypeScript type checking
+bun clean                # Clean all build artifacts + node_modules
+bun docker:dev           # Start Docker dev stack
+bun docker:prod          # Start Docker prod stack
+bun docker:down          # Stop Docker stack
 ```
 
-### Web App (Next.js)
+### Web App (`apps/web`)
 
 ```bash
 cd apps/web
-
-# Development
-bun dev              # Development server (port 3000)
-
-# Building
-bun build            # Production build
-bun start            # Production server
-
-# Linting
-bun lint             # ESLint
+bun dev                  # Next.js dev server with Turbopack (port 3000)
+bun build                # Production build
+bun start                # Production server
+bun lint                 # Ultracite check
 ```
 
-### Backend (TypeScript)
+### Backend (`apps/backend`)
 
 ```bash
 cd apps/backend
-
-# Development
-bun dev              # Start LangGraph dev server (uses langgraph-cli)
-bun start            # Production server
-
-# Building
-bun build            # Compile TypeScript
-
-# Linting
-bun lint             # ESLint
+bun dev                  # LangGraph CLI dev server (port 2024)
+bun start                # Direct Hono server start
+bun test                 # Run tests
+bun typecheck            # TypeScript checking
 ```
 
-### Legacy Python Backend (backend-py-legacy)
+### Docker Development
 
 ```bash
-cd apps/backend-py-legacy
+# Start all services (backend, web, qdrant, redis)
+docker-compose up --build
 
-# Install dependencies
-pip install -e ".[dev]"    # Install with dev dependencies
-pip install -e .           # Production only
-
-# Linting & Type Checking
-ruff check .               # Lint Python files
-ruff check --fix .         # Auto-fix linting issues
-mypy .                     # Type checking
-
-# Testing
-pytest                     # Run all tests
-pytest tests/unit_tests    # Unit tests only
-pytest tests/integration_tests  # Integration tests
-pytest -v                  # Verbose output
-pytest -k "test_name"      # Run tests matching pattern
+# Services and ports:
+#   backend  → port 2024 (agent API), port 8000 (health)
+#   web      → port 3000 (Next.js)
+#   qdrant   → port 6333 (HTTP), port 6334 (gRPC)
+#   redis    → port 6379
 ```
 
 ---
 
-## Code Style Guidelines
-
-### TypeScript/JavaScript
-
-**Package Manager:** Use `bun` (version 1.3.6+), not pnpm/npm
-
-**Imports:**
-
-- Group imports: React → external libraries → workspace packages (`@horizon/*`) → app imports (`@/*`) → local imports
-- Use named exports for utilities and hooks
-- Use default exports for page components
-
-```typescript
-import { useState } from "react";
-import { useChat } from "@langchain/langgraph-sdk";
-import { Button } from "@horizon/ui/components/ui/button";
-import { useAuth } from "@/lib/stores/auth";
-import { ChatArea } from "./chat-area";
-```
-
-**Formatting:**
-
-- Prettier configured in package.json
-- 2 spaces for indentation
-- Single quotes for strings
-- Semicolons required
-- Trailing commas in multi-line objects/arrays
-
-**Types:**
-
-- Use explicit TypeScript types, avoid `any`
-- Use `Record<K, V>` for object types
-- Use `T[]` notation for arrays (not `Array<T>`)
-- Use `interface` for object shapes, `type` for unions/intersections
-
-**Naming:**
-
-- Components: PascalCase (e.g., `ChatInterface`)
-- Hooks: camelCase with `use` prefix (e.g., `useChat`)
-- Variables/functions: camelCase (e.g., `isLoading`, `processEvent`)
-- Constants: SCREAMING_SNAKE_CASE or camelCase for config objects
-- Files: kebab-case for utilities, PascalCase for components
-
-**React Patterns:**
-
-- Mark client components with `"use client"` directive
-- Use functional components with TypeScript interfaces
-- Use early returns for conditionals
-- Destructure props explicitly
-- Use `console.log` for debugging with context prefix
-
-```typescript
-"use client";
-
-import { useState } from "react";
-
-export interface ChatInterfaceProps {
-  threadId: string;
-}
-
-export function ChatInterface({ threadId }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
-
-  if (!threadId) {
-    return <Loading />;
-  }
-
-  console.log("[Chat] Initializing with thread:", threadId);
-
-  return <div>{/* ... */}</div>;
-}
-```
-
-**Error Handling:**
-
-- Use `try/catch` with specific error types
-- Log errors with context: `console.error("[Chat] Error:", error)`
-- Use optional chaining and nullish coalescing: `value?.property ?? default`
-- Create custom error types for domain errors
-
-### Python (Legacy Backend Only)
-
-**Imports:**
-
-- Standard library → Third party → Local application
-- Relative imports for internal modules
-
-```python
-from langgraph.graph import StateGraph, START, END
-from typing import Annotated, TypedDict, Any
-
-from agent.state import AgentState
-from agent.config import AgentConfig
-```
-
-**Docstrings:**
-
-- Use Google-style docstrings
-- Required for all public functions and classes
-- Include Args, Returns, Raises sections
-
-```python
-def build_graph(config: AgentConfig = None) -> CompiledStateGraph:
-    """Build the agent graph.
-
-    Args:
-        config: Optional agent configuration. Uses environment config if None.
-
-    Returns:
-        Compiled StateGraph instance ready for execution.
-
-    Raises:
-        ValueError: If configuration is invalid.
-    """
-```
-
-**Types:**
-
-- Use Python type hints throughout
-- Use `typing` module for complex types
-- Prefer `TypedDict` for structured state
-
-**Naming:**
-
-- Functions/variables: snake_case (e.g., `build_graph`, `model_calls`)
-- Classes: PascalCase (e.g., `AgentState`, `ModelCallMiddleware`)
-- Constants: SCREAMING_SNAKE_CASE (e.g., `MAX_TOKENS`)
-- Private methods/variables: prefix with `_`
-
-**Linting Rules (ruff):**
-
-- pycodestyle (E) and pyflakes (F) enabled
-- isort (I) for import sorting
-- pydocstyle (D) with Google convention
-- No print statements (T201) - use logging
-- Ignore: UP006, UP007, UP035, D417, E501
-
----
-
-## Key Features & Workflows
-
-### 1. Multi-Model AI Support
-
-The backend supports multiple LLM providers:
-
-- **OpenAI** (GPT-4, GPT-3.5)
-- **Anthropic** (Claude 3/3.5)
-- **Google** (Gemini)
-- **Groq** (Fast inference)
-- **Ollama** (Local models)
-
-Configuration via environment variables:
-
-```bash
-MODEL_PROVIDER=groq
-MODEL_NAME=meta-llama/llama-4-scout-17b-16e-instruct
-TEMPERATURE=0.7
-MAX_TOKENS=4096
-```
-
-### 2. Human-in-the-Loop Workflow
-
-The agent implements a sophisticated approval system:
-
-1. Agent generates tool calls
-2. ApprovalGate node checks if approval is needed
-3. For dangerous tools (shell, file operations), auto-approval is currently enabled
-4. Stream is interrupted with `interrupt_status: "waiting_approval"`
-5. Frontend shows approval UI
-6. User approves/rejects
-7. Stream resumes via `/threads/:id/runs/resume`
-
-**State Management:**
-
-- `interrupt_status`: "idle" | "waiting_approval" | "approved" | "rejected" | "error"
-- `interrupt_data`: Contains tool calls pending approval
-- `pending_tool_calls`: Tools waiting for approval
-
-### 3. Long-Term Memory System
-
-**Architecture:**
-
-- Qdrant vector database for semantic search
-- OpenAI/Ollama embeddings
-- Multiple memory types: conversation, fact, preference, document, summary
-- Privacy levels: public, private, sensitive
-- Hybrid retrieval combining semantic similarity and recency
-
-**Memory Node** (`nodes/MemoryRetrieval.ts`):
-
-- Retrieves relevant memories before agent inference
-- Embeds user query
-- Searches Qdrant for similar memories
-- Injects context into system prompt
-
-### 4. Assistant System
-
-Users can create custom AI assistants:
-
-- Custom system prompts
-- Model provider selection
-- Tool configuration
-- Public/private sharing
-- Avatar uploads
-- Default assistant per user
-
-**Storage:** JSON file at `data/assistants.json`
-
-### 5. Generative UI for Tool Calls
-
-Tools emit UI events during execution:
-
-- Tool start/complete/fail events
-- Custom renderers for each tool type
-- Expandable/collapsible results
-- Real-time status updates
-
-### 6. Shell Execution Security
-
-The shell tool has multiple safety layers:
-
-- **Approval modes:** always, never, dangerous, custom
-- **Dangerous patterns:** rm -rf, sudo, chmod, mkfs, dd, npm install, git push, DROP TABLE, etc.
-- **Timeouts:** Configurable (default 30s)
-- **Output limits:** 1MB max output
-- **Working directory:** Restricted scope
-
----
-
-## Docker Development
-
-### Development Stack
-
-```bash
-# Start all services
-docker-compose up
-
-# Services:
-# - web: Next.js dev server (port 3000)
-# - backend: LangGraph agent (port 2024)
-# - qdrant: Vector database (port 6333)
-# - redis: Session store (port 6379)
-```
-
-### Production Stack
-
-```bash
-# Production deployment
-docker-compose -f docker-compose.prod.yaml up
-
-# Services:
-# - web: Next.js production
-# - backend: LangGraph agent
-# - sandbox: Isolated code execution
-# - redis: Session store
-# - nginx: Reverse proxy with SSL
-```
-
-### Sandbox Environment
-
-The sandbox provides isolated Python execution:
-
-- Minimal Docker image (Python 3.11-slim)
-- Resource limits (CPU, memory)
-- No network access
-- Read-only filesystem except /tmp
-- Suitable for running untrusted code
-
----
-
-## Environment Variables
-
-### Web App (.env.local)
-
-```bash
-# Required
-NEXT_PUBLIC_LANGGRAPH_API_URL=http://localhost:2024
-JWT_SECRET=your-secret-key
-
-# Optional
-NEXT_PUBLIC_APP_NAME=Horizon
-NEXT_PUBLIC_APP_DESCRIPTION="AI Assistant Platform"
-```
-
-### Backend (.env)
-
-```bash
-# Server
-PORT=2024
-ENVIRONMENT=development
-
-# Model Configuration
-MODEL_PROVIDER=groq
-MODEL_NAME=meta-llama/llama-4-scout-17b-16e-instruct
-TEMPERATURE=0.7
-MAX_TOKENS=4096
-
-# API Keys (at least one required)
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
-GOOGLE_API_KEY=
-GROQ_API_KEY=
-
-# Feature Flags
-ENABLE_MEMORY=true
-ENABLE_SUMMARIZATION=true
-ENABLE_PII_DETECTION=true
-ENABLE_RATE_LIMITING=true
-ENABLE_TOOL_APPROVAL=true
-
-# Vector Database
-QDRANT_URL=http://localhost:6333
-QDRANT_API_KEY=
-
-# Limits
-MAX_MODEL_CALLS=10
-MAX_TOOL_CALLS=20
-MAX_RETRIES=3
-```
-
----
-
-## Testing
-
-### TypeScript/JavaScript
-
-```bash
-# Run all tests
-bun test
-
-# Run specific test
-bun test -- --grep "test name"
-```
-
-### Python (Legacy Backend)
-
-```bash
-cd apps/backend-py-legacy
-
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=src --cov-report=html
-
-# Run specific test file
-pytest tests/unit_tests/test_configuration.py
-
-# Run specific test
-pytest tests/unit_tests/test_configuration.py::test_config_loading
-```
-
----
-
-## CI/CD
-
-### GitHub Actions (backend-py-legacy/.github/workflows/)
-
-1. **unit-tests.yml**
-   - Triggers: Push to main, PRs, manual dispatch
-   - Python 3.11 & 3.12 matrix
-   - Steps: Install uv, lint with ruff, type check with mypy, run pytest
-
-2. **integration-tests.yml**
-   - Schedule: Daily at 14:37 UTC
-   - Requires: ANTHROPIC_API_KEY, LANGSMITH_API_KEY
-   - Runs integration tests against real APIs
-
----
-
-## Common Development Tasks
+## 10. Common Development Tasks
 
 ### Adding a New Tool
 
-1. Define tool schema in `apps/backend/src/agent/tools/index.ts`
-2. Implement tool logic
-3. Add to tools array in graph
-4. Create UI renderer in web app (if needed)
-5. Update assistant tool configuration
+1. Define the tool schema and implementation in `apps/backend/src/agent/tools/index.ts` using `tool()` from `@langchain/core/tools`.
+2. Add the tool name to `TOOL_CATEGORIES.safe` or `TOOL_CATEGORIES.dangerous`.
+3. Add the tool to the `tools` array export.
+4. Create a generative UI renderer in `apps/web/components/chat/generative-ui/` (e.g., `your-tool.tsx`).
+5. Register the renderer inside `generative-ui/index.tsx`.
+6. Update `apps/web/lib/tool-config.ts` with display metadata (icon, label, color).
+
+### Adding a New LLM Provider
+
+1. Install the `@langchain/<provider>` package in `apps/backend`.
+2. Add the provider to the `switch` in `apps/backend/src/lib/llm.ts` → `createRuntimeLLM()`.
+3. Add the provider type to `RuntimeModelConfig.provider` union.
+4. Add the provider to `ModelProvider` type in `apps/web/lib/stores/model-config.ts`.
+5. Add default models and provider info to `DEFAULT_MODELS` and `PROVIDER_INFO`.
+6. Add the provider config to the Zustand store default state.
+7. Update fallback config in `apps/backend/src/lib/config.ts` → `EnvSchema.MODEL_PROVIDER` enum.
 
 ### Adding a New Graph Node
 
-1. Create file in `apps/backend/src/agent/nodes/`
-2. Implement node function with proper types
-3. Add to graph in `graph.ts`
-4. Wire edges appropriately
-5. Update state types if needed
+1. Create a file in `apps/backend/src/agent/nodes/` (kebab-case).
+2. Export a node function: `export const YourNode = async (state: AgentState) => { ... }`.
+3. Import and wire it in `apps/backend/src/agent/graph.ts` using `.addNode()` and `.addEdge()` / `.addConditionalEdges()`.
+4. Update `AgentStateAnnotation` in `state.ts` if new state fields are needed.
 
-### Adding a New UI Component
+### Adding a New Theme
 
-1. Add to `packages/ui/src/components/ui/` if shared
-2. Or add to `apps/web/components/` if app-specific
-3. Export from `packages/ui/src/index.ts` if shared
-4. Update theme tokens if needed
+1. Define CSS custom properties under `[data-theme="your-theme"]` in the shared UI styles (`packages/ui`).
+2. Add the theme name to the `Theme` type union in `components/theme/theme-provider.tsx`.
+3. Add a swatch in `components/theme/theme-switcher.tsx`.
 
-### Modifying State Schema
+### Modifying Agent State
 
-1. Update `AgentStateAnnotation` in `apps/backend/src/agent/state.ts`
-2. Update reducers for new fields
-3. Update types in `packages/agent-memory` if memory-related
-4. Update frontend types if needed
+1. Update `AgentStateAnnotation` in `apps/backend/src/agent/state.ts` — add new fields with appropriate reducers.
+2. Update any nodes that read/write the new fields.
+3. If the field is surfaced to the frontend, update the corresponding types in the web app.
 
 ---
 
-## Troubleshooting
+## 11. Future Improvements & Roadmap
+
+Tracked in `TODO.md`. Key areas:
+
+### Active TODO Items
+
+- [ ] Implement proper sandboxed code execution
+- [ ] Improve theme contrast for low-visibility UI components
+- [ ] Make the memory feature fully functional
+- [ ] Fix auth token expiry handling (loading state gets stuck)
+- [ ] Fix unauthenticated access to chat interface
+
+### Planned Phases (File Attachments & RAG)
+
+- **Phase 1**: File display in messages, multimodal content (images as base64) *(partially done)*
+- **Phase 2**: Persistent file storage with upload API and database metadata
+- **Phase 3**: Document processing with Docling/Unstructured, text chunking, Qdrant embeddings
+- **Phase 4**: My Items panel — uploaded files, generated artifacts, preview/download
+- **Phase 5**: Chat with Docs — RAG context selection, multi-document queries, citation linking
+
+### Future Aspirations
+
+- Scalable server architecture for concurrent users
+- Electron/Tauri desktop wrapper
+- Browser automation tools (Playwright integration)
+- Plugin system for community-built tools
+- Agent-to-agent communication
+
+---
+
+## 12. Documentation Guidelines
+
+### Where Documentation Lives
+
+| Type | Location | Purpose |
+|---|---|---|
+| **Agent guidelines** | `AGENTS.md` (this file) | Single source of truth for AI agents |
+| **Project README** | `README.md` | User-facing project overview |
+| **Library docs** | `docs/LIBRARY_DOCS/` | Detailed docs for complex libraries (LangGraph, LangChain) |
+| **Reference projects** | `docs/REFERENCE_PROJECTS/` | Cloned repos for agent study (gitignored) |
+| **Config guide** | `docs/configuration.md` | Configuration reference |
+| **Dev guide** | `docs/development.md` | Development environment setup |
+| **Deploy guide** | `docs/deployment.md` | Docker & production deployment |
+| **TODO list** | `TODO.md` | Active feature roadmap |
+
+### Library Documentation (`docs/LIBRARY_DOCS/`)
+
+This directory contains **manually curated documentation** for libraries that are complex, frequently updated, or whose APIs are not well-known to LLM training data. **Always check these docs before working with these libraries:**
+
+| File | Use When |
+|---|---|
+| `AGENT_IN_LOOP.md` | Implementing or modifying human-in-the-loop / tool approval workflows |
+| `LANGCHAIN_GENERATIVE_UI.md` | Building custom tool renderers or modifying the generative UI system |
+| `LANGCHAIN_MODELS.md` | Working with LangChain model classes, configuring providers, or debugging LLM instantiation |
+| `LANGCHAIN_USESTREAM.md` | Working with the `useStream` hook, SSE streaming, or modifying the chat data flow |
+
+**Why this matters:** LangGraph and LangChain are rapidly evolving libraries. Their APIs change frequently (e.g., the v0.x → v1.x migration broke many patterns). The documentation here serves as a **pinned, verified reference** — always prefer it over your training data when there's a conflict.
+
+### Reference Projects (`docs/REFERENCE_PROJECTS/`)
+
+This directory is for **temporarily cloning external open-source projects** that an AI agent needs to study for implementation patterns. For example, cloning a project that demonstrates a specific LangGraph pattern the agent should replicate in Horizon.
+
+- This directory is **gitignored** (except its README.md).
+- Projects should be **removed when no longer needed**.
+- Prefer copying only relevant files/folders over full clones.
+
+### When to Update `AGENTS.md`
+
+Update this file whenever you:
+
+1. Add or remove a major feature, tool, or graph node.
+2. Change the project structure (new apps, packages, or directory reorganization).
+3. Modify the architecture (new data flow, new services, config changes).
+4. Add or change dependencies that affect build/dev commands.
+5. Modify the linting/formatting setup.
+6. Change environment variable requirements or configuration options.
+7. Make any breaking change to how agents should understand this codebase.
+
+---
+
+## 13. Troubleshooting
 
 ### Common Issues
 
 **Build Errors:**
 
-- Run `bun install` to ensure dependencies are up to date
-- Clear `.turbo` cache: `rm -rf .turbo`
+- Run `bun install` at the repo root.
+- Clear Turbo cache: `rm -rf .turbo`
 - Clear Next.js cache: `rm -rf apps/web/.next`
+- Verify TypeScript: `bun typecheck`
 
-**LangGraph SDK Connection:**
+**Backend Won't Start:**
 
-- Ensure backend is running on port 2024
-- Check `NEXT_PUBLIC_LANGGRAPH_API_URL` environment variable
-- Verify no CORS issues in browser console
+- Ensure `apps/backend/.env` exists with at least `PORT=2024`.
+- If using LangGraph CLI: `cd apps/backend && bunx @langchain/langgraph-cli dev`
+- Check for TypeScript errors: `cd apps/backend && bun typecheck`
 
-**Qdrant Connection:**
+**Frontend Can't Connect to Backend:**
 
-- Ensure Qdrant container is running: `docker-compose ps`
-- Check `QDRANT_URL` environment variable
-- Verify network connectivity: `curl http://localhost:6333/healthz`
+- Verify backend is running on port 2024.
+- Check `NEXT_PUBLIC_LANGGRAPH_API_URL=http://localhost:2024` in `apps/web/.env.local`.
+- Check browser console for CORS errors.
+
+**Qdrant Connection Issues:**
+
+- Verify Qdrant container is running: `docker-compose ps`
+- Test connectivity: `curl http://localhost:6333/healthz`
+- Check `QDRANT_URL` in backend `.env`.
 
 **Authentication Issues:**
 
-- Check `JWT_SECRET` is set
-- Clear browser cookies/localStorage
-- Verify user exists in database
+- Verify `JWT_SECRET` is set in the web app's environment.
+- Clear browser `localStorage` and cookies.
+- Check SQLite database integrity in `apps/web/data/`.
 
-### Debug Logging
+**Linting Failures:**
 
-Enable debug logging:
+- Run `bun x ultracite fix` to auto-fix.
+- If Biome errors persist, check `biome.json` for rule configuration.
+- Run `bun x ultracite doctor` to diagnose setup issues.
 
-```bash
-# Backend
-DEBUG=langgraph:* bun dev
+**LangChain/LangGraph Type Errors:**
 
-# Web
-NEXT_PUBLIC_DEBUG=true bun dev
-```
+- These libraries undergo frequent breaking changes. Check `docs/LIBRARY_DOCS/` for pinned API reference.
+- Use `// @ts-expect-error` with a descriptive comment as a last resort for known type mismatches (see `graph.ts` for an example).
 
 ---
 
-## Security Considerations
+## 14. Testing
+
+### Current State
+
+- Backend tests: `cd apps/backend && bun test`
+- No comprehensive test suite yet — this is a known gap.
+
+### Testing Standards (For New Tests)
+
+- Write assertions inside `it()` or `test()` blocks.
+- Use `async/await` — never done callbacks.
+- Don't commit `.only` or `.skip`.
+- Keep test suites flat — avoid excessive `describe` nesting.
+- Mock external services (LLM calls, Qdrant, shell execution).
+- Test tool approval logic independently from graph execution.
+
+---
+
+## 15. Security Considerations
 
 ### PII Detection
 
-- Automatic detection of emails, phone numbers, SSNs
-- Logs warnings but doesn't block (configurable)
-- Pattern-based detection in StartMiddleware
+- Automatic detection of email and phone patterns in `middleware/pii.ts`.
+- Logs warnings but does not block (configurable via `ENABLE_PII_DETECTION`).
+- Run in `StartMiddleware` before any LLM inference.
 
 ### Rate Limiting
 
-- IP-based rate limiting (100 requests/minute default)
-- Configurable via `RATE_LIMIT_WINDOW` and `RATE_LIMIT_MAX_REQUESTS`
-- Toggle with `ENABLE_RATE_LIMITING`
+- IP-based, configurable via `RATE_LIMIT_WINDOW` and env vars.
+- Toggle with `ENABLE_RATE_LIMITING`.
 
 ### Shell Execution
 
-- Dangerous pattern detection
-- Configurable approval workflow
-- Resource limits (timeout, output size)
-- Never run shell commands without understanding the context
+- Dangerous pattern detection in `@horizon/shell`.
+- Approval workflow prevents accidental destructive commands.
+- Configurable timeouts and output limits.
+- Workspace path restriction via `config/horizon.json`.
 
 ### Authentication
 
-- JWT-based sessions
-- Password hashing with bcrypt
-- Protected route middleware
-- CSRF protection via SameSite cookies
+- JWT-based sessions via `jose`.
+- Password hashing with `bcryptjs`.
+- SQLite database for user accounts.
+- CSRF protection via SameSite cookies.
+- API routes protected by auth middleware.
+
+### API Keys
+
+- **Never** stored on the backend — API keys are sent per-request from the frontend's encrypted `localStorage`.
+- Backend env vars serve only as fallback defaults for development.
 
 ---
 
-## Documentation Updates
+## 16. Autonomous Self-Improvement — Keeping `AGENTS.md` Current
 
-**When to Update This File:**
+This file is a **living document**. It is only useful if it accurately reflects the current state of the codebase. **Every AI agent working on Horizon has a standing obligation to update this file proactively.**
 
-1. **New Features:** Adding major features (new tools, UI components, workflows)
-2. **Architecture Changes:** Modifying graph structure, state schema, or API
-3. **New Dependencies:** Adding packages that change build/test commands
-4. **Configuration Changes:** New environment variables or feature flags
-5. **Workflow Updates:** Changes to Docker, CI/CD, or development processes
-6. **Breaking Changes:** Any change that affects how agents work on this codebase
+### When to Update (Mandatory)
 
-**Update Process:**
+You **must** update `AGENTS.md` as part of your current task whenever you:
 
-1. Make your code changes
-2. Update AGENTS.md to reflect the changes
-3. Include code examples where helpful
-4. Update the "Last Updated" date below
-5. Commit both code and documentation changes together
+1. **Add, rename, move, or delete** any file, directory, package, or app that is referenced in the Project Structure (Section 3).
+2. **Add or remove** a dependency that changes the tech stack (Section 5), build commands (Section 9), or development workflows.
+3. **Add or modify** a tool, graph node, API endpoint, Zustand store, or theme — update the corresponding tables/sections.
+4. **Change** configuration behavior (env vars, `horizon.json` schema, feature flags).
+5. **Deprecate or remove** a feature — remove all references from this file and add a note to the Roadmap (Section 11) if appropriate.
+6. **Fix a bug** that was caused by, or related to, information in this file being wrong.
 
----
+### When to Update (Proactive — Self-Improvement)
 
-## Resources
+Even if your current task does **not** trigger the mandatory conditions above, you **should** update `AGENTS.md` if you notice:
 
-- **Main README:** `/README.md`
-- **Legacy Backend README:** `/apps/backend-py-legacy/README.md`
-- **Package Documentation:** See individual package READMEs in `/packages/*/`
-- **LangGraph Docs:** https://langchain-ai.github.io/langgraphjs/
-- **Next.js Docs:** https://nextjs.org/docs
+- **Stale information**: A file path, directory, endpoint, or config value referenced here no longer exists or has changed.
+- **Missing information**: A significant part of the codebase is not documented here and caused you confusion or wasted effort during your task.
+- **Incorrect instructions**: A workflow, build command, or coding pattern described here is wrong or produces errors.
+- **Outdated code snippets**: Any inline code example that no longer compiles or follows current patterns.
 
----
+### How to Update
 
-**Last Updated:** 2026-02-08
+1. **Make surgical edits** — update only the specific sections that are stale. Do not rewrite the entire file.
+2. **Update the `Last Updated` date** at the top of the file.
+3. **Preserve the section numbering** — do not renumber existing sections unless a major restructure is needed.
+4. **Add a context comment** in your commit message mentioning that `AGENTS.md` was updated and why.
 
-**Maintained by:** AI coding assistants working on Horizon
+### Self-Correction Feedback Loop
 
-**Questions?** Check the main README.md or ask in the project chat.
+If you encounter an error or unexpected behavior **because this file gave you wrong information**, you must:
 
-
-# Ultracite Code Standards
-
-This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.
-
-## Quick Reference
-
-- **Format code**: `bun x ultracite fix`
-- **Check for issues**: `bun x ultracite check`
-- **Diagnose setup**: `bun x ultracite doctor`
-
-Biome (the underlying engine) provides robust linting and formatting. Most issues are automatically fixable.
+1. Fix the root cause of your task first.
+2. Then fix the corresponding section in `AGENTS.md` so the next agent does not hit the same issue.
+3. If the error revealed a broader gap (e.g., an entire subsystem is undocumented), add a skeleton section with a `<!-- TODO: expand this section -->` comment.
 
 ---
 
-## Core Principles
+## 17. Autonomous Bug Fixing Protocol
 
-Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
+When encountering or being asked to fix a bug, follow this systematic workflow. **Do not jump to editing code immediately.**
 
-### Type Safety & Explicitness
+### Step 1: Reproduce & Understand
 
-- Use explicit types for function parameters and return values when they enhance clarity
-- Prefer `unknown` over `any` when the type is genuinely unknown
-- Use const assertions (`as const`) for immutable values and literal types
-- Leverage TypeScript's type narrowing instead of type assertions
-- Use meaningful variable names instead of magic numbers - extract constants with descriptive names
+1. **Read the error message carefully** — extract the file path, line number, error type, and stack trace.
+2. **Check if it's a known issue** — search `TODO.md`, this file's Troubleshooting section (Section 13), and recent git history (`git log --oneline -20`).
+3. **Read the relevant source code** — understand what the code is *supposed* to do, not just where it crashes.
+4. **Check `docs/LIBRARY_DOCS/`** — if the error involves LangGraph, LangChain, or another documented library, read the pinned docs before assuming the code is wrong. The library API may have changed.
 
-### Modern JavaScript/TypeScript
+### Step 2: Diagnose
 
-- Use arrow functions for callbacks and short functions
-- Prefer `for...of` loops over `.forEach()` and indexed `for` loops
-- Use optional chaining (`?.`) and nullish coalescing (`??`) for safer property access
-- Prefer template literals over string concatenation
-- Use destructuring for object and array assignments
-- Use `const` by default, `let` only when reassignment is needed, never `var`
+1. **Identify the root cause** — distinguish between:
+   - **Syntax/type errors**: Usually straightforward; fix the type mismatch or import.
+   - **Logic errors**: The code runs but produces wrong results; trace the data flow.
+   - **Integration errors**: Two systems disagree (e.g., frontend sends a shape the backend doesn't expect); check both sides.
+   - **Dependency errors**: A library update broke something; check `package.json` versions and changelogs.
+2. **Narrow the scope** — determine the minimum set of files that need to change. Resist the urge to refactor unrelated code.
 
-### Async & Promises
+### Step 3: Fix
 
-- Always `await` promises in async functions - don't forget to use the return value
-- Use `async/await` syntax instead of promise chains for better readability
-- Handle errors appropriately in async code with try-catch blocks
-- Don't use async functions as Promise executors
+1. **Make the smallest correct fix** — follow KISS. Don't over-engineer a fix for a simple bug.
+2. **Verify the fix** — run `bun typecheck`, `bun x ultracite check`, and any relevant tests.
+3. **Check for ripple effects** — if you changed a type, interface, or function signature, search for all callers and update them.
 
-### React & JSX
+### Step 4: Prevent Recurrence
 
-- Use function components over class components
-- Call hooks at the top level only, never conditionally
-- Specify all dependencies in hook dependency arrays correctly
-- Use the `key` prop for elements in iterables (prefer unique IDs over array indices)
-- Nest children between opening and closing tags instead of passing as props
-- Don't define components inside other components
-- Use semantic HTML and ARIA attributes for accessibility:
-  - Provide meaningful alt text for images
-  - Use proper heading hierarchy
-  - Add labels for form inputs
-  - Include keyboard event handlers alongside mouse events
-  - Use semantic elements (`<button>`, `<nav>`, etc.) instead of divs with roles
+1. **If the bug was caused by stale docs**, update `AGENTS.md` (see Section 16).
+2. **If the bug was in a tricky area**, add a code comment explaining the non-obvious behavior.
+3. **If a test would have caught it**, note the testing gap (add a test if within scope, or note in `TODO.md`).
 
-### Error Handling & Debugging
+### Escalation
 
-- Remove `console.log`, `debugger`, and `alert` statements from production code
-- Throw `Error` objects with descriptive messages, not strings or other values
-- Use `try-catch` blocks meaningfully - don't catch errors just to rethrow them
-- Prefer early returns over nested conditionals for error cases
+If after investigation you determine the bug:
 
-### Code Organization
-
-- Keep functions focused and under reasonable cognitive complexity limits
-- Extract complex conditions into well-named boolean variables
-- Use early returns to reduce nesting
-- Prefer simple conditionals over nested ternary operators
-- Group related code together and separate concerns
-
-### Security
-
-- Add `rel="noopener"` when using `target="_blank"` on links
-- Avoid `dangerouslySetInnerHTML` unless absolutely necessary
-- Don't use `eval()` or assign directly to `document.cookie`
-- Validate and sanitize user input
-
-### Performance
-
-- Avoid spread syntax in accumulators within loops
-- Use top-level regex literals instead of creating them in loops
-- Prefer specific imports over namespace imports
-- Avoid barrel files (index files that re-export everything)
-- Use proper image components (e.g., Next.js `<Image>`) over `<img>` tags
-
-### Framework-Specific Guidance
-
-**Next.js:**
-- Use Next.js `<Image>` component for images
-- Use `next/head` or App Router metadata API for head elements
-- Use Server Components for async data fetching instead of async Client Components
-
-**React 19+:**
-- Use ref as a prop instead of `React.forwardRef`
-
-**Solid/Svelte/Vue/Qwik:**
-- Use `class` and `for` attributes (not `className` or `htmlFor`)
+- Requires user input to resolve (e.g., which of two valid behaviors is intended) — **ask the user**.
+- Is a known upstream library bug — document the workaround and link to the issue.
+- Is beyond the scope of the current task — log it in `TODO.md` and inform the user.
 
 ---
 
-## Testing
+## 18. Sub-Agent Strategy — Parallel Execution Guidelines
 
-- Write assertions inside `it()` or `test()` blocks
-- Avoid done callbacks in async tests - use async/await instead
-- Don't use `.only` or `.skip` in committed code
-- Keep test suites reasonably flat - avoid excessive `describe` nesting
+This project benefits greatly from using **sub-agents** (browser agents, research agents, etc.) to keep the main agent context clean and focused. Use them **liberally** but **strategically**.
 
-## When Biome Can't Help
+### Core Philosophy
 
-Biome's linter will catch most issues automatically. Focus your attention on:
+> **One task per sub-agent. Keep the main context clean. Offload all research, exploration, and parallel analysis to sub-agents.**
 
-1. **Business logic correctness** - Biome can't validate your algorithms
-2. **Meaningful naming** - Use descriptive names for functions, variables, and types
-3. **Architecture decisions** - Component structure, data flow, and API design
-4. **Edge cases** - Handle boundary conditions and error states
-5. **User experience** - Accessibility, performance, and usability considerations
-6. **Documentation** - Add comments for complex logic, but prefer self-documenting code
+The main agent should orchestrate, synthesize, and make final decisions. Sub-agents should do the legwork.
 
----
+### ✅ When to Use Sub-Agents (DO)
 
-Most formatting and common issues are automatically fixed by Biome. Run `bun x ultracite fix` before committing to ensure compliance.
+| Scenario | Sub-Agent Task | Why |
+|---|---|---|
+| **Research** | Read documentation, search the web, explore an API reference | Keeps the main context free of noise; research output is summarized when sub-agent returns |
+| **Exploration** | Scan a directory tree, read multiple files to understand a subsystem | Main agent gets a concise summary instead of raw file contents |
+| **Parallel file analysis** | Analyze `frontend/` and `backend/` independently | Two sub-agents can work in parallel if they touch completely separate file sets |
+| **Browser testing** | Navigate the running app, verify UI behavior, take screenshots | Browser interactions are noisy; isolate them in a sub-agent |
+| **Code generation for separate files** | Generate a new component file while another sub-agent generates a new backend route | Safe if the files don't overlap |
+| **Long-running commands** | Run a build, wait for output, check for errors | Frees the main agent to continue planning |
+| **Reference project study** | Read and summarize code from `docs/REFERENCE_PROJECTS/` | Avoids polluting the main context with thousands of lines of reference code |
+
+### ❌ When NOT to Use Parallel Sub-Agents (DON'T)
+
+| Scenario | Risk | What to Do Instead |
+|---|---|---|
+| **Two sub-agents editing the same file** | Race condition — one sub-agent's edits will overwrite the other's | Use a single agent (main or one sub-agent) for all edits to the same file |
+| **Sub-agent A's output is needed by Sub-agent B** | Dependency — B will proceed with stale or missing data | Run A first, wait for it to return, then launch B with A's results |
+| **Editing tightly coupled files** (e.g., `state.ts` + `graph.ts` + a node) | Edits to state affect graph wiring which affects node implementation | Handle sequentially in one agent, or split very carefully with explicit coordination |
+| **Making a change + verifying it in the same step** | Sub-agent may verify before the change is actually written | Make the change first, then launch a sub-agent to verify |
+| **Multiple sub-agents writing to `AGENTS.md`** | This file is a shared resource — parallel writes will conflict | Only one agent should edit `AGENTS.md` at a time |
+| **Debugging an error** (when the fix is unknown) | Debugging requires iterative context — sub-agents lose context between steps | Debug in the main agent context; use sub-agents only for targeted information gathering |
+
+### Allocation Rules — Preventing Overlap
+
+When launching parallel sub-agents, follow these strict rules:
+
+1. **Partition by file**: Each sub-agent gets exclusive ownership of a specific set of files. No two sub-agents should ever touch the same file.
+2. **Partition by concern**: Prefer splitting by domain boundary (frontend vs backend, component A vs component B) rather than by operation (read vs write).
+3. **Define clear return contracts**: Tell each sub-agent exactly what information to return. Vague instructions lead to wasted context.
+4. **Limit parallelism**: 2–3 parallel sub-agents is usually optimal. More than that increases coordination overhead and error risk.
+5. **Always wait before synthesizing**: Do not start writing a final result until all parallel sub-agents have returned.
+
+### Sub-Agent Prompting Best Practices
+
+When spawning a sub-agent, your task description should include:
+
+- **Exact goal**: What should the sub-agent accomplish?
+- **File scope**: Which files should it read/modify (and which it must NOT touch)?
+- **Return format**: What information should it report back? (e.g., "Return a summary of the function signatures in X" or "Return the exact error message from the build output")
+- **Stop condition**: When should the sub-agent stop? (e.g., "Stop after reading the first 3 files" or "Stop when you find the function that handles tool approval")
+
+**Example — Good sub-agent prompt:**
+
+```text
+Read all files in apps/backend/src/agent/nodes/ and return a summary for each node:
+- Function name and signature
+- What state fields it reads and writes
+- Any external calls it makes (LLM, Qdrant, shell)
+Do NOT modify any files. Return your findings as a markdown table.
+```
+
+**Example — Bad sub-agent prompt:**
+
+```text
+Look at the backend and figure out how it works.
+```
+
+### Recovery from Sub-Agent Failure
+
+If a sub-agent fails or returns incomplete results:
+
+1. **Read the sub-agent's output** — even failed sub-agents usually return partial information.
+2. **Do not re-launch blindly** — understand why it failed first (missing file? permission error? unclear instructions?).
+3. **Refine the task** and re-launch with a more specific prompt, or handle the remaining work in the main agent context.
