@@ -218,6 +218,8 @@ const getLanguageExtension = (lang: string) => {
         return langs.go?.();
       case "yaml":
         return langs.yaml?.();
+      case "svg":
+        return html(); // SVG is XML-based, use HTML extension
       case "text":
         return langs.markdown?.();
       default:
@@ -262,6 +264,7 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
       jsonc: "jsonc",
       jsx: "jsx",
       tsx: "tsx",
+      svg: "svg",
       vue: "vue",
       svelte: "svelte",
       graphql: "graphql",
