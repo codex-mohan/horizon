@@ -1,7 +1,7 @@
 "use client";
 
-import * as SliderPrimitive from "@radix-ui/react-slider";
 import { cn } from "@horizon/ui/lib/utils";
+import * as SliderPrimitive from "@radix-ui/react-slider";
 import * as React from "react";
 
 function Slider({

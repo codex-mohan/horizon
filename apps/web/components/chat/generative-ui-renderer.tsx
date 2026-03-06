@@ -1,8 +1,8 @@
 "use client";
 
 import { hasCustomUI } from "@/lib/tool-config";
-import { ArtifactTool } from "./generative-ui/artifact-tool";
 import { FetchUrlTool, GenericTool, ShellTool, WeatherTool, WebSearchTool } from "./generative-ui";
+import { ArtifactTool } from "./generative-ui/artifact-tool";
 import type { ToolCall } from "./tool-call-message";
 
 interface GenerativeUIRendererProps {

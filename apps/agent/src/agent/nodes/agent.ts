@@ -2,8 +2,8 @@ import { type BaseMessage, SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { agentConfig } from "../../lib/config.js";
 import { createLLM, createRuntimeLLM, type RuntimeModelConfig } from "../../lib/llm.js";
-import type { AgentState } from "../state.js";
 import { SYSTEM_PROMPT } from "../prompt.js";
+import type { AgentState } from "../state.js";
 import { tools } from "../tools/index.js";
 
 function isMultimodalContent(content: unknown): boolean {

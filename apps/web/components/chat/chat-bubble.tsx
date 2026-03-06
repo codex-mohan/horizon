@@ -157,19 +157,16 @@ export const ChatBubble = React.memo(
                   "relative wrap-break-word rounded-xl px-4 py-2 font-body leading-relaxed",
                   isUser
                     ? cn(
-                      isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
-                      "text-foreground"
-                    )
+                        isLightTheme ? "glass-user-bubble-light" : "glass-user-bubble",
+                        "text-foreground"
+                      )
                     : "w-full min-w-[120px] text-foreground"
                 )}
               >
                 {/* Reasoning Block (assistant only) */}
                 {message.reasoning && (
                   <div className="mb-4">
-                    <ReasoningBlock
-                      isStreaming={message.streaming}
-                      reasoning={message.reasoning}
-                    />
+                    <ReasoningBlock isStreaming={message.streaming} reasoning={message.reasoning} />
                   </div>
                 )}
 
@@ -178,8 +175,8 @@ export const ChatBubble = React.memo(
                   <div
                     className={cn(
                       isLongMessage &&
-                      !isExpanded &&
-                      "max-h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]"
+                        !isExpanded &&
+                        "max-h-[300px] overflow-hidden [mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent_100%)]"
                     )}
                   >
                     {isUser ? (

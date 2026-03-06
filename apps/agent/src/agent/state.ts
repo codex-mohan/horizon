@@ -1,5 +1,4 @@
 import { MessagesValue, ReducedValue, StateSchema } from "@langchain/langgraph";
-import { type BaseMessage } from "@langchain/core/messages";
 import { z } from "zod/v4";
 
 /**
@@ -16,32 +15,6 @@ export interface UIMessage {
     tool_name?: string;
     [key: string]: any;
   };
-}
-
-/**
- * Reducer for UI messages
- * Handles adding new messages and updating existing ones (for streaming)
- */
-function _uiMessageReducer(existing: UIMessage[], updates: UIMessage | UIMessage[]): UIMessage[] {
-  const updatesArray = Array.isArray(updates) ? updates : [updates];
-  const existingMap = new Map(existing.map((msg) => [msg.id, msg]));
-
-  for (const update of updatesArray) {
-    const existing = existingMap.get(update.id);
-    if (existing) {
-      // Merge with existing message
-      existingMap.set(update.id, {
-        ...existing,
-        props: { ...existing.props, ...update.props },
-        metadata: { ...existing.metadata, ...update.metadata },
-      });
-    } else {
-      // Add new message
-      existingMap.set(update.id, update);
-    }
-  }
-
-  return Array.from(existingMap.values());
 }
 
 /**
@@ -89,11 +62,13 @@ export const AgentStateAnnotation = new StateSchema({
   model_calls: z.number().default(0),
 
   // Token usage
-  token_usage: z.object({
-    input: z.number().default(0),
-    output: z.number().default(0),
-    total: z.number().default(0),
-  }).default(() => ({ input: 0, output: 0, total: 0 })),
+  token_usage: z
+    .object({
+      input: z.number().default(0),
+      output: z.number().default(0),
+      total: z.number().default(0),
+    })
+    .default(() => ({ input: 0, output: 0, total: 0 })),
 
   // Metadata (for memory context, etc.)
   metadata: z.record(z.string(), z.any()).default(() => ({})),
@@ -104,9 +79,11 @@ export const AgentStateAnnotation = new StateSchema({
     {
       inputSchema: z.any(),
       reducer: (current, updates) => {
-        const updatesArray = Array.isArray(updates) ? updates as ToolCall[] : [updates as ToolCall];
+        const updatesArray = Array.isArray(updates)
+          ? (updates as ToolCall[])
+          : [updates as ToolCall];
         return [...(current as ToolCall[]), ...updatesArray];
-      }
+      },
     }
   ),
 
@@ -116,25 +93,27 @@ export const AgentStateAnnotation = new StateSchema({
 
   // Middleware metrics
   middleware_metrics: new ReducedValue(
-    z.object({
-      token_usage: z.object({
-        input: z.number(),
-        output: z.number(),
-        total: z.number(),
-      }),
-      rate_limit_hits: z.number(),
-      retries: z.number(),
-      pii_detected: z.boolean(),
-      pii_types: z.array(z.string()),
-      processing_time_ms: z.number(),
-    }).default(() => ({
-      token_usage: { input: 0, output: 0, total: 0 },
-      rate_limit_hits: 0,
-      retries: 0,
-      pii_detected: false,
-      pii_types: [],
-      processing_time_ms: 0,
-    })),
+    z
+      .object({
+        token_usage: z.object({
+          input: z.number(),
+          output: z.number(),
+          total: z.number(),
+        }),
+        rate_limit_hits: z.number(),
+        retries: z.number(),
+        pii_detected: z.boolean(),
+        pii_types: z.array(z.string()),
+        processing_time_ms: z.number(),
+      })
+      .default(() => ({
+        token_usage: { input: 0, output: 0, total: 0 },
+        rate_limit_hits: 0,
+        retries: 0,
+        pii_detected: false,
+        pii_types: [],
+        processing_time_ms: 0,
+      })),
     {
       inputSchema: z.any(),
       reducer: (current, updates) => {
@@ -152,7 +131,7 @@ export const AgentStateAnnotation = new StateSchema({
           pii_types: [...(c.pii_types ?? []), ...(u.pii_types ?? [])],
           processing_time_ms: u.processing_time_ms ?? c.processing_time_ms ?? 0,
         };
-      }
+      },
     }
   ),
 
@@ -162,9 +141,9 @@ export const AgentStateAnnotation = new StateSchema({
     {
       inputSchema: z.any(),
       reducer: (current, updates) => {
-        const updatesArray = Array.isArray(updates) ? updates as string[] : [updates as string];
+        const updatesArray = Array.isArray(updates) ? (updates as string[]) : [updates as string];
         return [...(current as string[]), ...updatesArray];
-      }
+      },
     }
   ),
 
@@ -174,7 +153,9 @@ export const AgentStateAnnotation = new StateSchema({
     {
       inputSchema: z.any(),
       reducer: (current, updates) => {
-        const updatesArray = Array.isArray(updates) ? updates as UIMessage[] : [updates as UIMessage];
+        const updatesArray = Array.isArray(updates)
+          ? (updates as UIMessage[])
+          : [updates as UIMessage];
         const existingMap = new Map((current as UIMessage[]).map((msg) => [msg.id, msg]));
         for (const update of updatesArray) {
           const existing = existingMap.get(update.id);
@@ -189,7 +170,7 @@ export const AgentStateAnnotation = new StateSchema({
           }
         }
         return Array.from(existingMap.values());
-      }
+      },
     }
   ),
 
@@ -199,7 +180,7 @@ export const AgentStateAnnotation = new StateSchema({
 
 /**
  * AgentState type derived from the schema.
- * Manually defined because Zod v4 does not properly satisfy LangGraph's 
+ * Manually defined because Zod v4 does not properly satisfy LangGraph's
  * SerializableSchema type constraints during TS inference, resulting in 'unknown'.
  */
 export interface AgentState {

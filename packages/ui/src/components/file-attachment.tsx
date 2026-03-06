@@ -360,35 +360,34 @@ export function FileAttachment({
                 "rounded-lg p-2",
                 // PDF - Red gradient
                 (file.type === "application/pdf" || file.name.endsWith(".pdf")) &&
-                "bg-linear-to-br from-red-500 to-red-600",
+                  "bg-linear-to-br from-red-500 to-red-600",
                 // Word/Documents - Blue gradient
                 (file.type.includes("document") ||
                   file.type.includes("word") ||
                   /\.(doc|docx|txt|rtf|odt)$/i.test(file.name)) &&
-                "bg-linear-to-br from-blue-500 to-blue-600",
+                  "bg-linear-to-br from-blue-500 to-blue-600",
                 // Excel/Spreadsheets - Green gradient
                 (file.type.includes("spreadsheet") ||
                   file.type.includes("excel") ||
                   /\.(xls|xlsx|csv)$/i.test(file.name)) &&
-                "bg-linear-to-br from-green-500 to-green-600",
+                  "bg-linear-to-br from-green-500 to-green-600",
                 // Code files - language specific colors
                 /\.(js|jsx|ts|tsx|mjs|cjs)$/i.test(file.name) &&
-                "bg-linear-to-br from-yellow-400 to-yellow-500",
+                  "bg-linear-to-br from-yellow-400 to-yellow-500",
                 /\.(py|pyw)$/i.test(file.name) && "bg-linear-to-br from-blue-400 to-blue-500",
                 /\.(java|class)$/i.test(file.name) &&
-                "bg-linear-to-br from-orange-500 to-orange-600",
+                  "bg-linear-to-br from-orange-500 to-orange-600",
                 /\.(c|cpp|h|hpp|cxx|hxx)$/i.test(file.name) &&
-                "bg-linear-to-br from-blue-600 to-blue-700",
-                /\.(rs|rlib)$/i.test(file.name) &&
-                "bg-linear-to-br from-orange-600 to-orange-700",
+                  "bg-linear-to-br from-blue-600 to-blue-700",
+                /\.(rs|rlib)$/i.test(file.name) && "bg-linear-to-br from-orange-600 to-orange-700",
                 /\.(go|mod|sum)$/i.test(file.name) && "bg-linear-to-br from-cyan-400 to-cyan-500",
                 /\.(rb|gemspec)$/i.test(file.name) && "bg-linear-to-br from-red-500 to-red-600",
                 /\.(php|phtml|php3|php4|php5)$/i.test(file.name) &&
-                "bg-linear-to-br from-purple-500 to-purple-600",
+                  "bg-linear-to-br from-purple-500 to-purple-600",
                 /\.(swift)$/i.test(file.name) && "bg-linear-to-br from-orange-400 to-orange-500",
                 /\.(kt|kts)$/i.test(file.name) && "bg-linear-to-br from-violet-400 to-violet-500",
                 /\.(cs|csx|sln|csproj)$/i.test(file.name) &&
-                "bg-linear-to-br from-green-500 to-green-600",
+                  "bg-linear-to-br from-green-500 to-green-600",
                 /\.(scala|sc)$/i.test(file.name) && "bg-linear-to-br from-red-600 to-red-700",
                 /\.(lua)$/i.test(file.name) && "bg-linear-to-br from-blue-500 to-blue-600",
                 /\.(r|R|Rmd)$/i.test(file.name) && "bg-linear-to-br from-blue-400 to-blue-500",
@@ -398,34 +397,33 @@ export function FileAttachment({
                 /\.(hs|lhs)$/i.test(file.name) && "bg-linear-to-br from-purple-500 to-purple-600",
                 /\.(ml|mli)$/i.test(file.name) && "bg-linear-to-br from-orange-400 to-orange-500",
                 /\.(clj|cljs|cljc|edn)$/i.test(file.name) &&
-                "bg-linear-to-br from-green-500 to-green-600",
+                  "bg-linear-to-br from-green-500 to-green-600",
                 /\.(zig)$/i.test(file.name) && "bg-linear-to-br from-yellow-500 to-yellow-600",
                 /\.(nim)$/i.test(file.name) && "bg-linear-to-br from-yellow-500 to-yellow-600",
                 /\.(dart)$/i.test(file.name) && "bg-linear-to-br from-cyan-500 to-cyan-600",
                 /\.(sql)$/i.test(file.name) && "bg-linear-to-br from-yellow-600 to-yellow-700",
                 /\.(sh|bash|zsh|fish)$/i.test(file.name) &&
-                "bg-linear-to-br from-gray-400 to-gray-500",
+                  "bg-linear-to-br from-gray-400 to-gray-500",
                 /\.(toml|ini|cfg|conf|config|yaml|yml|json)$/i.test(file.name) &&
-                "bg-linear-to-br from-gray-400 to-gray-500",
+                  "bg-linear-to-br from-gray-400 to-gray-500",
                 /\.(html|css|scss|sass|less|styl)$/i.test(file.name) &&
-                "bg-linear-to-br from-pink-500 to-pink-600",
-                /\.(vue|svelte)$/i.test(file.name) &&
-                "bg-linear-to-br from-green-500 to-green-600",
+                  "bg-linear-to-br from-pink-500 to-pink-600",
+                /\.(vue|svelte)$/i.test(file.name) && "bg-linear-to-br from-green-500 to-green-600",
                 // Audio - Purple gradient
                 (file.type.startsWith("audio") ||
                   /\.(mp3|wav|ogg|flac|aac|m4a|wma|aiff)$/i.test(file.name)) &&
-                "bg-linear-to-br from-purple-500 to-purple-600",
+                  "bg-linear-to-br from-purple-500 to-purple-600",
                 // Video - Pink gradient
                 (file.type.startsWith("video") ||
                   /\.(mp4|webm|mov|avi|mkv|wmv|flv|m4v)$/i.test(file.name)) &&
-                "bg-linear-to-br from-pink-500 to-pink-600",
+                  "bg-linear-to-br from-pink-500 to-pink-600",
                 // Archives - Amber gradient
                 (file.type.includes("zip") ||
                   file.type.includes("rar") ||
                   file.type.includes("tar") ||
                   file.type.includes("gzip") ||
                   /\.(zip|rar|tar|gz|bz2|7z|xz)$/i.test(file.name)) &&
-                "bg-linear-to-br from-amber-500 to-amber-600",
+                  "bg-linear-to-br from-amber-500 to-amber-600",
                 // Default - Gray gradient
                 "bg-linear-to-br from-gray-400 to-gray-500"
               )}

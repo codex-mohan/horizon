@@ -30,7 +30,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@workspace/typescript-config": "workspace:*",
+    "@horizon/typescript-config": "workspace:*",
     "@types/node": "^22.19.13",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

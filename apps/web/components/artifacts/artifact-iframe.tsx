@@ -14,15 +14,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ArtifactType } from "@/lib/types/artifact";
 
 interface ArtifactIframeProps {
-    content: string;
-    type: ArtifactType;
-    language?: string;
-    className?: string;
+  content: string;
+  type: ArtifactType;
+  language?: string;
+  className?: string;
 }
 
 /** Build a full HTML document wrapping the artifact content */
 function buildSrcdoc(content: string, type: ArtifactType): string {
-    const baseStyles = `
+  const baseStyles = `
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       body {
@@ -40,22 +40,22 @@ function buildSrcdoc(content: string, type: ArtifactType): string {
     </style>
   `;
 
-    switch (type) {
-        case "html": {
-            // If it's a full HTML document, use it directly
-            if (content.includes("<html") || content.includes("<!DOCTYPE")) {
-                return content;
-            }
-            // Otherwise wrap it
-            return `<!DOCTYPE html>
+  switch (type) {
+    case "html": {
+      // If it's a full HTML document, use it directly
+      if (content.includes("<html") || content.includes("<!DOCTYPE")) {
+        return content;
+      }
+      // Otherwise wrap it
+      return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${baseStyles}</head>
 <body>${content}</body>
 </html>`;
-        }
+    }
 
-        case "svg": {
-            return `<!DOCTYPE html>
+    case "svg": {
+      return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8">${baseStyles}
 <style>
@@ -65,15 +65,15 @@ function buildSrcdoc(content: string, type: ArtifactType): string {
 </head>
 <body>${content}</body>
 </html>`;
-        }
+    }
 
-        case "mermaid": {
-            return `<!DOCTYPE html>
+    case "mermaid": {
+      return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   ${baseStyles}
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <script>
     mermaid.initialize({
       startOnLoad: true,
@@ -87,25 +87,25 @@ function buildSrcdoc(content: string, type: ArtifactType): string {
         tertiaryColor: '#0f172a',
       }
     });
-  <\/script>
+  </script>
 </head>
 <body>
   <div class="mermaid">${content}</div>
 </body>
 </html>`;
-        }
+    }
 
-        case "react": {
-            // Basic React rendering via CDN (single-file components only in MVP)
-            return `<!DOCTYPE html>
+    case "react": {
+      // Basic React rendering via CDN (single-file components only in MVP)
+      return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   ${baseStyles}
-  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"><\/script>
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"><\/script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
 </head>
 <body>
   <div id="root"></div>
@@ -119,89 +119,83 @@ function buildSrcdoc(content: string, type: ArtifactType): string {
     if (Component) {
       ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Component));
     }
-  <\/script>
+  </script>
 </body>
 </html>`;
-        }
+    }
 
-        case "markdown": {
-            // Render markdown as pre-formatted text (proper MD rendering needs a lib)
-            const escaped = content
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-            return `<!DOCTYPE html>
+    case "markdown": {
+      // Render markdown as pre-formatted text (proper MD rendering needs a lib)
+      const escaped = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8">${baseStyles}
 <style>body { padding: 24px; max-width: 800px; margin: 0 auto; }</style>
 </head>
 <body><pre style="white-space: pre-wrap; word-wrap: break-word;">${escaped}</pre></body>
 </html>`;
-        }
+    }
 
-        case "code":
-        default: {
-            const escaped = content
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-            return `<!DOCTYPE html>
+    case "code":
+    default: {
+      const escaped = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8">${baseStyles}</head>
 <body><pre><code>${escaped}</code></pre></body>
 </html>`;
-        }
     }
+  }
 }
 
 export function ArtifactIframe({ content, type, language, className }: ArtifactIframeProps) {
-    const iframeRef = useRef<HTMLIFrameElement>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
-    const srcdoc = buildSrcdoc(content, type);
+  const srcdoc = buildSrcdoc(content, type);
 
-    const handleLoad = useCallback(() => {
-        setIsLoading(false);
-    }, []);
+  const handleLoad = useCallback(() => {
+    setIsLoading(false);
+  }, []);
 
-    const handleError = useCallback(() => {
-        setIsLoading(false);
-        setHasError(true);
-    }, []);
+  const handleError = useCallback(() => {
+    setIsLoading(false);
+    setHasError(true);
+  }, []);
 
-    // Reset loading state when content changes
-    useEffect(() => {
-        setIsLoading(true);
-        setHasError(false);
-    }, [content, type]);
+  // Reset loading state when content changes
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError(false);
+  }, [content, type]);
 
-    return (
-        <div className={cn("relative overflow-hidden rounded-lg border border-border", className)}>
-            {/* Loading overlay */}
-            {isLoading && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80">
-                    <Loader2 className="size-6 animate-spin text-muted-foreground" />
-                </div>
-            )}
-
-            {/* Error state */}
-            {hasError && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/90">
-                    <AlertTriangle className="size-8 text-destructive" />
-                    <p className="text-muted-foreground text-sm">Failed to render artifact</p>
-                </div>
-            )}
-
-            <iframe
-                className="h-full w-full border-0 bg-[#0f172a]"
-                onError={handleError}
-                onLoad={handleLoad}
-                ref={iframeRef}
-                sandbox="allow-scripts"
-                srcDoc={srcdoc}
-                title="Artifact Preview"
-            />
+  return (
+    <div className={cn("relative overflow-hidden rounded-lg border border-border", className)}>
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
-    );
+      )}
+
+      {/* Error state */}
+      {hasError && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/90">
+          <AlertTriangle className="size-8 text-destructive" />
+          <p className="text-muted-foreground text-sm">Failed to render artifact</p>
+        </div>
+      )}
+
+      <iframe
+        className="h-full w-full border-0 bg-[#0f172a]"
+        onError={handleError}
+        onLoad={handleLoad}
+        ref={iframeRef}
+        sandbox="allow-scripts"
+        srcDoc={srcdoc}
+        title="Artifact Preview"
+      />
+    </div>
+  );
 }

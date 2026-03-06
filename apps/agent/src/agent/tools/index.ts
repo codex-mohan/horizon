@@ -16,7 +16,14 @@ const shellExecutor = new ShellExecutor({
 });
 
 export const TOOL_CATEGORIES = {
-  safe: ["web_search", "fetch_url_content", "duckduckgo_search", "get_weather", "create_artifact", "present_artifact"],
+  safe: [
+    "web_search",
+    "fetch_url_content",
+    "duckduckgo_search",
+    "get_weather",
+    "create_artifact",
+    "present_artifact",
+  ],
   dangerous: ["shell_execute", "file_write", "file_delete"],
 } as const;
 

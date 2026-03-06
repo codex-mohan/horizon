@@ -1,10 +1,11 @@
 "use client";
 
-import type { Message as LangGraphMessage } from "@langchain/langgraph-sdk";
 import { cn } from "@horizon/ui/lib/utils";
+import type { Message as LangGraphMessage } from "@langchain/langgraph-sdk";
 import { ArrowDown, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ArtifactViewer } from "@/components/artifacts/artifact-viewer";
 import { useTheme } from "@/components/theme/theme-provider";
 import {
   type ChatError,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/chat";
 import { extractFileContent, getFileCategory } from "@/lib/file-loader";
 import { groupMessages } from "@/lib/message-grouping";
+import { useArtifactsStore } from "@/lib/stores/artifacts";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useChatSettings } from "@/lib/stores/chat-settings";
 import { useConversationStore } from "@/lib/stores/conversation";
@@ -31,8 +33,6 @@ import { MessageGroup } from "./message-group";
 import { ProviderConfigDialog } from "./provider-config-dialog";
 import type { ToolApprovalData } from "./tool-approval-banner";
 import type { ToolCall } from "./tool-call-message";
-import { ArtifactViewer } from "@/components/artifacts/artifact-viewer";
-import { useArtifactsStore } from "@/lib/stores/artifacts";
 
 interface ChatAreaProps {
   messages: Message[];
@@ -651,10 +651,12 @@ export function ChatArea({
   return (
     <div className="relative z-10 flex flex-1">
       {/* Main chat column — shrinks when artifact panel is open */}
-      <div className={cn(
-        "relative flex flex-1 flex-col transition-all duration-300",
-        isArtifactPanelOpen && "max-w-[calc(100%-480px)]"
-      )}>
+      <div
+        className={cn(
+          "relative flex flex-1 flex-col transition-all duration-300",
+          isArtifactPanelOpen && "max-w-[calc(100%-480px)]"
+        )}
+      >
         {/* Messages Container */}
         <div className="relative flex-1 min-h-0">
           <div
@@ -692,29 +694,29 @@ export function ChatArea({
                   const interruptProp =
                     isLastGroup && chat.isWaitingForInterrupt && chat.interrupt
                       ? {
-                        data: {
-                          type: "tool_approval_required" as const,
-                          tool_call: {
-                            id: "0",
-                            name: chat.interrupt.action_requests[0]?.name || "unknown",
-                            args: chat.interrupt.action_requests[0]?.arguments || {},
-                            status: "pending",
-                          },
-                          all_pending_tools: chat.interrupt.action_requests.map((ar, idx) => ({
-                            id: String(idx),
-                            name: ar.name,
-                            args: ar.arguments,
-                            status: "pending",
-                          })),
-                          auto_execute_tools: [],
-                          message: chat.interrupt.action_requests
-                            .map((ar) => ar.description)
-                            .join("\n"),
-                        } satisfies ToolApprovalData,
-                        onApprove: () => chat.approveInterrupt(),
-                        onReject: () => chat.rejectInterrupt(),
-                        isLoading: chat.isResuming,
-                      }
+                          data: {
+                            type: "tool_approval_required" as const,
+                            tool_call: {
+                              id: "0",
+                              name: chat.interrupt.action_requests[0]?.name || "unknown",
+                              args: chat.interrupt.action_requests[0]?.arguments || {},
+                              status: "pending",
+                            },
+                            all_pending_tools: chat.interrupt.action_requests.map((ar, idx) => ({
+                              id: String(idx),
+                              name: ar.name,
+                              args: ar.arguments,
+                              status: "pending",
+                            })),
+                            auto_execute_tools: [],
+                            message: chat.interrupt.action_requests
+                              .map((ar) => ar.description)
+                              .join("\n"),
+                          } satisfies ToolApprovalData,
+                          onApprove: () => chat.approveInterrupt(),
+                          onReject: () => chat.rejectInterrupt(),
+                          isLoading: chat.isResuming,
+                        }
                       : undefined;
 
                   return (

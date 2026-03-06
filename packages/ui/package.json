@@ -37,7 +37,7 @@
     "@types/node": "^20.19.9",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
-    "@workspace/typescript-config": "workspace:*",
+    "@horizon/typescript-config": "workspace:*",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.9.2"
   },

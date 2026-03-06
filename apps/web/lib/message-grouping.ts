@@ -221,7 +221,8 @@ export function groupMessages(
           // preserves multi-round ordering (no merging by ID dedup here).
           // Show intro message if there's text content OR reasoning (even if content is empty)
           const hasReasoning = !!reasoning;
-          const introMessage: Message | null = (hasTextContent || hasReasoning) ? { ...aiMessage } : null;
+          const introMessage: Message | null =
+            hasTextContent || hasReasoning ? { ...aiMessage } : null;
 
           // Deduplicate tool calls against ALL previous steps to be safe
           const seenIds = new Set(

@@ -12,15 +12,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@horizon/ui/components
 import { cn } from "@horizon/ui/lib/utils";
 import {
   Code,
+  Component,
   FileText,
   GitBranch,
   Globe,
   Grid3x3,
   Image,
-  Component,
+  Inbox,
   List,
   SortAsc,
-  Inbox,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useArtifactsStore } from "@/lib/stores/artifacts";

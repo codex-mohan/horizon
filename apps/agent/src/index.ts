@@ -119,27 +119,6 @@ app.get("/threads/:threadId/history", async (c) => {
   }
 });
 
-function findCheckpointId(obj: unknown): string | undefined {
-  if (!obj || typeof obj !== "object") {
-    return undefined;
-  }
-
-  const record = obj as Record<string, unknown>;
-  if (record.checkpoint_id && typeof record.checkpoint_id === "string") {
-    return record.checkpoint_id;
-  }
-
-  for (const key in record) {
-    if (Object.hasOwn(record, key)) {
-      const result = findCheckpointId(record[key]);
-      if (result) {
-        return result;
-      }
-    }
-  }
-  return undefined;
-}
-
 function getDefaultToolApprovalConfig(): ToolApprovalConfig {
   return {
     mode: "dangerous_only",

@@ -426,7 +426,7 @@ import { z } from "zod";
 
 // 3. Workspace packages (@horizon/*)
 import { ShellExecutor } from "@horizon/shell";
-import { Button } from "@workspace/ui/components/ui/button";
+import { Button } from "@horizon/ui/components/ui/button";
 
 // 4. App-level imports (@/*)
 import { useAuth } from "@/lib/stores/auth";

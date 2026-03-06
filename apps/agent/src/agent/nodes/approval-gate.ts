@@ -2,12 +2,7 @@ import { type AIMessage, ToolMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { interrupt } from "@langchain/langgraph";
 import type { AgentState } from "../state.js";
-import {
-  filterToolsNeedingApproval,
-  getToolApprovalConfig,
-  getToolRiskLevel,
-  needsApproval,
-} from "../tools/index.js";
+import { getToolApprovalConfig, getToolRiskLevel, needsApproval } from "../tools/index.js";
 
 interface ActionRequest {
   name: string;

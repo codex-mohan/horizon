@@ -20,7 +20,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@workspace/ui/*": ["../../packages/ui/src/*"]
+      "@horizon/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": [
