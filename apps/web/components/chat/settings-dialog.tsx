@@ -85,7 +85,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
               </div>
               <GradientSlider
                 id="max-tokens"
-                max={8192}
+                max={131072}
                 min={256}
                 onValueChange={(val) => setModelSetting("maxTokens", val[0])}
                 step={256}

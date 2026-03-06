@@ -38,9 +38,8 @@ interface ModelConfigState {
 
 export const DEFAULT_MODELS: Record<ModelProvider, string[]> = {
   nvidia_nim: [
+    "z-ai/glm5",
     "qwen/qwen3.5-397b-a17b",
-    "meta/llama-3.1-70b-instruct",
-    "meta/llama-3.3-70b-instruct",
     "nvidia/llama-3.1-nemotron-70b-instruct",
     "mistralai/mixtral-8x7b-instruct-v0.1",
     "deepseek-ai/deepseek-r1",
@@ -121,6 +120,8 @@ export const REASONING_MODELS = [
   "deepseek-r1",
   "qwen3.5",
   "qwen3.5-397b",
+  "glm5",
+  "z-ai/glm5",
 ];
 
 export function supportsReasoning(modelName: string, provider: ModelProvider): boolean {
@@ -135,9 +136,9 @@ export const useModelConfig = create<ModelConfigState>()(
     (set, get) => ({
       config: {
         provider: "nvidia_nim",
-        modelName: "qwen/qwen3.5-397b-a17b",
+        modelName: "z-ai/glm5",
         temperature: 0.7,
-        maxTokens: 4096,
+        maxTokens: 16384,
         enableReasoning: false,
         reasoningEffort: "medium",
         thinkingBudget: 1024,

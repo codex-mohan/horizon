@@ -49,7 +49,7 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
     provider,
     modelName,
     temperature = 0.7,
-    maxTokens = 4096,
+    maxTokens = 16384,
     apiKey,
     baseUrl,
     enableReasoning = false,
@@ -130,15 +130,13 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
       if (!apiKey) {
         throw new Error("NVIDIA_NIM_API_KEY is required for NVIDIA NIM provider");
       }
-      // NVIDIA NIM uses chat_template_kwargs with "enable_thinking" (not "thinking")
-      // and does NOT support OpenAI's "reasoningEffort" parameter.
-      // Temperature and maxTokens are fine to pass through to NIM.
-      const modelKwargs = enableReasoning
-        ? { chat_template_kwargs: { enable_thinking: true } }
+      // NVIDIA NIM uses extra_body with chat_template_kwargs for thinking/reasoning
+      // Set enable_thinking: true and clear_thinking: false to get reasoning in response
+      const extraBody = enableReasoning
+        ? { chat_template_kwargs: { enable_thinking: true, clear_thinking: false } }
         : undefined;
-      console.log(`[LLM] NVIDIA NIM modelKwargs:`, modelKwargs);
+      console.log(`[LLM] NVIDIA NIM extraBody:`, extraBody);
 
-      // Cast to any to bypass TypeScript type checking for extra params
       const chatModel = new ChatOpenAI({
         modelName,
         temperature,
@@ -150,8 +148,12 @@ export async function createRuntimeLLM(runtimeConfig: RuntimeModelConfig): Promi
             Authorization: `Bearer ${apiKey}`,
           },
         },
-        modelKwargs,
       }) as any;
+
+      // Set extraBody for NVIDIA NIM reasoning after construction
+      if (extraBody) {
+        (chatModel as any).extraBody = extraBody;
+      }
 
       return chatModel;
     }

@@ -13,9 +13,9 @@ const EnvSchema = z.object({
   MODEL_PROVIDER: z
     .enum(["openai", "anthropic", "google", "ollama", "groq", "nvidia_nim"])
     .default("nvidia_nim"),
-  MODEL_NAME: z.string().default("qwen/qwen3.5-397b-a17b"),
+  MODEL_NAME: z.string().default("z-ai/glm5"),
   TEMPERATURE: z.string().default("0.7").transform(Number),
-  MAX_TOKENS: z.string().default("4096").transform(Number),
+  MAX_TOKENS: z.string().default("16384").transform(Number),
   BASE_URL: z.string().optional(),
   OLLAMA_BASE_URL: z.string().default("http://localhost:11434"),
 
