@@ -1,7 +1,7 @@
 "use client";
 
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import type * as React from "react";
 

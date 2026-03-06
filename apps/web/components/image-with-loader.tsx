@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import { AlertTriangle, Download, Link as LinkIcon, Loader, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";

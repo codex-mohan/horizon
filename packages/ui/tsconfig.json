@@ -1,11 +1,19 @@
 {
-  "extends": "@workspace/typescript-config/react-library.json",
+  "extends": "@horizon/typescript-config/react-library.json",
   "compilerOptions": {
+    "jsx": "react-jsx",
     "paths": {
-      "@workspace/ui/*": ["./src/*"]
+      "@horizon/ui/*": [
+        "./src/*"
+      ]
     },
     "strictNullChecks": true
   },
-  "include": ["."],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "."
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

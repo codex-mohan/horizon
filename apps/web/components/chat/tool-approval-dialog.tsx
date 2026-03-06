@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
-import { cn } from "@workspace/ui/lib/utils";
+import { Button } from "@horizon/ui/components/button";
+import { cn } from "@horizon/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,

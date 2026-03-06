@@ -1,10 +1,10 @@
 "use client";
 
-import { Checkbox } from "@workspace/ui/components/checkbox";
-import { GradientButton } from "@workspace/ui/components/gradient-button";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import { cn } from "@workspace/ui/lib/utils";
+import { Checkbox } from "@horizon/ui/components/checkbox";
+import { GradientButton } from "@horizon/ui/components/gradient-button";
+import { Input } from "@horizon/ui/components/input";
+import { Label } from "@horizon/ui/components/label";
+import { cn } from "@horizon/ui/lib/utils";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2, Lock, LogIn, User } from "lucide-react";
 import { useRouter } from "next/navigation";

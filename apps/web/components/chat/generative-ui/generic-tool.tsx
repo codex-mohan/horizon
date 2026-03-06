@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { useState } from "react";

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Message as LangGraphMessage } from "@langchain/langgraph-sdk";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import { ArrowDown, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -31,6 +31,8 @@ import { MessageGroup } from "./message-group";
 import { ProviderConfigDialog } from "./provider-config-dialog";
 import type { ToolApprovalData } from "./tool-approval-banner";
 import type { ToolCall } from "./tool-call-message";
+import { ArtifactViewer } from "@/components/artifacts/artifact-viewer";
+import { useArtifactsStore } from "@/lib/stores/artifacts";
 
 interface ChatAreaProps {
   messages: Message[];
@@ -254,6 +256,11 @@ export function ChatArea({
       observer.disconnect();
     };
   }, [messageGroups]);
+
+  // ============================================================================
+  // ARTIFACT PANEL STATE
+  // ============================================================================
+  const { isPanelOpen: isArtifactPanelOpen } = useArtifactsStore();
 
   // Clear loading states when done
   useEffect(() => {
@@ -642,44 +649,49 @@ export function ChatArea({
   }, []);
 
   return (
-    <div className="relative z-10 flex flex-1 flex-col">
-      {/* Messages Container */}
-      <div className="relative flex-1 min-h-0">
-        <div
-          className={cn(
-            "custom-scrollbar h-full overflow-y-auto",
-            hasMessages ? "px-4 pb-4 pt-6" : "flex items-center justify-center"
-          )}
-          ref={chatContainerRef}
-        >
-          {hasMessages ? (
-            // Messages List - Render by Groups
-            <div className="mx-auto w-full max-w-3xl space-y-6">
-              {/* Error Display */}
-              {chatError && (
-                <div className="relative rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-                  <button
-                    aria-label="Close error"
-                    className="absolute top-2 right-2 rounded-md p-1 opacity-60 hover:bg-destructive/20 hover:opacity-100"
-                    onClick={() => setChatError(null)}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                  <p className="font-medium text-sm">Error</p>
-                  <p className="text-xs opacity-80">{chatError}</p>
-                </div>
-              )}
+    <div className="relative z-10 flex flex-1">
+      {/* Main chat column — shrinks when artifact panel is open */}
+      <div className={cn(
+        "relative flex flex-1 flex-col transition-all duration-300",
+        isArtifactPanelOpen && "max-w-[calc(100%-480px)]"
+      )}>
+        {/* Messages Container */}
+        <div className="relative flex-1 min-h-0">
+          <div
+            className={cn(
+              "custom-scrollbar h-full overflow-y-auto",
+              hasMessages ? "px-4 pb-4 pt-6" : "flex items-center justify-center"
+            )}
+            ref={chatContainerRef}
+          >
+            {hasMessages ? (
+              // Messages List - Render by Groups
+              <div className="mx-auto w-full max-w-3xl space-y-6">
+                {/* Error Display */}
+                {chatError && (
+                  <div className="relative rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+                    <button
+                      aria-label="Close error"
+                      className="absolute top-2 right-2 rounded-md p-1 opacity-60 hover:bg-destructive/20 hover:opacity-100"
+                      onClick={() => setChatError(null)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                    <p className="font-medium text-sm">Error</p>
+                    <p className="text-xs opacity-80">{chatError}</p>
+                  </div>
+                )}
 
-              {/* Message Groups */}
-              {messageGroups.map((group, groupIdx) => {
-                const isLastGroup = groupIdx === messageGroups.length - 1;
+                {/* Message Groups */}
+                {messageGroups.map((group, groupIdx) => {
+                  const isLastGroup = groupIdx === messageGroups.length - 1;
 
-                // Pass interrupt inline to the last group so the approval banner
-                // appears adjacent to the tool that triggered it — not detached
-                // at the bottom of the message list.
-                const interruptProp =
-                  isLastGroup && chat.isWaitingForInterrupt && chat.interrupt
-                    ? {
+                  // Pass interrupt inline to the last group so the approval banner
+                  // appears adjacent to the tool that triggered it — not detached
+                  // at the bottom of the message list.
+                  const interruptProp =
+                    isLastGroup && chat.isWaitingForInterrupt && chat.interrupt
+                      ? {
                         data: {
                           type: "tool_approval_required" as const,
                           tool_call: {
@@ -703,102 +715,106 @@ export function ChatArea({
                         onReject: () => chat.rejectInterrupt(),
                         isLoading: chat.isResuming,
                       }
-                    : undefined;
+                      : undefined;
 
-                return (
-                  <MessageGroup
-                    assistantMessage={group.assistantMessage}
-                    branch={group.branch}
-                    branchOptions={group.branchOptions}
-                    firstAssistantMessageId={group.firstAssistantMessageId}
-                    hasPendingTasks={chat.hasPendingTasks}
-                    id={group.id}
-                    interrupt={interruptProp}
-                    isLastGroup={isLastGroup}
-                    isLoading={chat.isLoading}
-                    key={group.id}
-                    onBranchChange={handleBranchChange}
-                    onDelete={handleDelete}
-                    onEdit={handleEdit}
-                    onRegenerate={handleRegenerate}
-                    onContinue={handleContinue}
+                  return (
+                    <MessageGroup
+                      assistantMessage={group.assistantMessage}
+                      branch={group.branch}
+                      branchOptions={group.branchOptions}
+                      firstAssistantMessageId={group.firstAssistantMessageId}
+                      hasPendingTasks={chat.hasPendingTasks}
+                      id={group.id}
+                      interrupt={interruptProp}
+                      isLastGroup={isLastGroup}
+                      isLoading={chat.isLoading}
+                      key={group.id}
+                      onBranchChange={handleBranchChange}
+                      onDelete={handleDelete}
+                      onEdit={handleEdit}
+                      onRegenerate={handleRegenerate}
+                      onContinue={handleContinue}
+                      showToolCalls={settings.showToolCalls}
+                      toolSteps={group.toolSteps}
+                      userMessage={group.userMessage}
+                    />
+                  );
+                })}
+
+                {/* Tool Approval Banner is now rendered inline inside the last MessageGroup */}
+
+                {/* Loading Indicator */}
+                {showLoading && (
+                  <ChatLoadingIndicator
+                    currentToolCalls={currentToolCalls}
+                    isLightTheme={isLightTheme}
+                    liveActivityEvents={liveActivityEvents}
+                    showActivityTimeline={settings.showActivityTimeline}
                     showToolCalls={settings.showToolCalls}
-                    toolSteps={group.toolSteps}
-                    userMessage={group.userMessage}
                   />
-                );
-              })}
+                )}
+              </div>
+            ) : (
+              <ChatEmptyState
+                attachedFiles={attachedFiles}
+                isLoading={chat.isLoading}
+                onAttachedFilesChange={onAttachedFilesChange}
+                onOpenProviderConfig={() => setIsProviderConfigOpen(true)}
+                onRemoveFile={handleRemoveFile}
+                onSettingsOpen={onSettingsOpen}
+                onStop={handleStop}
+                onSubmit={handleSubmit}
+                onToggleToolCalls={toggleShowToolCalls}
+                showToolCalls={settings.showToolCalls}
+              />
+            )}
+          </div>
 
-              {/* Tool Approval Banner is now rendered inline inside the last MessageGroup */}
-
-              {/* Loading Indicator */}
-              {showLoading && (
-                <ChatLoadingIndicator
-                  currentToolCalls={currentToolCalls}
-                  isLightTheme={isLightTheme}
-                  liveActivityEvents={liveActivityEvents}
-                  showActivityTimeline={settings.showActivityTimeline}
-                  showToolCalls={settings.showToolCalls}
-                />
-              )}
-            </div>
-          ) : (
-            <ChatEmptyState
-              attachedFiles={attachedFiles}
-              isLoading={chat.isLoading}
-              onAttachedFilesChange={onAttachedFilesChange}
-              onOpenProviderConfig={() => setIsProviderConfigOpen(true)}
-              onRemoveFile={handleRemoveFile}
-              onSettingsOpen={onSettingsOpen}
-              onStop={handleStop}
-              onSubmit={handleSubmit}
-              onToggleToolCalls={toggleShowToolCalls}
-              showToolCalls={settings.showToolCalls}
+          {/* Grok-style Chat Message Index — horizontal dashes just left of scrollbar */}
+          {hasMessages && (
+            <ChatIndex
+              entries={indexEntries}
+              visibleIds={visibleMessageIds}
+              onJump={handleJumpToMessage}
+              scrollContainerRef={chatContainerRef}
             />
+          )}
+
+          {/* Scroll to bottom button - appears when user scrolls up */}
+          {hasMessages && !isNearBottom && (
+            <button
+              onClick={scrollToBottom}
+              className="scroll-to-bottom-btn absolute bottom-4 left-1/2 z-20 flex h-10 w-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[var(--gradient-from)] via-[var(--gradient-via)] to-[var(--gradient-to)] text-primary-foreground shadow-lg transition-shadow duration-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background active:scale-95"
+              title="Jump to latest"
+              type="button"
+            >
+              <ArrowDown className="scroll-to-bottom-arrow size-5 transition-transform duration-500" />
+            </button>
           )}
         </div>
 
-        {/* Grok-style Chat Message Index — horizontal dashes just left of scrollbar */}
+        {/* Input Area */}
         {hasMessages && (
-          <ChatIndex
-            entries={indexEntries}
-            visibleIds={visibleMessageIds}
-            onJump={handleJumpToMessage}
-            scrollContainerRef={chatContainerRef}
+          <ChatInputArea
+            attachedFiles={attachedFiles}
+            isLoading={chat.isLoading}
+            onAttachedFilesChange={onAttachedFilesChange}
+            onOpenProviderConfig={() => setIsProviderConfigOpen(true)}
+            onRemoveFile={handleRemoveFile}
+            onSettingsOpen={onSettingsOpen}
+            onStop={handleStop}
+            onSubmit={handleSubmit}
+            onToggleToolCalls={toggleShowToolCalls}
+            showToolCalls={settings.showToolCalls}
           />
         )}
 
-        {/* Scroll to bottom button - appears when user scrolls up */}
-        {hasMessages && !isNearBottom && (
-          <button
-            onClick={scrollToBottom}
-            className="scroll-to-bottom-btn absolute bottom-4 left-1/2 z-20 flex h-10 w-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[var(--gradient-from)] via-[var(--gradient-via)] to-[var(--gradient-to)] text-primary-foreground shadow-lg transition-shadow duration-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background active:scale-95"
-            title="Jump to latest"
-            type="button"
-          >
-            <ArrowDown className="scroll-to-bottom-arrow size-5 transition-transform duration-500" />
-          </button>
-        )}
+        {/* Provider Configuration Dialog */}
+        <ProviderConfigDialog onOpenChange={setIsProviderConfigOpen} open={isProviderConfigOpen} />
       </div>
 
-      {/* Input Area */}
-      {hasMessages && (
-        <ChatInputArea
-          attachedFiles={attachedFiles}
-          isLoading={chat.isLoading}
-          onAttachedFilesChange={onAttachedFilesChange}
-          onOpenProviderConfig={() => setIsProviderConfigOpen(true)}
-          onRemoveFile={handleRemoveFile}
-          onSettingsOpen={onSettingsOpen}
-          onStop={handleStop}
-          onSubmit={handleSubmit}
-          onToggleToolCalls={toggleShowToolCalls}
-          showToolCalls={settings.showToolCalls}
-        />
-      )}
-
-      {/* Provider Configuration Dialog */}
-      <ProviderConfigDialog onOpenChange={setIsProviderConfigOpen} open={isProviderConfigOpen} />
+      {/* Artifact Viewer Panel — slides in from right */}
+      <ArtifactViewer />
     </div>
   );
 }

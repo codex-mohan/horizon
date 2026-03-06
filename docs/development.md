@@ -55,11 +55,11 @@ docker run -d --name redis -p 6379:6379 redis:alpine
 ### 3. Configure Environment
 
 ```bash
-# Backend environment
-cp apps/backend/.env.example apps/backend/.env
+# Agent environment
+cp apps/agent/.env.example apps/agent/.env
 ```
 
-Edit `apps/backend/.env`:
+Edit `apps/agent/.env`:
 
 ```env
 # Choose your LLM provider
@@ -78,19 +78,19 @@ JWT_SECRET=dev-secret-change-in-production
 ### 4. Start Development Servers
 
 ```bash
-# Start both frontend and backend
+# Start both frontend and agent
 bun dev
 
 # Or start individually
 bun dev:web      # Frontend only (port 3000)
-bun dev:backend  # Backend only (port 2024)
+bun dev:agent    # Agent only (port 2024)
 ```
 
 ### 5. Access the Application
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:2024
-- **Qdrant Dashboard**: http://localhost:6333/dashboard
+- **Frontend**: <http://localhost:3000>
+- **Backend API**: <http://localhost:2024>
+- **Qdrant Dashboard**: <http://localhost:6333/dashboard>
 
 ## Project Structure
 
@@ -105,12 +105,12 @@ Horizon/
 │   │   ├── lib/               # Utilities, stores, hooks
 │   │   └── data/              # Local JSON database
 │   │
-│   ├── backend/               # TypeScript LangGraph agent
-│   │   ├── src/
-│   │   │   ├── agent/        # Graph, nodes, tools
-│   │   │   ├── assistants/   # Assistant management
-│   │   │   └── lib/          # Config, utilities
-│   │   └── langgraph.json    # LangGraph config
+│   └── agent/                 # TypeScript LangGraph agent server
+│       ├── src/
+│       │   ├── agent/        # Graph, nodes, tools
+│       │   ├── assistants/   # Assistant management
+│       │   └── lib/          # Config, utilities
+│       └── langgraph.json    # LangGraph config
 │   │
 │   └── backend-py-legacy/     # Python FastAPI (reference)
 │
@@ -138,7 +138,7 @@ Horizon/
 |---------|-------------|
 | `bun dev` | Start all dev servers |
 | `bun dev:web` | Start frontend only |
-| `bun dev:backend` | Start backend only |
+| `bun dev:agent` | Start agent only |
 | `bun build` | Build all packages |
 | `bun lint` | Check code style |
 | `bun lint:fix` | Fix code style issues |
@@ -235,7 +235,7 @@ pytest --cov=src
 
 ```bash
 # Enable debug logging
-DEBUG=langgraph:* bun dev:backend
+DEBUG=langgraph:* bun dev:agent
 ```
 
 ### Frontend Debugging
@@ -263,7 +263,7 @@ console.log("[Config] Loaded from:", configPath);
 
 ### Adding a New Tool
 
-1. Define tool in `apps/backend/src/agent/tools/index.ts`:
+1. Define tool in `apps/agent/src/agent/tools/`:
 
 ```typescript
 export const myTool = tool({
@@ -279,8 +279,8 @@ export const myTool = tool({
 });
 ```
 
-2. Add to tools array
-3. Create UI renderer in `apps/web/components/chat/` if needed
+1. Add to tools array
+2. Create UI renderer in `apps/web/components/chat/` if needed
 
 ### Adding a New UI Component
 
@@ -290,13 +290,13 @@ export const myTool = tool({
 
 ### Modifying Agent Behavior
 
-1. Edit state in `apps/backend/src/agent/state.ts`
-2. Modify nodes in `apps/backend/src/agent/nodes/`
-3. Update graph edges in `apps/backend/src/agent/graph.ts`
+1. Update state in `apps/agent/src/agent/state.ts`
+2. Modify nodes in `apps/agent/src/agent/nodes/`
+3. Update graph edges in `apps/agent/src/agent/graph.ts`
 
 ### Adding Environment Variables
 
-1. Add to `apps/backend/src/lib/config.ts` schema
+1. Add to `apps/agent/src/lib/config.ts` schema
 2. Document in `.env.example`
 3. Update `docs/configuration.md`
 

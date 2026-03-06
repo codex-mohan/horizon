@@ -10,12 +10,12 @@ services:
   # =============================================================================
   # Backend - LangGraph Agent Server (Production)
   # =============================================================================
-  backend:
+  agent:
     build:
-      context: ./apps/backend
+      context: ./apps/agent
       dockerfile: Dockerfile
       target: production
-    container_name: horizon-backend-prod
+    container_name: horizon-agent-prod
     ports:
       - "2024:2024"
       - "8000:8000"
@@ -27,9 +27,9 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     env_file:
-      - ./apps/backend/.env
+      - ./apps/agent/.env
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -61,7 +61,7 @@ services:
       - NODE_ENV=production
       - NEXT_PUBLIC_LANGGRAPH_API_URL=${LANGGRAPH_API_URL:-http://localhost:2024}
     depends_on:
-      backend:
+      agent:
         condition: service_healthy
     restart: always
     networks:
@@ -115,7 +115,7 @@ services:
       - redis-data:/data
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -142,7 +142,7 @@ services:
       - ./certs:/etc/nginx/certs:ro
     depends_on:
       - web
-      - backend
+      - agent
     restart: always
     networks:
       - horizon-network

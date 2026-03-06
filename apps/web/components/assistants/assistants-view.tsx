@@ -1,17 +1,17 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
-import { Badge } from "@workspace/ui/components/badge";
-import { Button } from "@workspace/ui/components/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@horizon/ui/components/avatar";
+import { Badge } from "@horizon/ui/components/badge";
+import { Button } from "@horizon/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
-import { cn } from "@workspace/ui/lib/utils";
+} from "@horizon/ui/components/dropdown-menu";
+import { ScrollArea } from "@horizon/ui/components/scroll-area";
+import { cn } from "@horizon/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Brain,

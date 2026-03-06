@@ -1,13 +1,13 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@horizon/ui/components/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
-import { cn } from "@workspace/ui/lib/utils";
+} from "@horizon/ui/components/tooltip";
+import { cn } from "@horizon/ui/lib/utils";
 import { Bot, Copy, CornerDownRight, RefreshCw } from "lucide-react";
 import React from "react";
 import type { ToolStep } from "@/lib/message-grouping";

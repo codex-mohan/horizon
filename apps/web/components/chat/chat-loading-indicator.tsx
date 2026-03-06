@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import type { ProcessedEvent as ChatProcessedEvent } from "@/lib/chat";
 import type { ToolCall } from "./tool-call-message";
 

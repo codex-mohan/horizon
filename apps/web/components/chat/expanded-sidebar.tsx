@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@horizon/ui/components/button";
 import { X } from "lucide-react";
 import { AssistantsView } from "@/components/assistants/assistants-view";
 import { CollectionsPanel } from "./collections-panel";

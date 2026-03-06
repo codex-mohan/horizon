@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 

@@ -5,7 +5,7 @@ import type React from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import "highlight.js/styles/github-dark.css";
-import "@workspace/ui/styles/globals.css";
+import "@horizon/ui/styles/globals.css";
 
 // Display font: Space Grotesk - Modern geometric sans-serif with personality
 // Perfect for headings and brand elements, has a tech-forward but human feel

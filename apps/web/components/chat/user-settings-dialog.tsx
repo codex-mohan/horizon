@@ -1,11 +1,11 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
-import { Button } from "@workspace/ui/components/button";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import { Separator } from "@workspace/ui/components/separator";
-import { cn } from "@workspace/ui/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@horizon/ui/components/avatar";
+import { Button } from "@horizon/ui/components/button";
+import { Input } from "@horizon/ui/components/input";
+import { Label } from "@horizon/ui/components/label";
+import { Separator } from "@horizon/ui/components/separator";
+import { cn } from "@horizon/ui/lib/utils";
 import { Bell, LogOut, Settings, Shield, User, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";

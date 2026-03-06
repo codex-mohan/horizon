@@ -6,8 +6,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog";
-import { cn } from "@workspace/ui/lib/utils";
+} from "@horizon/ui/components/dialog";
+import { cn } from "@horizon/ui/lib/utils";
 import { Command as CommandPrimitive } from "cmdk";
 import { SearchIcon } from "lucide-react";
 import type * as React from "react";

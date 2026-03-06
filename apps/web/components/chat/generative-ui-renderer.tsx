@@ -1,6 +1,7 @@
 "use client";
 
 import { hasCustomUI } from "@/lib/tool-config";
+import { ArtifactTool } from "./generative-ui/artifact-tool";
 import { FetchUrlTool, GenericTool, ShellTool, WeatherTool, WebSearchTool } from "./generative-ui";
 import type { ToolCall } from "./tool-call-message";
 
@@ -44,6 +45,10 @@ function renderGenerativeUI(toolCall: ToolCall, isLoading: boolean): React.React
 
     case "get_weather":
       return <WeatherTool {...commonProps} />;
+
+    case "create_artifact":
+    case "present_artifact":
+      return <ArtifactTool {...commonProps} />;
 
     default:
       return <GenericTool {...commonProps} />;

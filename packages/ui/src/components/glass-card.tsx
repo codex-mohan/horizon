@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import * as React from "react";
 
 interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {

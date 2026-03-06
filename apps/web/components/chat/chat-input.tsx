@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@horizon/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,16 +13,16 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
-import { GradientButton } from "@workspace/ui/components/gradient-button";
-import { Textarea } from "@workspace/ui/components/textarea";
+} from "@horizon/ui/components/dropdown-menu";
+import { GradientButton } from "@horizon/ui/components/gradient-button";
+import { Textarea } from "@horizon/ui/components/textarea";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
-import { cn } from "@workspace/ui/lib/utils";
+} from "@horizon/ui/components/tooltip";
+import { cn } from "@horizon/ui/lib/utils";
 import {
   AlertTriangle,
   Check,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@horizon/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,15 +13,15 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
-import { Switch } from "@workspace/ui/components/switch";
+} from "@horizon/ui/components/dropdown-menu";
+import { Switch } from "@horizon/ui/components/switch";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
-import { cn } from "@workspace/ui/lib/utils";
+} from "@horizon/ui/components/tooltip";
+import { cn } from "@horizon/ui/lib/utils";
 import { Brain, ChevronDown, Cpu, Settings2, Sparkles, Zap } from "lucide-react";
 import { memo, useEffect, useState } from "react";
 import {
@@ -127,7 +127,10 @@ export const ModelSelector = memo(function ModelSelector({
                   </>
                 )}
                 <ChevronDown
-                  className={cn("size-3 opacity-50 transition-transform", isOpen && "rotate-180")}
+                  className={cn(
+                    "size-3 text-muted-foreground transition-transform",
+                    isOpen && "rotate-180"
+                  )}
                 />
               </Button>
             </DropdownMenuTrigger>

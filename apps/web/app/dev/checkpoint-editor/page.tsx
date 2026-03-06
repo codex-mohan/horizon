@@ -23,11 +23,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { createCodeMirrorTheme } from "@/lib/codemirror-theme";
-import { Button } from "@workspace/ui/components/button";
-import { Input } from "@workspace/ui/components/input";
-import { Badge } from "@workspace/ui/components/badge";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
-import { Separator } from "@workspace/ui/components/separator";
+import { Button } from "@horizon/ui/components/button";
+import { Input } from "@horizon/ui/components/input";
+import { Badge } from "@horizon/ui/components/badge";
+import { ScrollArea } from "@horizon/ui/components/scroll-area";
+import { Separator } from "@horizon/ui/components/separator";
 import {
     Dialog,
     DialogContent,
@@ -35,7 +35,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@workspace/ui/components/dialog";
+} from "@horizon/ui/components/dialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -45,7 +45,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@workspace/ui/components/alert-dialog";
+} from "@horizon/ui/components/alert-dialog";
 
 interface ThreadInfo {
     id: string;

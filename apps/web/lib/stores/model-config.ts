@@ -52,6 +52,8 @@ export const DEFAULT_MODELS: Record<ModelProvider, string[]> = {
     "gpt-3.5-turbo",
     "o1-preview",
     "o1-mini",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
   ],
   anthropic: [
     "claude-3-5-sonnet-20241022",
@@ -66,6 +68,8 @@ export const DEFAULT_MODELS: Record<ModelProvider, string[]> = {
     "llama-3.1-8b-instant",
     "mixtral-8x7b-32768",
     "gemma2-9b-it",
+    "llama3-70b-8192",
+    "llama3-8b-8192",
   ],
   google: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-pro"],
   ollama: ["llama3.2", "llama3.1", "llama3", "mistral", "codellama", "deepseek-r1", "qwen2.5"],

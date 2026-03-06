@@ -1,10 +1,10 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
-import { GradientButton } from "@workspace/ui/components/gradient-button";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import { cn } from "@workspace/ui/lib/utils";
+import { Button } from "@horizon/ui/components/button";
+import { GradientButton } from "@horizon/ui/components/gradient-button";
+import { Input } from "@horizon/ui/components/input";
+import { Label } from "@horizon/ui/components/label";
+import { cn } from "@horizon/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,

@@ -11,7 +11,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "dev:web": "bun --cwd apps/web dev",
-    "dev:backend": "cd apps/backend && bunx @langchain/langgraph-cli dev",
+    "dev:agent": "cd apps/agent && bunx @langchain/langgraph-cli dev",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
     "format": "ultracite fix",

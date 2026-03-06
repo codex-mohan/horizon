@@ -1,9 +1,9 @@
 "use client";
 
-import { Label } from "@workspace/ui/components/label";
-import { Separator } from "@workspace/ui/components/separator";
+import { Label } from "@horizon/ui/components/label";
+import { Separator } from "@horizon/ui/components/separator";
 
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import { useMemo } from "react";
 

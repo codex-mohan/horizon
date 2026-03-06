@@ -1,7 +1,7 @@
 "use client";
 
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import * as React from "react";
 
 const GlassAvatar = React.forwardRef<

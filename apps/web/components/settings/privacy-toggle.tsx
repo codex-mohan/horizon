@@ -1,10 +1,10 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
-import { Label } from "@workspace/ui/components/label";
-import { Slider } from "@workspace/ui/components/slider";
-import { Switch } from "@workspace/ui/components/switch";
-import { cn } from "@workspace/ui/lib/utils";
+import { Button } from "@horizon/ui/components/button";
+import { Label } from "@horizon/ui/components/label";
+import { Slider } from "@horizon/ui/components/slider";
+import { Switch } from "@horizon/ui/components/switch";
+import { cn } from "@horizon/ui/lib/utils";
 import { motion } from "framer-motion";
 import { AlertTriangle, Clock, Eye, EyeOff, Shield, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";

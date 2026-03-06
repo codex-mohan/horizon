@@ -1,6 +1,6 @@
 # Horizon — Agent Coding Guidelines
 
-> **Last Updated:** 2026-03-05
+> **Last Updated:** 2026-03-06
 > **Maintained by:** AI coding agents working on Horizon
 
 **This document is the single source of truth for AI coding agents working on this codebase. It must be updated whenever the project structure, architecture, configuration, or workflows change. If you make changes that affect how agents should work on this project, update this document immediately.**
@@ -70,12 +70,13 @@ Horizon/
 │   │   │   └── page.tsx              # Home redirect
 │   │   ├── components/
 │   │   │   ├── chat/                 # Chat-specific components (31+ files)
-│   │   │   │   └── generative-ui/   # Tool call renderers (shell, web search, etc.)
+│   │   │   │   └── generative-ui/   # Tool call renderers (shell, web search, artifacts, etc.)
+│   │   │   ├── artifacts/            # ArtifactViewer, ArtifactIframe panels
 │   │   │   ├── theme/                # Theme provider & switcher
 │   │   │   ├── auth/                 # Auth components
 │   │   │   ├── settings/             # Settings dialogs
 │   │   │   ├── assistants/           # Assistant management
-│   │   │   ├── markdown-view.tsx     # Rich markdown renderer
+│   │   │   ├── markdown-view.tsx     # Rich markdown renderer (CodeBlock exported)
 │   │   │   ├── mermaid-diagram.tsx   # Mermaid diagram component
 │   │   │   └── login-form.tsx        # Login/register form
 │   │   ├── lib/
@@ -85,7 +86,10 @@ Horizon/
 │   │   │   │   ├── chat-settings.ts  # UI preferences
 │   │   │   │   ├── assistants.ts     # Assistant management
 │   │   │   │   ├── conversation.ts   # Thread tracking
+│   │   │   │   ├── artifacts.ts      # Artifact state (panel open, active artifact)
 │   │   │   │   └── ollama-store.ts   # Ollama model management
+│   │   │   ├── types/
+│   │   │   │   └── artifact.ts       # Artifact type definitions & ARTIFACT_TYPE_META
 │   │   │   ├── chat.ts               # Core chat hook (LangGraph SDK streaming)
 │   │   │   ├── threads.ts            # Thread management client
 │   │   │   ├── auth/                 # JWT utilities (jose)
@@ -100,12 +104,13 @@ Horizon/
 │   │   │   └── use-mobile.ts
 │   │   └── public/                   # Static assets (logo, icons)
 │   │
-│   └── backend/                      # TypeScript LangGraph agent server
+│   └── agent/                        # TypeScript LangGraph agent server (renamed from backend)
 │       ├── src/
 │       │   ├── agent/
 │       │   │   ├── graph.ts          # Main LangGraph graph builder
 │       │   │   ├── state.ts          # Agent state annotation (Annotation.Root)
 │       │   │   ├── fs-checkpointer.ts # FileSystem-based checkpointer
+│       │   │   ├── prompt.ts         # Hardcoded system prompt (SYSTEM_PROMPT export)
 │       │   │   ├── nodes/            # Graph nodes
 │       │   │   │   ├── agent.ts               # LLM inference with tools
 │       │   │   │   ├── start-middleware.ts     # Initialize execution, PII
@@ -114,7 +119,8 @@ Horizon/
 │       │   │   │   ├── tool-execution.ts       # Execute approved tools
 │       │   │   │   └── end-middleware.ts        # Finalize, metrics
 │       │   │   ├── tools/
-│       │   │   │   └── index.ts      # Tool registry & approval logic
+│       │   │   │   ├── index.ts      # Tool registry & approval logic
+│       │   │   │   └── artifacts.ts  # create_artifact & present_artifact tools
 │       │   │   └── middleware/
 │       │   │       └── pii.ts        # PII detection patterns
 │       │   ├── assistants/           # Assistant CRUD system
@@ -128,6 +134,8 @@ Horizon/
 │       │   ├── middleware/
 │       │   │   └── rate-limit.ts     # IP-based rate limiting
 │       │   └── index.ts              # Hono server entry (routes, SSE streaming)
+│       ├── data/
+│       │   └── artifacts.json        # Artifact storage (auto-created)
 │       └── langgraph.json            # LangGraph CLI config
 │
 ├── packages/
@@ -277,7 +285,7 @@ This means:
 | **AI SDK** | @langchain/langgraph-sdk | Streaming chat client |
 | **Icons** | Lucide React, React Icons | Icon library |
 
-### Backend (`apps/backend`)
+### Backend (`apps/agent`)
 
 | Category | Technology | Notes |
 |---|---|---|
@@ -522,6 +530,7 @@ All client-side state uses **Zustand** stores in `lib/stores/`:
 | `useChatSettings` | `chat-settings.ts` | ✅ localStorage | UI preferences (sidebar state, etc.) |
 | `useAssistants` | `assistants.ts` | ❌ | Assistant list, selection |
 | `useConversation` | `conversation.ts` | ❌ | Active thread tracking |
+| `useArtifactsStore` | `artifacts.ts` | ❌ | Artifact list, active artifact ID, panel open state |
 | `useOllamaStore` | `ollama-store.ts` | ❌ | Local Ollama model list |
 
 ### Generative UI (Tool Call Rendering)
@@ -534,6 +543,8 @@ Tool calls are rendered with **custom React components** in `components/chat/gen
 | `web_search` / `duckduckgo_search` | `web-search-tool.tsx` | Search result cards |
 | `fetch_url_content` | `fetch-url-tool.tsx` | Page content extraction display |
 | `get_weather` | `weather-tool.tsx` | Weather card |
+| `create_artifact` | `artifact-tool.tsx` | Compact shimmer line while generating, then "Created ✓" |
+| `present_artifact` | `artifact-tool.tsx` | Clickable artifact card that opens `ArtifactViewer` panel |
 | *(fallback)* | `generic-tool.tsx` | JSON-based generic display |
 
 The `generative-ui-renderer.tsx` dispatches to the appropriate component based on tool name. The `loading-effects.tsx` provides animated loading states during tool execution.
@@ -546,7 +557,7 @@ Notifications use **Sonner** (`sonner` package) configured in `layout.tsx` with 
 
 ## 8. Backend Architecture
 
-### Server (`apps/backend/src/index.ts`)
+### Server (`apps/agent/src/index.ts`)
 
 The backend is a **Hono 4** HTTP server running on `@hono/node-server`. It handles:
 
@@ -583,7 +594,7 @@ Each node is a pure function `(state: AgentState) => Partial<AgentState>` in `sr
 
 ### Tool System
 
-Tools are defined in `src/agent/tools/index.ts`:
+Tools are defined in `src/agent/tools/index.ts` and `src/agent/tools/artifacts.ts`:
 
 | Tool | Source | Description |
 |---|---|---|
@@ -591,6 +602,8 @@ Tools are defined in `src/agent/tools/index.ts`:
 | `fetch_url_content` | `@horizon/agent-web` | Extract page content via Cheerio |
 | `duckduckgo_search` | `@horizon/agent-web` | Alternative search tool |
 | `shell_execute` | Local (wraps `@horizon/shell`) | Execute shell commands with structured JSON output |
+| `create_artifact` | `tools/artifacts.ts` | Store HTML/SVG/Mermaid/React/code artifact, format with Prettier, return ID |
+| `present_artifact` | `tools/artifacts.ts` | Fetch artifact by ID and signal frontend to render ArtifactCard |
 
 **Tool Approval Modes:**
 
@@ -602,7 +615,7 @@ Tools are defined in `src/agent/tools/index.ts`:
 
 **Tool Risk Categories:**
 
-- **Safe**: `web_search`, `fetch_url_content`, `duckduckgo_search`, `get_weather`
+- **Safe**: `web_search`, `fetch_url_content`, `duckduckgo_search`, `get_weather`, `create_artifact`, `present_artifact`
 - **Dangerous**: `shell_execute`, `file_write`, `file_delete`
 
 ### Shell Execution Safety (`@horizon/shell`)
@@ -640,7 +653,7 @@ The shell package has multiple safety layers:
 The backend uses **@langchain/langgraph-cli** for development:
 
 ```bash
-cd apps/backend
+cd apps/agent
 bunx @langchain/langgraph-cli dev
 ```
 
@@ -653,9 +666,9 @@ This reads `langgraph.json` which points to `./src/agent/graph.ts:graph` as the 
 ### Root Level (Turborepo)
 
 ```bash
-bun dev                  # Start all dev servers (web + backend via Turbo)
+bun dev                  # Start all dev servers (web + agent via Turbo)
 bun dev:web              # Start only the web frontend
-bun dev:backend          # Start only the backend (LangGraph CLI)
+bun dev:agent            # Start only the agent server (LangGraph CLI)
 bun build                # Build all packages
 bun lint                 # Check linting (ultracite check)
 bun lint:fix             # Fix linting issues (ultracite fix)
@@ -677,10 +690,10 @@ bun start                # Production server
 bun lint                 # Ultracite check
 ```
 
-### Backend (`apps/backend`)
+### Agent (`apps/agent`)
 
 ```bash
-cd apps/backend
+cd apps/agent
 bun dev                  # LangGraph CLI dev server (port 2024)
 bun start                # Direct Hono server start
 bun test                 # Run tests
@@ -706,7 +719,7 @@ docker-compose up --build
 
 ### Adding a New Tool
 
-1. Define the tool schema and implementation in `apps/backend/src/agent/tools/index.ts` using `tool()` from `@langchain/core/tools`.
+1. Define the tool schema and implementation in `apps/agent/src/agent/tools/` using `tool()` from `@langchain/core/tools`.
 2. Add the tool name to `TOOL_CATEGORIES.safe` or `TOOL_CATEGORIES.dangerous`.
 3. Add the tool to the `tools` array export.
 4. Create a generative UI renderer in `apps/web/components/chat/generative-ui/` (e.g., `your-tool.tsx`).
@@ -715,19 +728,19 @@ docker-compose up --build
 
 ### Adding a New LLM Provider
 
-1. Install the `@langchain/<provider>` package in `apps/backend`.
-2. Add the provider to the `switch` in `apps/backend/src/lib/llm.ts` → `createRuntimeLLM()`.
+1. Install the `@langchain/<provider>` package in `apps/agent`.
+2. Add the provider to the `switch` in `apps/agent/src/lib/llm.ts` → `createRuntimeLLM()`.
 3. Add the provider type to `RuntimeModelConfig.provider` union.
 4. Add the provider to `ModelProvider` type in `apps/web/lib/stores/model-config.ts`.
 5. Add default models and provider info to `DEFAULT_MODELS` and `PROVIDER_INFO`.
 6. Add the provider config to the Zustand store default state.
-7. Update fallback config in `apps/backend/src/lib/config.ts` → `EnvSchema.MODEL_PROVIDER` enum.
+7. Update fallback config in `apps/agent/src/lib/config.ts` → `EnvSchema.MODEL_PROVIDER` enum.
 
 ### Adding a New Graph Node
 
-1. Create a file in `apps/backend/src/agent/nodes/` (kebab-case).
+1. Create a file in `apps/agent/src/agent/nodes/` (kebab-case).
 2. Export a node function: `export const YourNode = async (state: AgentState) => { ... }`.
-3. Import and wire it in `apps/backend/src/agent/graph.ts` using `.addNode()` and `.addEdge()` / `.addConditionalEdges()`.
+3. Import and wire it in `apps/agent/src/agent/graph.ts` using `.addNode()` and `.addEdge()` / `.addConditionalEdges()`.
 4. Update `AgentStateAnnotation` in `state.ts` if new state fields are needed.
 
 ### Adding a New Theme
@@ -738,7 +751,7 @@ docker-compose up --build
 
 ### Modifying Agent State
 
-1. Update `AgentStateAnnotation` in `apps/backend/src/agent/state.ts` — add new fields with appropriate reducers.
+1. Update `AgentStateAnnotation` in `apps/agent/src/agent/state.ts` — add new fields with appropriate reducers.
 2. Update any nodes that read/write the new fields.
 3. If the field is surfaced to the frontend, update the corresponding types in the web app.
 
@@ -835,11 +848,11 @@ Update this file whenever you:
 - Clear Next.js cache: `rm -rf apps/web/.next`
 - Verify TypeScript: `bun typecheck`
 
-**Backend Won't Start:**
+**Agent Won't Start:**
 
-- Ensure `apps/backend/.env` exists with at least `PORT=2024`.
-- If using LangGraph CLI: `cd apps/backend && bunx @langchain/langgraph-cli dev`
-- Check for TypeScript errors: `cd apps/backend && bun typecheck`
+- Ensure `apps/agent/.env` exists with at least `PORT=2024`.
+- If using LangGraph CLI: `cd apps/agent && bunx @langchain/langgraph-cli dev`
+- Check for TypeScript errors: `cd apps/agent && bun typecheck`
 
 **Frontend Can't Connect to Backend:**
 
@@ -851,7 +864,7 @@ Update this file whenever you:
 
 - Verify Qdrant container is running: `docker-compose ps`
 - Test connectivity: `curl http://localhost:6333/healthz`
-- Check `QDRANT_URL` in backend `.env`.
+- Check `QDRANT_URL` in agent `.env`.
 
 **Authentication Issues:**
 
@@ -876,7 +889,7 @@ Update this file whenever you:
 
 ### Current State
 
-- Backend tests: `cd apps/backend && bun test`
+- Agent tests: `cd apps/agent && bun test`
 - No comprehensive test suite yet — this is a known gap.
 
 ### Testing Standards (For New Tests)
@@ -921,7 +934,7 @@ Update this file whenever you:
 ### API Keys
 
 - **Never** stored on the backend — API keys are sent per-request from the frontend's encrypted `localStorage`.
-- Backend env vars serve only as fallback defaults for development.
+- Agent env vars serve only as fallback defaults for development.
 
 ---
 
@@ -1046,7 +1059,7 @@ The main agent should orchestrate, synthesize, and make final decisions. Sub-age
 When launching parallel sub-agents, follow these strict rules:
 
 1. **Partition by file**: Each sub-agent gets exclusive ownership of a specific set of files. No two sub-agents should ever touch the same file.
-2. **Partition by concern**: Prefer splitting by domain boundary (frontend vs backend, component A vs component B) rather than by operation (read vs write).
+2. **Partition by concern**: Prefer splitting by domain boundary (frontend vs agent, component A vs component B) rather than by operation (read vs write).
 3. **Define clear return contracts**: Tell each sub-agent exactly what information to return. Vague instructions lead to wasted context.
 4. **Limit parallelism**: 2–3 parallel sub-agents is usually optimal. More than that increases coordination overhead and error risk.
 5. **Always wait before synthesizing**: Do not start writing a final result until all parallel sub-agents have returned.
@@ -1063,7 +1076,7 @@ When spawning a sub-agent, your task description should include:
 **Example — Good sub-agent prompt:**
 
 ```text
-Read all files in apps/backend/src/agent/nodes/ and return a summary for each node:
+Read all files in apps/agent/src/agent/nodes/ and return a summary for each node:
 - Function name and signature
 - What state fields it reads and writes
 - Any external calls it makes (LLM, Qdrant, shell)

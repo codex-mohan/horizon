@@ -154,7 +154,7 @@ When running in Docker:
 ```yaml
 # docker-compose.yaml example
 services:
-  backend:
+  agent:
     volumes:
       - ./config/horizon.json:/app/config/horizon.json:ro
     environment:
@@ -192,6 +192,6 @@ ajv validate -s config/config.schema.json -d config/horizon.json
 
 ### Changes Not Taking Effect
 
-1. Restart the backend server
+1. Restart the agent server
 2. Clear any cached configuration (internal)
 3. Verify you're editing the correct file (check logs for loaded path)

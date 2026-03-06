@@ -11,11 +11,11 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@workspace/ui/components",
-    "utils": "@workspace/ui/lib/utils",
-    "ui": "@workspace/ui/components",
-    "lib": "@workspace/ui/lib",
-    "hooks": "@workspace/ui/hooks"
+    "components": "@horizon/ui/components",
+    "utils": "@horizon/ui/lib/utils",
+    "ui": "@horizon/ui/components",
+    "lib": "@horizon/ui/lib",
+    "hooks": "@horizon/ui/hooks"
   },
   "registries": {
     "@einui": "https://ui.eindev.ir/r/{name}.json"

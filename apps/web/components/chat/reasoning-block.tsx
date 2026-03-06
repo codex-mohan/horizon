@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import React, { useState } from "react";
 

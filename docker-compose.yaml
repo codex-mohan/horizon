@@ -1,22 +1,20 @@
 services:
   # =============================================================================
-  # Backend - LangGraph Agent Server
+  # Agent - LangGraph Agent Server
   # =============================================================================
-  backend:
+  agent:
     build:
-      context: ./apps/backend
+      context: ./apps/agent
       dockerfile: Dockerfile
       target: development
-    container_name: horizon-backend
+    container_name: horizon-agent
     ports:
       - "2024:2024"
       - "8000:8000"
     volumes:
-      # Mount source code for hot reload
-      - ./apps/backend/src:/app/src:cached
-      - ./apps/backend/.env:/app/.env:ro
-      # Persist Python cache
-      - backend-cache:/app/.cache
+      - ./apps/agent/src:/app/src:cached
+      - ./apps/agent/.env:/app/.env:ro
+      - agent-cache:/app/.cache
     environment:
       - ENVIRONMENT=development
       - HOST=0.0.0.0
@@ -26,7 +24,7 @@ services:
       - PYTHONUNBUFFERED=1
       - QDRANT_URL=http://qdrant:6333
     env_file:
-      - ./apps/backend/.env
+      - ./apps/agent/.env
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -58,7 +56,7 @@ services:
       - NEXT_PUBLIC_LANGGRAPH_API_URL=http://localhost:2024
       - WATCHPACK_POLLING=true
     depends_on:
-      backend:
+      agent:
         condition: service_healthy
     restart: unless-stopped
     networks:
@@ -113,6 +111,6 @@ networks:
     driver: bridge
 
 volumes:
-  backend-cache:
+  agent-cache:
   redis-data:
   qdrant-data:

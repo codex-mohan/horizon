@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@workspace/ui/components/badge";
+import { Badge } from "@horizon/ui/components/badge";
 import { suggestedPrompts } from "@/lib/message-grouping";
 import { ChatInput, type AttachedFile as ChatInputAttachedFile } from "./chat-input";
 import type { AttachedFile } from "./chat-interface";

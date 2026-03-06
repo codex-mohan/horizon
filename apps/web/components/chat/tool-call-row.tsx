@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import { CheckCircle2, Loader2, Terminal, XCircle } from "lucide-react";
 import { useTheme } from "@/components/theme/theme-provider";
 import type { UIMessage } from "@/lib/chat";

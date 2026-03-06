@@ -14,8 +14,10 @@ import {
   FileText,
   Globe,
   type LucideIcon,
+  Package,
   Search,
   Settings,
+  Sparkles,
   Terminal,
   Wrench,
 } from "lucide-react";
@@ -185,6 +187,58 @@ export const toolUIRegistry: Record<string, ToolUIConfig> = {
       collapseResult: false,
     },
   },
+
+  create_artifact: {
+    toolName: "create_artifact",
+    displayName: "Create Artifact",
+    description: "Generate a renderable artifact (HTML, SVG, diagram, code)",
+    namespace: "special",
+    icon: {
+      name: "Sparkles",
+      color: "text-purple-400",
+      bgColor: "bg-purple-500/10",
+    },
+    component: {
+      name: "ArtifactTool",
+      useCustom: true,
+    },
+    statusColors: {
+      pending: "text-amber-400",
+      executing: "text-purple-400",
+      completed: "text-emerald-400",
+      failed: "text-red-400",
+    },
+    metadata: {
+      showArgs: false,
+      collapseResult: true,
+    },
+  },
+
+  present_artifact: {
+    toolName: "present_artifact",
+    displayName: "Present Artifact",
+    description: "Display a generated artifact to the user",
+    namespace: "special",
+    icon: {
+      name: "Package",
+      color: "text-indigo-400",
+      bgColor: "bg-indigo-500/10",
+    },
+    component: {
+      name: "ArtifactTool",
+      useCustom: true,
+    },
+    statusColors: {
+      pending: "text-amber-400",
+      executing: "text-indigo-400",
+      completed: "text-indigo-400",
+      failed: "text-red-400",
+    },
+    metadata: {
+      showArgs: false,
+      collapseResult: true,
+    },
+  },
 };
 
 /**
@@ -248,6 +302,8 @@ export function getToolIcon(toolName: string): LucideIcon {
     Settings,
     Wrench,
     Cloud,
+    Sparkles,
+    Package,
   };
   return iconMap[config.icon.name] || Wrench;
 }

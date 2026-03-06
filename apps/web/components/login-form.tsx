@@ -1,14 +1,14 @@
-import { Card, CardContent } from "@workspace/ui/components/card";
+import { Card, CardContent } from "@horizon/ui/components/card";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-} from "@workspace/ui/components/field";
-import { GradientButton } from "@workspace/ui/components/gradient-button";
-import { Input } from "@workspace/ui/components/input";
-import { cn } from "@workspace/ui/lib/utils";
+} from "@horizon/ui/components/field";
+import { GradientButton } from "@horizon/ui/components/gradient-button";
+import { Input } from "@horizon/ui/components/input";
+import { cn } from "@horizon/ui/lib/utils";
 import { Apple, Facebook } from "lucide-react";
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {

@@ -1,11 +1,11 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
-import { GradientButton } from "@workspace/ui/components/gradient-button";
-import { GradientSlider } from "@workspace/ui/components/gradient-slider";
-import { Label } from "@workspace/ui/components/label";
-import { Textarea } from "@workspace/ui/components/textarea";
-import { cn } from "@workspace/ui/lib/utils";
+import { Button } from "@horizon/ui/components/button";
+import { GradientButton } from "@horizon/ui/components/gradient-button";
+import { GradientSlider } from "@horizon/ui/components/gradient-slider";
+import { Label } from "@horizon/ui/components/label";
+import { Textarea } from "@horizon/ui/components/textarea";
+import { cn } from "@horizon/ui/lib/utils";
 import { X } from "lucide-react";
 import { useChatSettings } from "@/lib/stores/chat-settings";
 

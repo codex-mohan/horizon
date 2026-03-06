@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
-import { cn } from "@workspace/ui/lib/utils"; // Assumes utils are here based on previous file reads
+import { Button } from "@horizon/ui/components/button";
+import { cn } from "@horizon/ui/lib/utils"; // Assumes utils are here based on previous file reads
 import { X } from "lucide-react";
 import { memo } from "react";
 import { getFileTypeConfig } from "@/lib/file-types";

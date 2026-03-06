@@ -4,11 +4,11 @@ import {
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-} from "@workspace/ui/components/field";
-import { GlassButton } from "@workspace/ui/components/glass-button";
-import { GlassCard, GlassCardContent } from "@workspace/ui/components/glass-card";
-import { Input } from "@workspace/ui/components/input";
-import { cn } from "@workspace/ui/lib/utils";
+} from "@horizon/ui/components/field";
+import { GlassButton } from "@horizon/ui/components/glass-button";
+import { GlassCard, GlassCardContent } from "@horizon/ui/components/glass-card";
+import { Input } from "@horizon/ui/components/input";
+import { cn } from "@horizon/ui/lib/utils";
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   return (

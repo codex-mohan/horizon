@@ -1,7 +1,7 @@
 "use client";
 
 import * as ProgressPrimitive from "@radix-ui/react-progress";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import * as React from "react";
 
 const GlassProgress = React.forwardRef<

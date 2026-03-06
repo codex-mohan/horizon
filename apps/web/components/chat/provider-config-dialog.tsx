@@ -1,13 +1,13 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
-import { GlassProgress } from "@workspace/ui/components/glass-progress";
-import { GradientButton } from "@workspace/ui/components/gradient-button";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
-import { Switch } from "@workspace/ui/components/switch";
-import { cn } from "@workspace/ui/lib/utils";
+import { Button } from "@horizon/ui/components/button";
+import { GlassProgress } from "@horizon/ui/components/glass-progress";
+import { GradientButton } from "@horizon/ui/components/gradient-button";
+import { Input } from "@horizon/ui/components/input";
+import { Label } from "@horizon/ui/components/label";
+import { ScrollArea } from "@horizon/ui/components/scroll-area";
+import { Switch } from "@horizon/ui/components/switch";
+import { cn } from "@horizon/ui/lib/utils";
 import {
   AlertCircle,
   Brain,

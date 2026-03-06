@@ -1,7 +1,7 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
-import { Button } from "@workspace/ui/components/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@horizon/ui/components/avatar";
+import { Button } from "@horizon/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,15 +9,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
-import { Separator } from "@workspace/ui/components/separator";
+} from "@horizon/ui/components/dropdown-menu";
+import { Separator } from "@horizon/ui/components/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
-import { cn } from "@workspace/ui/lib/utils";
+} from "@horizon/ui/components/tooltip";
+import { cn } from "@horizon/ui/lib/utils";
 import {
   Bot,
   FolderOpen,

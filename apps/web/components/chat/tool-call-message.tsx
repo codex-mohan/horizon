@@ -2,7 +2,7 @@
 
 import { json } from "@codemirror/lang-json";
 import { EditorView, lineNumbers } from "@codemirror/view";
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@horizon/ui/lib/utils";
 import { CheckCircle2, ChevronDown, Loader2, XCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 import React, { useMemo } from "react";

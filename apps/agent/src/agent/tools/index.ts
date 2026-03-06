@@ -5,6 +5,7 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { getHorizonConfig, resolveWorkspacePath } from "../../lib/config-loader.js";
 import type { ToolApprovalConfig } from "../state.js";
+import { createArtifactTool, presentArtifactTool } from "./artifacts.js";
 
 // Initialize shell executor with workspace from config
 const horizonConfig = getHorizonConfig();
@@ -15,7 +16,7 @@ const shellExecutor = new ShellExecutor({
 });
 
 export const TOOL_CATEGORIES = {
-  safe: ["web_search", "fetch_url_content", "duckduckgo_search", "get_weather"],
+  safe: ["web_search", "fetch_url_content", "duckduckgo_search", "get_weather", "create_artifact", "present_artifact"],
   dangerous: ["shell_execute", "file_write", "file_delete"],
 } as const;
 
@@ -155,5 +156,5 @@ export const shellTool = tool(
 );
 
 // Aggregate all tools
-export const tools = [...webTools, shellTool];
+export const tools = [...webTools, shellTool, createArtifactTool, presentArtifactTool];
 export const toolMap = Object.fromEntries(tools.map((t) => [t.name, t]));

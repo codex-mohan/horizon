@@ -76,8 +76,8 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
   const gradientClass =
     !useThemeGradient && fromColor && toColor
       ? viaColor
-        ? `bg-gradient-to-r ${fromColor} ${viaColor} ${toColor}`
-        : `bg-gradient-to-r ${fromColor} ${toColor}`
+        ? `bg-linear-to-r ${fromColor} ${viaColor} ${toColor}`
+        : `bg-linear-to-r ${fromColor} ${toColor}`
       : "";
 
   // For icon-only buttons, make them square if width/height not explicitly set
@@ -177,7 +177,7 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
           !useThemeGradient && variantStyles.button,
           variantStyles.textGradient &&
             !useThemeGradient &&
-            `bg-gradient-to-r ${fromColor} ${viaColor || ""} ${toColor} bg-clip-text text-transparent`,
+            `bg-linear-to-r ${fromColor} ${viaColor || ""} ${toColor} bg-clip-text text-transparent`,
           !variantStyles.textGradient && color,
           variant === "outline" && "border-transparent",
           !disabled && "cursor-pointer active:scale-95",

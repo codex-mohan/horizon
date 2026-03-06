@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
+import { Button } from "@horizon/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +8,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
-import { cn } from "@workspace/ui/lib/utils";
+} from "@horizon/ui/components/dropdown-menu";
+import { cn } from "@horizon/ui/lib/utils";
 import { Check, Moon, Palette, Sun } from "lucide-react";
 import { useTheme } from "./theme-provider";
 

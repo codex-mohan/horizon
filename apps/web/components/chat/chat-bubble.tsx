@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@workspace/ui/components/button";
-import { Textarea } from "@workspace/ui/components/textarea";
-import { cn } from "@workspace/ui/lib/utils";
+import { Button } from "@horizon/ui/components/button";
+import { Textarea } from "@horizon/ui/components/textarea";
+import { cn } from "@horizon/ui/lib/utils";
 import { ChevronDown, ChevronUp, Copy, Pencil, User } from "lucide-react";
 import React, { useCallback, useState } from "react";
 import MarkdownView from "@/components/markdown-view";

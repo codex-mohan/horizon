@@ -3,6 +3,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import { agentConfig } from "../../lib/config.js";
 import { createLLM, createRuntimeLLM, type RuntimeModelConfig } from "../../lib/llm.js";
 import type { AgentState } from "../state.js";
+import { SYSTEM_PROMPT } from "../prompt.js";
 import { tools } from "../tools/index.js";
 
 function isMultimodalContent(content: unknown): boolean {
@@ -99,19 +100,10 @@ export async function AgentNode(
     Object.keys(invocationConfig).length > 0 ? invocationConfig : undefined
   );
 
-  let systemPrompt =
-    `${agentConfig.CHARACTER}\n\n` +
-    `Behavior: ${agentConfig.CORE_BEHAVIOR}\n` +
-    `Instructions: ${agentConfig.INSTRUCTIONS}\n` +
-    `Guidelines: ${agentConfig.INTERACTION_GUIDELINES}\n` +
-    `Capabilities: ${agentConfig.KNOWLEDGE_CAPABILITIES}\n` +
-    `Reasoning: ${agentConfig.REASONING_APPROACH}\n` +
-    `Format: ${agentConfig.RESPONSE_FORMAT}\n` +
-    `Standards: ${agentConfig.FORMATTING_STANDARDS}\n` +
-    `Security: ${agentConfig.SECURITY_REQUIREMENTS}`;
+  let systemPrompt = SYSTEM_PROMPT;
 
   if (modelSettings?.systemPrompt) {
-    systemPrompt += `\n\nUser Override/Custom Instructions:\n${modelSettings.systemPrompt}`;
+    systemPrompt += `\n\n<user_instructions>\n${modelSettings.systemPrompt}\n</user_instructions>`;
   }
 
   const memories = state.metadata?.retrieved_memories;
