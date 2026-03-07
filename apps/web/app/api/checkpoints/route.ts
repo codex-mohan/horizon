@@ -166,6 +166,7 @@ function loadCheckpoints(): CheckpointsData {
 
 function saveCheckpoints(data: CheckpointsData): boolean {
   try {
+    console.log("[Checkpoints API] saveCheckpoints invoked with data keys:", Object.keys(data));
     if (!fs.existsSync(LANGGRAPH_CHECKPOINTER)) {
       console.error("[Checkpoints API] Checkpointer file not found:", LANGGRAPH_CHECKPOINTER);
       return false;
@@ -173,8 +174,10 @@ function saveCheckpoints(data: CheckpointsData): boolean {
 
     const content = fs.readFileSync(LANGGRAPH_CHECKPOINTER, "utf-8");
     const existingData: LangGraphCheckpointer = JSON.parse(content);
+    console.log("[Checkpoints API] Loaded existing checkpointer file");
 
     for (const [threadId, checkpoints] of Object.entries(data)) {
+      console.log(`[Checkpoints API] Processing thread ${threadId} with ${checkpoints.length} checkpoints`);
       // Rebuild the thread data to ensure renamed/deleted checkpoints are removed
       existingData.json.storage[threadId] = {};
 
@@ -197,9 +200,12 @@ function saveCheckpoints(data: CheckpointsData): boolean {
 
         existingData.json.storage[threadId][resolvedNs][checkpointId] =
           encodeCheckpointEntry(entry);
+
+        console.log(`[Checkpoints API] Wrote checkpoint ${checkpointId} to namespace "${resolvedNs}"`);
       }
     }
 
+    console.log("[Checkpoints API] About to write to", LANGGRAPH_CHECKPOINTER);
     fs.writeFileSync(LANGGRAPH_CHECKPOINTER, JSON.stringify(existingData, null, 2));
     console.log("[Checkpoints API] Checkpoints saved successfully");
     return true;
@@ -258,6 +264,9 @@ export async function PUT(request: NextRequest) {
     const checkpointId = searchParams.get("checkpointId");
     const body = await request.json();
 
+    console.log(`[Checkpoints API] PUT requested for thread=${threadId}, checkpoint=${checkpointId}`);
+    console.log(`[Checkpoints API] PUT body keys:`, Object.keys(body));
+
     if (!threadId || !checkpointId) {
       return NextResponse.json(
         { error: "threadId and checkpointId are required" },
@@ -300,12 +309,15 @@ export async function PUT(request: NextRequest) {
       [threadId]: checkpoints[threadId],
     };
 
+    console.log(`[Checkpoints API] Calling saveCheckpoints with modified threadData`);
     if (saveCheckpoints(threadOnlyData)) {
+      console.log(`[Checkpoints API] saveCheckpoints succeeded`);
       return NextResponse.json({
         success: true,
         message: "Checkpoint updated successfully",
       });
     } else {
+      console.error(`[Checkpoints API] saveCheckpoints returned false`);
       return NextResponse.json({ error: "Failed to save checkpoints" }, { status: 500 });
     }
   } catch (error) {

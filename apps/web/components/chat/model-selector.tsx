@@ -6,8 +6,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -195,49 +193,46 @@ export const ModelSelector = memo(function ModelSelector({
           Models ({currentProviderInfo.name})
         </DropdownMenuLabel>
 
-        <DropdownMenuRadioGroup
-          onValueChange={(value) => handleModelSelect(value)}
-          value={config.modelName}
-        >
-          <div className="custom-scrollbar max-h-48 overflow-y-auto">
-            {config.provider === "ollama" && isLoadingModels ? (
-              <div className="py-3 text-center text-xs text-muted-foreground">
-                Loading models...
-              </div>
-            ) : availableModels.length === 0 ? (
-              <div className="py-3 text-center text-xs text-muted-foreground">
-                No models installed
-              </div>
-            ) : (
-              availableModels.map((model) => {
-                const hasReasoning = REASONING_MODELS.some((rm) =>
-                  model.toLowerCase().includes(rm.toLowerCase())
-                );
-                return (
-                  <DropdownMenuRadioItem
-                    className="flex items-center gap-2 pr-8"
-                    key={model}
-                    value={model}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="truncate">{getModelDisplayName(model)}</span>
-                      {hasReasoning && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Brain className="size-3 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent className="z-120">Supports reasoning</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </div>
-                  </DropdownMenuRadioItem>
-                );
-              })
-            )}
-          </div>
-        </DropdownMenuRadioGroup>
+        <div className="custom-scrollbar max-h-48 overflow-y-auto px-1">
+          {config.provider === "ollama" && isLoadingModels ? (
+            <div className="py-3 text-center text-xs text-muted-foreground">
+              Loading models...
+            </div>
+          ) : availableModels.length === 0 ? (
+            <div className="py-3 text-center text-xs text-muted-foreground">
+              No models installed
+            </div>
+          ) : (
+            availableModels.map((model) => {
+              const hasReasoning = REASONING_MODELS.some((rm) =>
+                model.toLowerCase().includes(rm.toLowerCase())
+              );
+              const isSelected = config.modelName === model;
+              return (
+                <DropdownMenuItem
+                  className="flex items-center justify-between cursor-pointer"
+                  key={model}
+                  onClick={() => handleModelSelect(model)}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="truncate">{getModelDisplayName(model)}</span>
+                    {hasReasoning && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Brain className="size-3 text-muted-foreground shrink-0" />
+                          </TooltipTrigger>
+                          <TooltipContent className="z-120">Supports reasoning</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                  {isSelected && <span className="text-primary text-xs shrink-0">✓</span>}
+                </DropdownMenuItem>
+              );
+            })
+          )}
+        </div>
 
         <DropdownMenuSeparator />
 
@@ -252,7 +247,6 @@ export const ModelSelector = memo(function ModelSelector({
                 </div>
               </div>
               <Switch
-                className="bg-zinc-600 data-[state=checked]:bg-emerald-500"
                 checked={config.enableReasoning}
                 onCheckedChange={setEnableReasoning}
               />

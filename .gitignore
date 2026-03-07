@@ -59,3 +59,8 @@ docs/REFERENCE_PROJECTS/*
 # Data (anything under the data folder)
 data/*
 !data/README.md
+
+# Test scripts and backups
+test-api.js
+test-api-out.txt
+test-file-backup.txt
