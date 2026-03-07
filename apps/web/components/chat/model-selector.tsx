@@ -81,6 +81,16 @@ export const ModelSelector = memo(function ModelSelector({
   const availableModels =
     config.provider === "ollama" ? ollamaModels : DEFAULT_MODELS[config.provider];
 
+  useEffect(() => {
+    if (
+      (config.provider !== "ollama" || !isLoadingModels) &&
+      availableModels.length > 0 &&
+      !availableModels.includes(config.modelName)
+    ) {
+      setModelName(availableModels[0]);
+    }
+  }, [config.provider, isLoadingModels, availableModels, config.modelName, setModelName]);
+
   const currentProviderInfo = PROVIDER_INFO[config.provider];
   const modelSupportsReasoning = supportsReasoning(config.modelName, config.provider);
 

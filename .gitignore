@@ -55,3 +55,7 @@ config/horizon.json
 # Reference projects (cloned repos for agent context)
 docs/REFERENCE_PROJECTS/*
 !docs/REFERENCE_PROJECTS/README.md
+
+# Data (anything under the data folder)
+data/*
+!data/README.md

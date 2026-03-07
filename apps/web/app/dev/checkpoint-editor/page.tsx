@@ -63,21 +63,16 @@ interface CheckpointEntry {
     channel_values: Record<string, unknown>;
     channel_versions: Record<string, number>;
     versions_seen: Record<string, Record<string, number>>;
-    pending_sends: unknown[];
+    pending_sends?: unknown[];
   };
   metadata: {
     source: string;
     writes: unknown;
     step: number;
     parents: Record<string, unknown>;
+    [key: string]: unknown;
   };
-  parentConfig: {
-    tags: string[];
-    metadata: Record<string, unknown>;
-    recursionLimit: number;
-    configurable: Record<string, unknown>;
-    signal: Record<string, unknown>;
-  };
+  parentCheckpointId: string | null;
 }
 
 interface ThreadData {
@@ -125,7 +120,7 @@ export default function CheckpointEditorPage() {
     }
   }, []);
 
-  const loadThreadData = useCallback(async (threadId: string) => {
+  const loadThreadData = useCallback(async (threadId: string, targetIndex?: number) => {
     setIsLoading(true);
     try {
       const response = await fetch(`/api/checkpoints?threadId=${encodeURIComponent(threadId)}`);
@@ -133,8 +128,9 @@ export default function CheckpointEditorPage() {
       const data = await response.json();
       setThreadData(data);
       if (data.checkpoints.length > 0) {
-        setSelectedCheckpointIndex(0);
-        const content = JSON.stringify(data.checkpoints[0], null, 2);
+        const indexToSelect = targetIndex !== undefined && targetIndex < data.checkpoints.length ? targetIndex : 0;
+        setSelectedCheckpointIndex(indexToSelect);
+        const content = JSON.stringify(data.checkpoints[indexToSelect], null, 2);
         setEditorContent(content);
         setOriginalContent(content);
         setHasChanges(false);
@@ -223,6 +219,7 @@ export default function CheckpointEditorPage() {
           body: JSON.stringify({
             checkpoint: parsedData.checkpoint,
             metadata: parsedData.metadata,
+            parentCheckpointId: parsedData.parentCheckpointId,
           }),
         }
       );
@@ -232,7 +229,7 @@ export default function CheckpointEditorPage() {
       toast.success("Checkpoint saved successfully");
       setOriginalContent(editorContent);
       setHasChanges(false);
-      await loadThreadData(selectedThreadId);
+      await loadThreadData(selectedThreadId, selectedCheckpointIndex);
     } catch (error) {
       console.error("[CheckpointEditor] Error saving checkpoint:", error);
       toast.error("Failed to save checkpoint");
@@ -353,11 +350,10 @@ export default function CheckpointEditorPage() {
               <button
                 key={thread.id}
                 onClick={() => handleThreadSelect(thread.id)}
-                className={`w-full rounded-lg p-3 text-left transition-colors mb-1 ${
-                  selectedThreadId === thread.id
+                className={`w-full rounded-lg p-3 text-left transition-colors mb-1 ${selectedThreadId === thread.id
                     ? "bg-primary/10 border border-primary/20"
                     : "hover:bg-muted border border-transparent"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <Hash className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -489,11 +485,10 @@ export default function CheckpointEditorPage() {
                     <button
                       key={cp.checkpoint.id}
                       onClick={() => handleCheckpointSelect(index)}
-                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
-                        selectedCheckpointIndex === index
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${selectedCheckpointIndex === index
                           ? "bg-primary text-primary-foreground"
                           : "bg-background hover:bg-muted"
-                      }`}
+                        }`}
                     >
                       #{index + 1}
                       <span className="ml-1 opacity-70">({cp.metadata.step})</span>

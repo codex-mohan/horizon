@@ -200,14 +200,16 @@ export function ArtifactViewer() {
       </div>
 
       {/* Content */}
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-auto">
         {activeTab === "preview" && hasPreview ? (
-          <ArtifactIframe
-            className="h-full"
-            content={artifact.content}
-            language={artifact.language}
-            type={artifact.type}
-          />
+          <div className="custom-scrollbar h-full overflow-auto">
+            <ArtifactIframe
+              className="h-full"
+              content={artifact.content}
+              language={artifact.language}
+              type={artifact.type}
+            />
+          </div>
         ) : (
           /* Code view — theme-aware CodeMirror via the shared CodeBlock component */
           <div className="custom-scrollbar h-full overflow-auto">

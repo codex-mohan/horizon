@@ -291,6 +291,7 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
 
     const languageExt = useMemo(() => {
       const ext = getLanguageExtension(langHint || "");
+      console.log(`[CodeBlock] language: "${langHint}", extension:`, ext);
       if (langHint && !ext) {
         console.warn(`Language extension not found for: ${langHint} `);
       }

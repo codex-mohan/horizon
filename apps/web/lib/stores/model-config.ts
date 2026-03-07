@@ -12,6 +12,7 @@ export interface ProviderConfig {
 export interface ModelConfig {
   provider: ModelProvider;
   modelName: string;
+  providerModelMap?: Partial<Record<ModelProvider, string>>;
   temperature: number;
   maxTokens: number;
   enableReasoning: boolean;
@@ -141,6 +142,7 @@ export const useModelConfig = create<ModelConfigState>()(
       config: {
         provider: "nvidia_nim",
         modelName: "z-ai/glm5",
+        providerModelMap: {},
         temperature: 0.7,
         maxTokens: 16384,
         enableReasoning: false,
@@ -157,7 +159,8 @@ export const useModelConfig = create<ModelConfigState>()(
       },
       setProvider: (provider) =>
         set((state) => {
-          const defaultModel = DEFAULT_MODELS[provider][0];
+          const lastModel = state.config.providerModelMap?.[provider];
+          const defaultModel = lastModel || DEFAULT_MODELS[provider][0];
           return {
             config: {
               ...state.config,
@@ -168,7 +171,14 @@ export const useModelConfig = create<ModelConfigState>()(
         }),
       setModelName: (modelName) =>
         set((state) => ({
-          config: { ...state.config, modelName },
+          config: {
+            ...state.config,
+            modelName,
+            providerModelMap: {
+              ...(state.config.providerModelMap || {}),
+              [state.config.provider]: modelName,
+            },
+          },
         })),
       setTemperature: (temperature) =>
         set((state) => ({

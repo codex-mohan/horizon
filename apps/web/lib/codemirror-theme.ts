@@ -1,4 +1,4 @@
-import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { defaultHighlightStyle, HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
@@ -137,5 +137,9 @@ export function createCodeMirrorTheme(isDark: boolean, _isEditable = true): Exte
     { tag: t.punctuation, color: "var(--cm-punctuation)" },
   ]);
 
-  return [editorTheme, syntaxHighlighting(highlightStyle)];
+  return [
+    editorTheme,
+    syntaxHighlighting(highlightStyle),
+    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+  ];
 }
