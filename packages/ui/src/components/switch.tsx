@@ -11,14 +11,14 @@ const Switch = React.forwardRef<
   <SwitchPrimitives.Root
     className={cn(
       // Force explicit dimensions and prevent aspect-ratio interference
-      "peer inline-flex h-6 w-11 min-w-[2.75rem] aspect-auto shrink-0",
+      "peer inline-flex h-6 w-11 min-w-11 aspect-auto shrink-0",
       "cursor-pointer items-center rounded-full border-2 border-transparent",
       "p-0.5", // ← padding gives the thumb room to sit inside the track
       "transition-colors focus-visible:outline-none focus-visible:ring-2",
-      "focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2",
-      "focus-visible:ring-offset-[var(--background)]",
+      "focus-visible:ring-ring focus-visible:ring-offset-2",
+      "focus-visible:ring-offset-background",
       "disabled:cursor-not-allowed disabled:opacity-50",
-      "data-[state=checked]:bg-[var(--primary)] data-[state=unchecked]:bg-[var(--input)]",
+      "data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
       className
     )}
     {...props}
