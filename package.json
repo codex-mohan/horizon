@@ -27,7 +27,7 @@
     "@biomejs/biome": "2.3.13",
     "@horizon/typescript-config": "workspace:*",
     "baseline-browser-mapping": "latest",
-    "turbo": "^2.8.12",
+    "turbo": "^2.8.15",
     "typescript": "5.7.3",
     "ultracite": "7.1.5"
   },
@@ -37,7 +37,12 @@
   "engines": {
     "node": ">=20"
   },
-  "dependencies": {
-    "@lezer/highlight": "^1.2.3"
+  "dependencies": {},
+  "resolutions": {
+    "@lezer/highlight": "^1.2.3",
+    "@codemirror/state": "6.5.4",
+    "@codemirror/view": "6.39.6",
+    "@codemirror/language": "6.12.1",
+    "@lezer/common": "^1.5.1"
   }
 }
