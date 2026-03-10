@@ -1,0 +1,50 @@
+{
+  "name": "@horizon/agent-tools",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./shell": {
+      "import": "./src/shell/index.ts",
+      "types": "./src/shell/index.ts"
+    },
+    "./web": {
+      "import": "./src/web/index.ts",
+      "types": "./src/web/index.ts"
+    },
+    "./artifacts": {
+      "import": "./src/artifacts.ts",
+      "types": "./src/artifacts.ts"
+    }
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target node",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/community": "^0.3.0",
+    "bun-types": "^1.0.0",
+    "cheerio": "^1.0.0",
+    "picocolors": "^1.1.1",
+    "prettier": "^3.4.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@horizon/typescript-config": "workspace:*",
+    "@types/bun": "latest",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

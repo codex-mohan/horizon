@@ -1,13 +1,17 @@
-import { webTools } from "@horizon/agent-web";
-import { ShellExecutor } from "@horizon/shell";
+import {
+  createArtifactTool,
+  getToolRiskLevel,
+  isDangerousTool,
+  presentArtifactTool,
+  ShellExecutor,
+  TOOL_CATEGORIES,
+  webTools,
+} from "@horizon/agent-tools";
 import type { RunnableConfig } from "@langchain/core/runnables";
-import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { getHorizonConfig, resolveWorkspacePath } from "../../lib/config-loader.js";
 import type { ToolApprovalConfig } from "../state.js";
-import { createArtifactTool, presentArtifactTool } from "./artifacts.js";
 
-// Initialize shell executor with workspace from config
 const horizonConfig = getHorizonConfig();
 const workspacePath = resolveWorkspacePath(horizonConfig);
 
@@ -15,65 +19,32 @@ const shellExecutor = new ShellExecutor({
   cwd: workspacePath,
 });
 
-export const TOOL_CATEGORIES = {
-  safe: [
-    "web_search",
-    "fetch_url_content",
-    "duckduckgo_search",
-    "get_weather",
-    "create_artifact",
-    "present_artifact",
-  ],
-  dangerous: ["shell_execute", "file_write", "file_delete"],
-} as const;
+export { TOOL_CATEGORIES };
+export type { ToolRiskLevel } from "@horizon/agent-tools";
+export { getToolRiskLevel, isDangerousTool };
 
-export type ToolRiskLevel = "safe" | "dangerous";
-
-export function getToolRiskLevel(toolName: string): ToolRiskLevel {
-  if (TOOL_CATEGORIES.dangerous.includes(toolName as (typeof TOOL_CATEGORIES.dangerous)[number])) {
-    return "dangerous";
-  }
-  return "safe";
-}
-
-export function isDangerousTool(toolName: string): boolean {
-  return getToolRiskLevel(toolName) === "dangerous";
-}
-
-/**
- * Default tool approval configuration
- */
 export const DEFAULT_TOOL_APPROVAL_CONFIG: ToolApprovalConfig = {
   mode: "dangerous_only",
   auto_approve_tools: [],
   never_approve_tools: [],
 };
 
-/**
- * Extract tool approval configuration from RunnableConfig
- */
 export function getToolApprovalConfig(config: RunnableConfig): ToolApprovalConfig {
   const configurable = config.configurable as Record<string, unknown> | undefined;
   return (configurable?.tool_approval as ToolApprovalConfig) ?? DEFAULT_TOOL_APPROVAL_CONFIG;
 }
 
-/**
- * Check if a tool needs approval based on the approval configuration
- */
 export function needsApproval(toolName: string, approvalConfig: ToolApprovalConfig): boolean {
   const { mode, auto_approve_tools, never_approve_tools } = approvalConfig;
 
-  // Explicitly auto-approved tools never need approval
   if (auto_approve_tools.includes(toolName)) {
     return false;
   }
 
-  // Explicitly never-approve tools always need approval
   if (never_approve_tools.includes(toolName)) {
     return true;
   }
 
-  // Check mode
   switch (mode) {
     case "never_ask":
       return false;
@@ -85,9 +56,6 @@ export function needsApproval(toolName: string, approvalConfig: ToolApprovalConf
   }
 }
 
-/**
- * Check if any tool calls need approval
- */
 export function anyNeedsApproval(
   toolCalls: Array<{ name: string }>,
   approvalConfig: ToolApprovalConfig
@@ -95,9 +63,6 @@ export function anyNeedsApproval(
   return toolCalls.some((tc) => needsApproval(tc.name, approvalConfig));
 }
 
-/**
- * Filter tool calls that need approval
- */
 export function filterToolsNeedingApproval(
   toolCalls: Array<{ name: string; id?: string; args?: Record<string, unknown> }>,
   approvalConfig: ToolApprovalConfig
@@ -105,9 +70,6 @@ export function filterToolsNeedingApproval(
   return toolCalls.filter((tc) => needsApproval(tc.name, approvalConfig));
 }
 
-/**
- * Shell execution result structure for generative UI
- */
 interface ShellResult {
   command: string;
   stdout: string;
@@ -119,12 +81,13 @@ interface ShellResult {
   truncated: boolean;
 }
 
+import { tool } from "@langchain/core/tools";
+
 export const shellTool = tool(
   async ({ command }: { command: string }) => {
     try {
       const result = await shellExecutor.execute(command);
 
-      // Return structured JSON for the frontend to parse
       const shellResult: ShellResult = {
         command: result.command,
         stdout: result.stdout,
@@ -138,7 +101,6 @@ export const shellTool = tool(
 
       return JSON.stringify(shellResult);
     } catch (error) {
-      // Handle execution errors (timeout, permission denied, etc.)
       const errorResult: ShellResult = {
         command: command,
         stdout: "",
@@ -162,6 +124,5 @@ export const shellTool = tool(
   }
 );
 
-// Aggregate all tools
 export const tools = [...webTools, shellTool, createArtifactTool, presentArtifactTool];
 export const toolMap = Object.fromEntries(tools.map((t) => [t.name, t]));

@@ -3,10 +3,6 @@ import path from "node:path";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-/**
- * Artifact storage — simple JSON file for persistence.
- * Each artifact gets a unique ID and is stored with its content.
- */
 const dataDir = path.join(process.cwd(), "data");
 const artifactsDbPath = path.join(dataDir, "artifacts.json");
 
@@ -50,16 +46,8 @@ function saveArtifactsDb(db: ArtifactsDb): void {
   fs.writeFileSync(artifactsDbPath, JSON.stringify(db, null, 2));
 }
 
-/**
- * Format artifact content with Prettier before storing.
- * Falls back to raw content if formatting fails (e.g. LLM produced invalid syntax).
- *
- * Supported: html, react (babel), code (language-specific), markdown
- * Skipped:   mermaid, svg (no stable Prettier parser; content is usually fine as-is)
- */
 async function formatContent(content: string, type: string, language?: string): Promise<string> {
   try {
-    // Dynamic import keeps startup fast — only loaded when an artifact is created
     const prettier = await import("prettier");
 
     let parser: string | null = null;
@@ -75,7 +63,6 @@ async function formatContent(content: string, type: string, language?: string): 
         parser = "markdown";
         break;
       case "code": {
-        // Map the language hint to a Prettier parser
         const lang = (language || "").toLowerCase();
         if (["js", "javascript", "jsx"].includes(lang)) parser = "babel";
         else if (["ts", "typescript"].includes(lang)) parser = "typescript";
@@ -84,10 +71,8 @@ async function formatContent(content: string, type: string, language?: string): 
         else if (["css", "scss", "less"].includes(lang)) parser = "css";
         else if (["html"].includes(lang)) parser = "html";
         else if (["md", "markdown"].includes(lang)) parser = "markdown";
-        // else: leave unsupported languages (Python, Go, Rust, etc.) as-is
         break;
       }
-      // svg and mermaid: skip — Prettier doesn't handle them reliably
       default:
         return content;
     }
@@ -107,7 +92,6 @@ async function formatContent(content: string, type: string, language?: string): 
 
     return formatted;
   } catch (err) {
-    // Log but never fail — raw content is always better than an error
     console.warn(
       `[Artifacts] Prettier formatting failed for type=${type} lang=${language}:`,
       err instanceof Error ? err.message : err
@@ -116,12 +100,6 @@ async function formatContent(content: string, type: string, language?: string): 
   }
 }
 
-/**
- * create_artifact — Called by the agent to generate and store an artifact.
- *
- * The agent provides the full content (HTML, SVG, Mermaid, code, etc.)
- * and the tool stores it, returning metadata for later presentation.
- */
 export const createArtifactTool = tool(
   async (
     {
@@ -142,13 +120,11 @@ export const createArtifactTool = tool(
     const threadId =
       ((config?.configurable as Record<string, unknown>)?.thread_id as string) || "unknown";
 
-    // Format before storing — idempotent, silently falls back to raw on failure
     const formattedContent = await formatContent(content, type, language);
 
     const now = new Date().toISOString();
     const db = loadArtifactsDb();
 
-    // Check if an artifact with the same title+type exists in this thread (version update)
     const existingIndex = db.artifacts.findIndex(
       (a) => a.threadId === threadId && a.title === title && a.type === type
     );
@@ -192,7 +168,6 @@ export const createArtifactTool = tool(
       `[Artifacts] Created artifact: ${artifact.id} (${artifact.title}, ${artifact.type}, v${artifact.version})`
     );
 
-    // Return metadata (NOT the full content — keep tool result small)
     return JSON.stringify({
       id: artifact.id,
       title: artifact.title,
@@ -238,35 +213,24 @@ export const createArtifactTool = tool(
   }
 );
 
-/**
- * present_artifact — Called by the agent to display an artifact to the user.
- *
- * This signals the frontend to show the ArtifactCard in the chat.
- * The agent can create an artifact and present it later, or present
- * previously created artifacts.
- */
 export const presentArtifactTool = tool(
   async ({ artifact_id }: { artifact_id: string }) => {
     const db = loadArtifactsDb();
     const query = artifact_id.trim();
 
-    // Try exact ID match first
     let artifact = db.artifacts.find((a) => a.id === query);
 
-    // Fallback: try matching by fileName (without extension)
     if (!artifact) {
       artifact = db.artifacts.find(
         (a) => a.fileName === query || a.fileName.replace(/\.[^.]+$/, "") === query
       );
     }
 
-    // Fallback: try case-insensitive title match
     if (!artifact) {
       const lowerQuery = query.toLowerCase();
       artifact = db.artifacts.find((a) => a.title.toLowerCase() === lowerQuery);
     }
 
-    // Fallback: try slug-style fuzzy match (LLMs often slugify)
     if (!artifact) {
       const slugify = (s: string) =>
         s
@@ -279,7 +243,6 @@ export const presentArtifactTool = tool(
       );
     }
 
-    // Last resort: most recently created artifact
     if (!artifact && db.artifacts.length > 0) {
       artifact = db.artifacts[db.artifacts.length - 1]!;
       console.log(`[Artifacts] Fuzzy fallback: presenting most recent artifact: ${artifact.id}`);
@@ -293,7 +256,6 @@ export const presentArtifactTool = tool(
 
     console.log(`[Artifacts] Presenting artifact: ${artifact.id} (${artifact.title})`);
 
-    // Return the full artifact data so the frontend can render it
     return JSON.stringify({
       id: artifact.id,
       title: artifact.title,
