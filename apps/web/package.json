@@ -119,9 +119,6 @@
     "@codemirror/state": "6.5.4",
     "@codemirror/view": "6.39.6",
     "@codemirror/language": "6.12.1",
-    "@codemirror/language-data": "6.12.1",
-    "@lezer/common": "1.2.2",
-    "@lezer/highlight": "1.2.1",
-    "@lezer/lr": "1.0.1"
+    "@codemirror/language-data": "6.12.1"
   }
 }
