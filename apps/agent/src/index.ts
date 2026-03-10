@@ -161,6 +161,7 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
       model_config: modelConfigFromBody,
     },
     streamMode,
+    recursionLimit: 150,
   };
 
   try {
@@ -292,6 +293,7 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
       ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
     },
     streamMode: body.stream_mode || ["updates", "messages", "custom"],
+    recursionLimit: 150,
   };
 
   try {
@@ -376,6 +378,7 @@ app.post("/threads/:threadId/runs", async (c) => {
       model_config: config.configurable?.model_config,
       ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
     },
+    recursionLimit: 150,
   };
 
   try {

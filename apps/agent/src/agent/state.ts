@@ -64,9 +64,9 @@ export const AgentStateAnnotation = new StateSchema({
   // Token usage
   token_usage: z
     .object({
-      input: z.number().default(0),
-      output: z.number().default(0),
-      total: z.number().default(0),
+      input: z.number(),
+      output: z.number(),
+      total: z.number(),
     })
     .default(() => ({ input: 0, output: 0, total: 0 })),
 
@@ -74,18 +74,13 @@ export const AgentStateAnnotation = new StateSchema({
   metadata: z.record(z.string(), z.any()).default(() => ({})),
 
   // Tool tracking (for logging/debugging) - use ReducedValue for array accumulation
-  executed_tool_calls: new ReducedValue(
-    z.array(z.any()).default(() => []),
-    {
-      inputSchema: z.any(),
-      reducer: (current, updates) => {
-        const updatesArray = Array.isArray(updates)
-          ? (updates as ToolCall[])
-          : [updates as ToolCall];
-        return [...(current as ToolCall[]), ...updatesArray];
-      },
-    }
-  ),
+  executed_tool_calls: new ReducedValue(z.array(z.any()), {
+    inputSchema: z.any(),
+    reducer: (current, updates) => {
+      const updatesArray = Array.isArray(updates) ? (updates as ToolCall[]) : [updates as ToolCall];
+      return [...(current as ToolCall[]), ...updatesArray];
+    },
+  }),
 
   // Execution metadata
   start_time: z.number().default(0),
@@ -93,29 +88,19 @@ export const AgentStateAnnotation = new StateSchema({
 
   // Middleware metrics
   middleware_metrics: new ReducedValue(
-    z
-      .object({
-        token_usage: z.object({
-          input: z.number(),
-          output: z.number(),
-          total: z.number(),
-        }),
-        rate_limit_hits: z.number(),
-        retries: z.number(),
-        pii_detected: z.boolean(),
-        pii_types: z.array(z.string()),
-        processing_time_ms: z.number(),
-      })
-      .default(() => ({
-        token_usage: { input: 0, output: 0, total: 0 },
-        rate_limit_hits: 0,
-        retries: 0,
-        pii_detected: false,
-        pii_types: [],
-        processing_time_ms: 0,
-      })),
+    z.object({
+      token_usage: z.object({
+        input: z.number(),
+        output: z.number(),
+        total: z.number(),
+      }),
+      rate_limit_hits: z.number(),
+      retries: z.number(),
+      pii_detected: z.boolean(),
+      pii_types: z.array(z.string()),
+      processing_time_ms: z.number(),
+    }) as any,
     {
-      inputSchema: z.any(),
       reducer: (current, updates) => {
         const c = current as MiddlewareMetrics;
         const u = updates as Partial<MiddlewareMetrics>;
@@ -136,43 +121,37 @@ export const AgentStateAnnotation = new StateSchema({
   ),
 
   // Error tracking
-  errors: new ReducedValue(
-    z.array(z.string()).default(() => []),
-    {
-      inputSchema: z.any(),
-      reducer: (current, updates) => {
-        const updatesArray = Array.isArray(updates) ? (updates as string[]) : [updates as string];
-        return [...(current as string[]), ...updatesArray];
-      },
-    }
-  ),
+  errors: new ReducedValue(z.array(z.string()), {
+    inputSchema: z.any(),
+    reducer: (current, updates) => {
+      const updatesArray = Array.isArray(updates) ? (updates as string[]) : [updates as string];
+      return [...(current as string[]), ...updatesArray];
+    },
+  }),
 
   // UI state for generative UI
-  ui: new ReducedValue(
-    z.array(z.any()).default(() => []),
-    {
-      inputSchema: z.any(),
-      reducer: (current, updates) => {
-        const updatesArray = Array.isArray(updates)
-          ? (updates as UIMessage[])
-          : [updates as UIMessage];
-        const existingMap = new Map((current as UIMessage[]).map((msg) => [msg.id, msg]));
-        for (const update of updatesArray) {
-          const existing = existingMap.get(update.id);
-          if (existing) {
-            existingMap.set(update.id, {
-              ...existing,
-              props: { ...existing.props, ...update.props },
-              metadata: { ...existing.metadata, ...update.metadata },
-            });
-          } else {
-            existingMap.set(update.id, update);
-          }
+  ui: new ReducedValue(z.array(z.any()), {
+    inputSchema: z.any(),
+    reducer: (current, updates) => {
+      const updatesArray = Array.isArray(updates)
+        ? (updates as UIMessage[])
+        : [updates as UIMessage];
+      const existingMap = new Map((current as UIMessage[]).map((msg) => [msg.id, msg]));
+      for (const update of updatesArray) {
+        const existing = existingMap.get(update.id);
+        if (existing) {
+          existingMap.set(update.id, {
+            ...existing,
+            props: { ...existing.props, ...update.props },
+            metadata: { ...existing.metadata, ...update.metadata },
+          });
+        } else {
+          existingMap.set(update.id, update);
         }
-        return Array.from(existingMap.values());
-      },
-    }
-  ),
+      }
+      return Array.from(existingMap.values());
+    },
+  }),
 
   // Tool rejection flag for routing decisions
   tools_rejected: z.boolean().default(false),
