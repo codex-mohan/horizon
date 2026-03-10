@@ -529,7 +529,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     throttle: 30,
     hasPendingTasks,
     fetchStateHistory,
-    recursionLimit: 100,
+    recursionLimit: 150,
   } as any);
 
   // The SDK exposes interrupt as a property on stream - use it as a fallback
@@ -572,10 +572,11 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         submitOptions.optimisticValues = options.optimisticValues;
       }
 
-      const config: { configurable: Record<string, unknown> } = {
+      const config: { configurable: Record<string, unknown>, recursion_limit: number } = {
         configurable: {
           ...(options?.configurable || {}),
         },
+        recursion_limit: 150,
       };
 
       if (userId) {
@@ -639,10 +640,10 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
       console.log("[useChat] Sending approve decisions:", decisions);
 
-      // Use the stream's submit method with command
       const streamAny = stream as any;
       streamAny.submit(null, {
         command: { resume: decisions },
+        config: { recursion_limit: 150 },
       });
       setIsResuming(false);
     } else {
@@ -666,10 +667,10 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
       console.log("[useChat] Sending reject decisions:", decisions);
 
-      // Use the stream's submit method with command
       const streamAny = stream as any;
       streamAny.submit(null, {
         command: { resume: decisions },
+        config: { recursion_limit: 150 },
       });
       setIsResuming(false);
     } else {

@@ -60,7 +60,6 @@ const JsonViewer: React.FC<{ data: unknown; maxHeight?: string }> = React.memo(
         <CodeMirror
           basicSetup={{
             foldGutter: true,
-            syntaxHighlighting: false,
             lineNumbers: false,
           }}
           editable={false}

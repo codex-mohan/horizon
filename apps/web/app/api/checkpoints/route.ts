@@ -48,7 +48,7 @@ type LangGraphCheckpointer = {
 
 /**
  * Decodes a checkpoint entry from the LangGraph checkpointer file.
- * 
+ *
  * Each checkpoint in the file is stored as a 3-element array:
  *   [0] = base64-encoded raw checkpoint data (v, id, ts, channel_values, etc.)
  *   [1] = base64-encoded metadata (source, step, writes, parents, plus langgraph config)
@@ -78,9 +78,7 @@ function decodeCheckpointEntry(
       parents: {},
     };
     if (checkpointArray[1]) {
-      metadata = JSON.parse(
-        Buffer.from(checkpointArray[1], "base64").toString("utf-8")
-      );
+      metadata = JSON.parse(Buffer.from(checkpointArray[1], "base64").toString("utf-8"));
     }
 
     // entry[2]: RAW parent checkpoint ID string (plain string, NOT base64)
@@ -105,9 +103,7 @@ function decodeCheckpointEntry(
 function encodeCheckpointEntry(entry: CheckpointEntry): (string | null)[] {
   // entry[0]: base64-encode the checkpoint data
   // LangGraph stores the id both as the object key AND inside the encoded data
-  const encodedCheckpoint = Buffer.from(
-    JSON.stringify(entry.checkpoint)
-  ).toString("base64");
+  const encodedCheckpoint = Buffer.from(JSON.stringify(entry.checkpoint)).toString("base64");
 
   // entry[1]: base64-encode the metadata
   const encodedMetadata = entry.metadata
@@ -177,7 +173,9 @@ function saveCheckpoints(data: CheckpointsData): boolean {
     console.log("[Checkpoints API] Loaded existing checkpointer file");
 
     for (const [threadId, checkpoints] of Object.entries(data)) {
-      console.log(`[Checkpoints API] Processing thread ${threadId} with ${checkpoints.length} checkpoints`);
+      console.log(
+        `[Checkpoints API] Processing thread ${threadId} with ${checkpoints.length} checkpoints`
+      );
       // Rebuild the thread data to ensure renamed/deleted checkpoints are removed
       existingData.json.storage[threadId] = {};
 
@@ -201,7 +199,9 @@ function saveCheckpoints(data: CheckpointsData): boolean {
         existingData.json.storage[threadId][resolvedNs][checkpointId] =
           encodeCheckpointEntry(entry);
 
-        console.log(`[Checkpoints API] Wrote checkpoint ${checkpointId} to namespace "${resolvedNs}"`);
+        console.log(
+          `[Checkpoints API] Wrote checkpoint ${checkpointId} to namespace "${resolvedNs}"`
+        );
       }
     }
 
@@ -264,7 +264,9 @@ export async function PUT(request: NextRequest) {
     const checkpointId = searchParams.get("checkpointId");
     const body = await request.json();
 
-    console.log(`[Checkpoints API] PUT requested for thread=${threadId}, checkpoint=${checkpointId}`);
+    console.log(
+      `[Checkpoints API] PUT requested for thread=${threadId}, checkpoint=${checkpointId}`
+    );
     console.log(`[Checkpoints API] PUT body keys:`, Object.keys(body));
 
     if (!threadId || !checkpointId) {
@@ -299,7 +301,10 @@ export async function PUT(request: NextRequest) {
       ...existing,
       checkpoint: body.checkpoint,
       metadata: body.metadata || existing.metadata,
-      parentCheckpointId: body.parentCheckpointId !== undefined ? body.parentCheckpointId : existing.parentCheckpointId,
+      parentCheckpointId:
+        body.parentCheckpointId !== undefined
+          ? body.parentCheckpointId
+          : existing.parentCheckpointId,
       // Preserve _namespace - this is critical for saving back to the correct location
       _namespace: existing._namespace,
     };

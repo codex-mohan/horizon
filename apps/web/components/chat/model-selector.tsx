@@ -195,9 +195,7 @@ export const ModelSelector = memo(function ModelSelector({
 
         <div className="custom-scrollbar max-h-48 overflow-y-auto px-1">
           {config.provider === "ollama" && isLoadingModels ? (
-            <div className="py-3 text-center text-xs text-muted-foreground">
-              Loading models...
-            </div>
+            <div className="py-3 text-center text-xs text-muted-foreground">Loading models...</div>
           ) : availableModels.length === 0 ? (
             <div className="py-3 text-center text-xs text-muted-foreground">
               No models installed
@@ -246,10 +244,7 @@ export const ModelSelector = memo(function ModelSelector({
                   <span className="text-muted-foreground text-xs">Extended thinking</span>
                 </div>
               </div>
-              <Switch
-                checked={config.enableReasoning}
-                onCheckedChange={setEnableReasoning}
-              />
+              <Switch checked={config.enableReasoning} onCheckedChange={setEnableReasoning} />
             </div>
             {config.enableReasoning && (
               <div className="px-3 pb-3 animate-in fade-in slide-in-from-top-2">

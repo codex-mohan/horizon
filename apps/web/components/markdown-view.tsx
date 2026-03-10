@@ -9,6 +9,7 @@ import { python } from "@codemirror/lang-python";
 import { rust } from "@codemirror/lang-rust";
 import { sql } from "@codemirror/lang-sql";
 import { LanguageDescription } from "@codemirror/language";
+import { languages } from "@codemirror/language-data";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { langs } from "@uiw/codemirror-extensions-langs";
 import { mermaid as mermaidLanguage } from "codemirror-lang-mermaid";
@@ -154,54 +155,7 @@ const getLanguageExtension = (lang: string) => {
       case "md":
         return markdown({
           base: markdownLanguage,
-          codeLanguages: (info) => {
-            switch (info) {
-              case "javascript":
-              case "js":
-                return LanguageDescription.of({
-                  name: "JavaScript",
-                  support: javascript(),
-                });
-              case "python":
-              case "py":
-                return LanguageDescription.of({
-                  name: "Python",
-                  support: python(),
-                });
-              case "cpp":
-                return LanguageDescription.of({
-                  name: "C++",
-                  support: cpp(),
-                });
-              case "html":
-                return LanguageDescription.of({
-                  name: "HTML",
-                  support: html(),
-                });
-              case "css":
-                return LanguageDescription.of({
-                  name: "CSS",
-                  support: javascript(),
-                });
-              case "json":
-                return LanguageDescription.of({
-                  name: "JSON",
-                  support: json(),
-                });
-              case "mermaid":
-                return LanguageDescription.of({
-                  name: "Mermaid",
-                  support: mermaidLanguage(),
-                });
-              case "sql":
-                return LanguageDescription.of({
-                  name: "SQL",
-                  support: sql(),
-                });
-              default:
-                return null;
-            }
-          },
+          codeLanguages: languages,
         });
       case "sql":
         return sql();
@@ -384,7 +338,7 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
             height="auto"
             style={{
               fontFamily:
-                "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace",
+                "'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Courier New', monospace",
             }}
             theme={cmTheme}
             value={code.replace(/\n$/, "")}
