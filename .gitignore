@@ -64,3 +64,10 @@ data/*
 test-api.js
 test-api-out.txt
 test-file-backup.txt
+
+# Bun lock file
+bun.lock
+
+# linter and formatter cache
+.biome
+.ruff_cache
