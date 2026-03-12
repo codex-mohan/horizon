@@ -244,7 +244,11 @@ export const ModelSelector = memo(function ModelSelector({
                   <span className="text-muted-foreground text-xs">Extended thinking</span>
                 </div>
               </div>
-              <Switch checked={config.enableReasoning} onCheckedChange={setEnableReasoning} />
+              <Switch
+                className="shrink-0"
+                checked={config.enableReasoning}
+                onCheckedChange={setEnableReasoning}
+              />
             </div>
             {config.enableReasoning && (
               <div className="px-3 pb-3 animate-in fade-in slide-in-from-top-2">
