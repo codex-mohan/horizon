@@ -55,19 +55,10 @@ const routeAfterApproval = (state: AgentState): "ToolExecution" | "AgentNode" =>
 };
 
 /**
- * Check if we should continue the agent loop after ToolExecution
+ * After ToolExecution, always loop back to AgentNode for another inference cycle.
+ * AgentNode will naturally route to EndMiddleware when there are no more tool calls.
  */
-const shouldContinue = (state: AgentState): "AgentNode" | "EndMiddleware" => {
-  const envLimit = process.env.MAX_MODEL_CALLS ? parseInt(process.env.MAX_MODEL_CALLS, 10) : 50;
-  const metadata = state.metadata as Record<string, unknown> | undefined;
-  const maxCalls = (metadata?.max_model_calls as number) || envLimit;
-  const modelCalls = state.model_calls as number;
-
-  if (modelCalls >= maxCalls) {
-    console.warn(`[Graph] Max model calls (${maxCalls}) reached`);
-    return "EndMiddleware";
-  }
-
+const shouldContinue = (_state: AgentState): "AgentNode" => {
   return "AgentNode";
 };
 
@@ -97,11 +88,10 @@ export const graph = new StateGraph(AgentStateAnnotation)
     AgentNode: "AgentNode",
   })
 
-  // ToolExecution -> AgentNode (continue) or EndMiddleware (max calls)
+  // ToolExecution -> AgentNode (always continue loop)
   // @ts-expect-error Type mismatch with StateGraph 1.x
   .addConditionalEdges("ToolExecution", shouldContinue, {
     AgentNode: "AgentNode",
-    EndMiddleware: "EndMiddleware",
   })
 
   .addEdge("EndMiddleware", END)
