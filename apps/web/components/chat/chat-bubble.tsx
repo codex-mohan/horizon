@@ -165,7 +165,7 @@ export const ChatBubble = React.memo(
               >
                 {/* Reasoning Block (assistant only) */}
                 {message.reasoning && (
-                  <div className="mb-4">
+                  <div className="mb-4 w-full">
                     <ReasoningBlock isStreaming={message.streaming} reasoning={message.reasoning} />
                   </div>
                 )}
