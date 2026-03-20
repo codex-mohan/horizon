@@ -219,7 +219,7 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
         return (
           <motion.div
             animate="center"
-            className="space-y-6"
+            className="space-y-5"
             custom={1}
             exit="exit"
             initial="enter"
@@ -227,15 +227,15 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             variants={slideVariants}
           >
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-base" htmlFor="username">
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-2 text-sm" htmlFor="username">
                 <User className="size-4" />
                 Username
               </Label>
               <div className="relative">
                 <Input
                   autoFocus
-                  className="h-12 pr-10 text-lg"
+                  className="h-11 pr-10 text-sm"
                   id="username"
                   onChange={(e) => setUsername(e.target.value.toLowerCase())}
                   placeholder="Choose a unique username"
@@ -244,13 +244,13 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
                 />
                 <div className="absolute top-1/2 right-3 -translate-y-1/2">
                   {usernameStatus === "checking" && (
-                    <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                    <Loader2 className="size-4 animate-spin text-muted-foreground" />
                   )}
-                  {usernameStatus === "available" && <Check className="size-5 text-emerald-500" />}
-                  {usernameStatus === "taken" && <X className="size-5 text-destructive" />}
+                  {usernameStatus === "available" && <Check className="size-4 text-emerald-500" />}
+                  {usernameStatus === "taken" && <X className="size-4 text-destructive" />}
                 </div>
               </div>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-xs text-muted-foreground sm:text-sm">
                 3-20 characters, letters, numbers, and underscores only
               </p>
             </div>
@@ -261,7 +261,7 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
         return (
           <motion.div
             animate="center"
-            className="space-y-6"
+            className="space-y-5"
             custom={1}
             exit="exit"
             initial="enter"
@@ -269,15 +269,15 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             variants={slideVariants}
           >
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-base" htmlFor="password">
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-2 text-sm" htmlFor="password">
                 <Lock className="size-4" />
                 Password
               </Label>
               <div className="relative">
                 <Input
                   autoFocus
-                  className="h-12 pr-10 text-lg"
+                  className="h-11 pr-10 text-sm"
                   id="password"
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create a strong password"
@@ -289,18 +289,18 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
                   onClick={() => setShowPassword(!showPassword)}
                   type="button"
                 >
-                  {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
 
               {/* Password strength indicator */}
               {password && (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((level) => (
                       <div
                         className={cn(
-                          "h-1.5 flex-1 rounded-full transition-all duration-300",
+                          "h-1 flex-1 rounded-full transition-all duration-300",
                           passwordStrength.strength >= level
                             ? level <= 2
                               ? "bg-red-500"
@@ -315,7 +315,7 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
                   </div>
                   <p
                     className={cn(
-                      "text-sm",
+                      "text-xs",
                       passwordStrength.strength <= 2 && "text-red-500",
                       passwordStrength.strength === 3 && "text-yellow-500",
                       passwordStrength.strength >= 4 && "text-emerald-500"
@@ -327,14 +327,14 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-base" htmlFor="confirmPassword">
+            <div className="space-y-1.5">
+              <Label className="text-sm" htmlFor="confirmPassword">
                 Confirm Password
               </Label>
               <div className="relative">
                 <Input
                   className={cn(
-                    "h-12 pr-10 text-lg",
+                    "h-11 pr-10 text-sm",
                     confirmPassword && password !== confirmPassword && "border-destructive"
                   )}
                   id="confirmPassword"
@@ -348,11 +348,11 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   type="button"
                 >
-                  {showConfirmPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                  {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
               {confirmPassword && password !== confirmPassword && (
-                <p className="text-destructive text-sm">Passwords do not match</p>
+                <p className="text-xs text-destructive">Passwords do not match</p>
               )}
             </div>
           </motion.div>
@@ -362,7 +362,7 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
         return (
           <motion.div
             animate="center"
-            className="space-y-6"
+            className="space-y-5"
             custom={1}
             exit="exit"
             initial="enter"
@@ -370,22 +370,22 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             variants={slideVariants}
           >
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-base" htmlFor="displayName">
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-2 text-sm" htmlFor="displayName">
                 <Sparkles className="size-4" />
                 Display Name
-                <span className="text-muted-foreground text-sm">(optional)</span>
+                <span className="text-muted-foreground text-xs">(optional)</span>
               </Label>
               <Input
                 autoFocus
-                className="h-12 text-lg"
+                className="h-11 text-sm"
                 id="displayName"
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder={username || "How should we call you?"}
                 type="text"
                 value={displayName}
               />
-              <p className="text-muted-foreground text-sm">
+              <p className="text-xs text-muted-foreground sm:text-sm">
                 This is how your name will appear in conversations
               </p>
             </div>
@@ -396,7 +396,7 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
         return (
           <motion.div
             animate="center"
-            className="space-y-6 text-center"
+            className="space-y-5 text-center"
             custom={1}
             exit="exit"
             initial="enter"
@@ -406,7 +406,7 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
           >
             <motion.div
               animate={{ scale: 1 }}
-              className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/30"
+              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/25"
               initial={{ scale: 0 }}
               transition={{
                 type: "spring",
@@ -415,17 +415,19 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
                 delay: 0.2,
               }}
             >
-              <Sparkles className="size-12 text-white" />
+              <Sparkles className="size-9 text-white" />
             </motion.div>
 
             <motion.div
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-2"
+              className="space-y-1.5"
               initial={{ opacity: 0, y: 20 }}
               transition={{ delay: 0.4 }}
             >
-              <h3 className="font-bold font-display text-2xl tracking-tight">Almost There!</h3>
-              <p className="font-body text-muted-foreground">
+              <h3 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
+                Almost There!
+              </h3>
+              <p className="text-sm text-muted-foreground sm:text-base">
                 You're about to join Horizon as{" "}
                 <span className="font-semibold text-foreground">@{username}</span>
               </p>
@@ -433,7 +435,7 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
 
             <motion.div
               animate={{ opacity: 1 }}
-              className="space-y-2 rounded-lg bg-muted/50 p-4 text-left"
+              className="space-y-1.5 rounded-lg bg-muted/50 p-3.5 text-left sm:p-4"
               initial={{ opacity: 0 }}
               transition={{ delay: 0.6 }}
             >
@@ -462,7 +464,7 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
 
   return (
     <div className={cn("mx-auto w-full max-w-4xl", className)}>
-      <div className="grid gap-8 md:grid-cols-[280px_1fr]">
+      <div className="grid gap-6 md:grid-cols-[240px_1fr] lg:gap-8">
         {/* Timeline sidebar */}
         <div className="hidden md:block">
           <div className="sticky top-8">
@@ -475,16 +477,16 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
         </div>
 
         {/* Main content */}
-        <div className="glass-strong space-y-8 rounded-2xl p-8">
+        <div className="glass-strong space-y-6 rounded-xl p-5 sm:p-6 lg:p-8">
           {/* Mobile step indicator */}
           <div className="md:hidden">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">
+              <span className="text-xs text-muted-foreground sm:text-sm">
                 Step {currentStep + 1} of {wizardSteps.length}
               </span>
-              <span className="font-medium text-sm">{wizardSteps[currentStep]?.title}</span>
+              <span className="text-sm font-medium">{wizardSteps[currentStep]?.title}</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
               <motion.div
                 animate={{
                   width: `${((currentStep + 1) / wizardSteps.length) * 100}%`,
@@ -497,17 +499,19 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
           </div>
 
           {/* Step header */}
-          <div className="space-y-2">
-            <h2 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text font-bold font-display text-3xl text-transparent tracking-tight">
+          <div className="space-y-1">
+            <h2 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text font-display text-xl font-bold tracking-tight text-transparent sm:text-2xl lg:text-[1.625rem]">
               {wizardSteps[currentStep]?.title}
             </h2>
             {wizardSteps[currentStep]?.description && (
-              <p className="text-muted-foreground">{wizardSteps[currentStep].description}</p>
+              <p className="text-sm text-muted-foreground">
+                {wizardSteps[currentStep].description}
+              </p>
             )}
           </div>
 
           {/* Step content */}
-          <div className="min-h-[200px]">
+          <div className="min-h-[180px]">
             <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
           </div>
 
@@ -516,16 +520,20 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
             <div>
               {currentStep > 0 ? (
                 <Button
-                  className="gap-2"
+                  className="gap-1.5 text-sm"
                   disabled={isSubmitting}
                   onClick={handleBack}
                   variant="ghost"
                 >
-                  <ArrowLeft className="size-4" />
+                  <ArrowLeft className="size-3.5" />
                   Back
                 </Button>
               ) : (
-                <Button className="text-muted-foreground" onClick={onSwitchToLogin} variant="ghost">
+                <Button
+                  className="text-xs text-muted-foreground sm:text-sm"
+                  onClick={onSwitchToLogin}
+                  variant="ghost"
+                >
                   Already have an account?
                 </Button>
               )}
@@ -534,7 +542,7 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
             <div>
               {currentStep < wizardSteps.length - 1 ? (
                 <GradientButton
-                  className="gap-2"
+                  className="gap-1.5 text-sm"
                   disabled={
                     (currentStep === 0 && (username.length < 3 || usernameStatus === "taken")) ||
                     (currentStep === 1 &&
@@ -545,11 +553,11 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
                   useThemeGradient
                 >
                   Continue
-                  <ArrowRight className="size-4" />
+                  <ArrowRight className="size-3.5" />
                 </GradientButton>
               ) : (
                 <GradientButton
-                  className="gap-2"
+                  className="gap-1.5 text-sm"
                   disabled={isSubmitting}
                   glowIntensity="high"
                   onClick={handleComplete}
@@ -557,12 +565,12 @@ export function SignupWizard({ onSwitchToLogin, className }: SignupWizardProps) 
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="size-4 animate-spin" />
+                      <Loader2 className="size-3.5 animate-spin" />
                       Creating account...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="size-4" />
+                      <Sparkles className="size-3.5" />
                       Create Account
                     </>
                   )}

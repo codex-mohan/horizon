@@ -27,9 +27,9 @@ export function WizardTimeline({
   return (
     <div className={cn("relative", className)}>
       {/* Vertical line */}
-      <div className="absolute top-8 bottom-8 left-6 w-0.5 bg-gradient-to-b from-primary/30 via-primary/20 to-transparent" />
+      <div className="absolute top-6 bottom-6 left-5 w-0.5 bg-gradient-to-b from-primary/30 via-primary/20 to-transparent" />
 
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-7">
         {steps.map((step, index) => {
           const isCompleted = completedSteps.includes(index);
           const isCurrent = currentStep === index;
@@ -38,7 +38,7 @@ export function WizardTimeline({
           return (
             <motion.div
               animate={{ opacity: 1, x: 0 }}
-              className="relative flex items-start gap-4"
+              className="relative flex items-start gap-3.5"
               initial={{ opacity: 0, x: -20 }}
               key={step.id}
               transition={{ delay: index * 0.1, duration: 0.3 }}
@@ -59,11 +59,11 @@ export function WizardTimeline({
                       : {}
                   }
                   className={cn(
-                    "flex size-12 items-center justify-center rounded-full transition-all duration-500",
+                    "flex size-10 items-center justify-center rounded-full transition-all duration-500 sm:size-11",
                     isCompleted &&
                       "bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-emerald-500/30 shadow-lg",
                     isCurrent &&
-                      "bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30 ring-4 ring-primary/20",
+                      "bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25 ring-4 ring-primary/20",
                     isPending && "border-2 border-muted-foreground/30 border-dashed bg-muted/50"
                   )}
                   transition={{
@@ -84,7 +84,7 @@ export function WizardTimeline({
                           damping: 20,
                         }}
                       >
-                        <Check className="size-6 text-white" strokeWidth={3} />
+                        <Check className="size-5 text-white sm:size-5" strokeWidth={3} />
                       </motion.div>
                     ) : isCurrent ? (
                       <motion.div
@@ -93,7 +93,9 @@ export function WizardTimeline({
                         initial={{ scale: 0 }}
                         key="current"
                       >
-                        <span className="font-bold text-lg text-white">{index + 1}</span>
+                        <span className="text-sm font-bold text-white sm:text-base">
+                          {index + 1}
+                        </span>
                       </motion.div>
                     ) : (
                       <motion.div
@@ -102,7 +104,7 @@ export function WizardTimeline({
                         initial={{ scale: 0 }}
                         key="pending"
                       >
-                        <Circle className="size-5 text-muted-foreground/50" />
+                        <Circle className="size-4 text-muted-foreground/50 sm:size-5" />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -110,10 +112,10 @@ export function WizardTimeline({
               </div>
 
               {/* Step content */}
-              <div className="flex-1 pt-2">
+              <div className="flex-1 pt-1.5">
                 <motion.h3
                   className={cn(
-                    "font-semibold text-lg transition-colors duration-300",
+                    "text-sm font-semibold transition-colors duration-300 sm:text-base",
                     isCompleted && "text-emerald-500",
                     isCurrent && "text-foreground",
                     isPending && "text-muted-foreground/50"
@@ -124,7 +126,7 @@ export function WizardTimeline({
                 {step.description && (
                   <motion.p
                     className={cn(
-                      "mt-1 text-sm transition-colors duration-300",
+                      "mt-0.5 text-xs transition-colors duration-300 sm:text-sm",
                       isCompleted && "text-emerald-500/70",
                       isCurrent && "text-muted-foreground",
                       isPending && "text-muted-foreground/40"

@@ -74,12 +74,12 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
       initial={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="glass-strong space-y-8 rounded-2xl p-8">
+      <div className="glass-strong space-y-6 rounded-xl p-6 sm:p-8">
         {/* Header */}
-        <div className="space-y-2 text-center">
+        <div className="space-y-3 text-center">
           <motion.div
             animate={{ scale: 1 }}
-            className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/30"
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/25"
             initial={{ scale: 0 }}
             transition={{
               type: "spring",
@@ -88,12 +88,12 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
               delay: 0.1,
             }}
           >
-            <LogIn className="size-8 text-white" />
+            <LogIn className="size-6 text-white" />
           </motion.div>
 
           <motion.h1
             animate={{ opacity: 1, y: 0 }}
-            className="font-bold font-display text-3xl tracking-tight"
+            className="font-display text-xl font-bold tracking-tight sm:text-2xl"
             initial={{ opacity: 0, y: 10 }}
             transition={{ delay: 0.2 }}
           >
@@ -102,7 +102,7 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
 
           <motion.p
             animate={{ opacity: 1, y: 0 }}
-            className="font-body text-muted-foreground"
+            className="font-body text-sm text-muted-foreground sm:text-base"
             initial={{ opacity: 0, y: 10 }}
             transition={{ delay: 0.3 }}
           >
@@ -113,19 +113,19 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
         {/* Form */}
         <motion.form
           animate={{ opacity: 1 }}
-          className="space-y-6"
+          className="space-y-5"
           initial={{ opacity: 0 }}
           onSubmit={handleSubmit}
           transition={{ delay: 0.4 }}
         >
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2" htmlFor="signin-username">
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-2 text-sm" htmlFor="signin-username">
               <User className="size-4" />
               Username
             </Label>
             <Input
               autoComplete="username"
-              className="h-12 text-base"
+              className="h-11 text-sm"
               disabled={isSubmitting}
               id="signin-username"
               onChange={(e) => setUsername(e.target.value)}
@@ -135,15 +135,15 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2" htmlFor="signin-password">
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-2 text-sm" htmlFor="signin-password">
               <Lock className="size-4" />
               Password
             </Label>
             <div className="relative">
               <Input
                 autoComplete="current-password"
-                className="h-12 pr-10 text-base"
+                className="h-11 pr-10 text-sm"
                 disabled={isSubmitting}
                 id="signin-password"
                 onChange={(e) => setPassword(e.target.value)}
@@ -157,41 +157,43 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
                 tabIndex={-1}
                 type="button"
               >
-                {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <Checkbox
                 checked={rememberMe}
                 disabled={isSubmitting}
                 id="remember-me"
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
               />
-              <Label className="cursor-pointer font-normal text-sm" htmlFor="remember-me">
-                Remember me for 30 days
+              <Label
+                className="cursor-pointer text-sm font-normal leading-tight"
+                htmlFor="remember-me"
+              >
+                Remember me
               </Label>
             </div>
           </div>
 
           <GradientButton
-            className="h-12 text-base"
+            className="h-11 w-full text-sm font-medium"
             disabled={isSubmitting}
             glowIntensity="medium"
             type="submit"
             useThemeGradient
-            width="full"
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 size-5 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
                 Signing in...
               </>
             ) : (
               <>
-                <LogIn className="mr-2 size-5" />
+                <LogIn className="mr-2 size-4" />
                 Sign In
               </>
             )}
@@ -201,7 +203,7 @@ export function SigninForm({ onSwitchToSignup, className }: SigninFormProps) {
         {/* Footer */}
         <motion.div
           animate={{ opacity: 1 }}
-          className="text-center text-muted-foreground text-sm"
+          className="text-center text-sm text-muted-foreground"
           initial={{ opacity: 0 }}
           transition={{ delay: 0.5 }}
         >
