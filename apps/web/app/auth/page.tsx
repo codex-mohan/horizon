@@ -65,13 +65,15 @@ export default function AuthPage() {
       {/* Brand logo */}
       <motion.div
         animate={{ opacity: 1, y: 0 }}
-        className="fixed top-8 left-8"
+        className="fixed top-6 left-6 sm:top-8 sm:left-8"
         initial={{ opacity: 0, y: -20 }}
       >
-        <div className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text font-bold font-display text-2xl text-transparent tracking-tight">
+        <div className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text font-display text-lg font-bold text-transparent tracking-tight sm:text-xl">
           Horizon
         </div>
-        <div className="font-accent text-muted-foreground text-xs italic">by Singularity.ai</div>
+        <div className="font-accent text-muted-foreground text-[10px] italic sm:text-xs">
+          by Singularity.ai
+        </div>
       </motion.div>
 
       {/* Main content */}

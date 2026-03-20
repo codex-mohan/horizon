@@ -46,7 +46,6 @@ const sourceCodePro = Source_Code_Pro({
 export const metadata: Metadata = {
   title: "Horizon - AI Chat Interface",
   description: "Experience the event horizon of AI conversations by Singularity.ai",
-  generator: "v0.app",
   icons: {
     icon: [
       {
