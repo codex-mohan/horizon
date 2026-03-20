@@ -243,11 +243,11 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
 
       <div
         className={cn(
-          "glass-strong relative z-10 flex w-[90vw] max-w-[500px] h-[600px] flex-col overflow-hidden rounded-xl border-border shadow-2xl transition-all duration-300 ease-out max-h-[85vh]",
+          "glass-strong relative z-10 flex h-[85vh] max-h-[600px] w-[90vw] max-w-[500px] flex-col overflow-hidden rounded-xl border-border shadow-2xl transition-all duration-300 ease-out",
           open ? "scale-100 translate-y-0 opacity-100" : "scale-95 -translate-y-8 opacity-0"
         )}
       >
-        <div className="flex items-center justify-between border-border border-b bg-card/50 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-border border-b bg-card/50 px-6 py-4">
           <div className="flex items-center gap-2">
             <Settings2 className="size-5" />
             <h2 className="font-display text-sm font-semibold">Provider Configuration</h2>
@@ -262,11 +262,11 @@ export const ProviderConfigDialog = memo(function ProviderConfigDialog({
           </Button>
         </div>
 
-        <p className="border-border border-b bg-card/30 px-6 py-2 text-muted-foreground text-xs">
+        <p className="shrink-0 border-border border-b bg-card/30 px-6 py-2 text-muted-foreground text-xs">
           Configure your AI model providers and settings. Add API keys to enable providers.
         </p>
 
-        <ScrollArea className="flex-1 overflow-y-auto">
+        <ScrollArea className="min-h-0 flex-1">
           <div className="space-y-3 p-6">
             <p className="text-muted-foreground text-sm">
               Select a provider and expand it to configure API keys and custom settings.
