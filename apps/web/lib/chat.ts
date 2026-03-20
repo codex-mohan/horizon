@@ -572,7 +572,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         submitOptions.optimisticValues = options.optimisticValues;
       }
 
-      const config: { configurable: Record<string, unknown>, recursion_limit: number } = {
+      const config: { configurable: Record<string, unknown>; recursion_limit: number } = {
         configurable: {
           ...(options?.configurable || {}),
         },
