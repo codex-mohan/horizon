@@ -2,11 +2,10 @@
 
 import { cn } from "@horizon/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLink, Globe, Search } from "lucide-react";
+import { AlertCircle, ChevronDown, Clock, ExternalLink, Globe, Search, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
-import { getToolUIConfig } from "@/lib/tool-config";
-import { ModernSpinner, ShimmerText, ToolStatusBadge } from "./loading-effects";
+import { ModernSpinner } from "./loading-effects";
 
 interface SearchResult {
   title: string;
@@ -14,10 +13,25 @@ interface SearchResult {
   snippet: string;
 }
 
+interface SearchSummary {
+  resultIndex: number;
+  url: string;
+  title: string;
+  content: string | null;
+}
+
+interface ParsedSearchResponse {
+  query: string;
+  results: SearchResult[];
+  totalResults: number;
+  error?: string;
+  summaries?: SearchSummary[];
+}
+
 interface WebSearchToolProps {
   toolName: string;
   status: "pending" | "executing" | "completed" | "failed";
-  args: Record<string, any>;
+  args: Record<string, unknown>;
   result?: string;
   startedAt?: number;
   completedAt?: number;
@@ -25,43 +39,199 @@ interface WebSearchToolProps {
   isLoading?: boolean;
 }
 
-/**
- * Parse markdown-formatted search results from the tool
- * Format:
- * ## Search results for 'query'
- *
- * ### 1. [Title](URL)
- * snippet text
- *
- * ### 2. [Title](URL)
- * snippet text
- */
-function parseMarkdownResults(result: string): SearchResult[] {
-  const results: SearchResult[] = [];
+function getFaviconUrl(url: string): string {
+  try {
+    const hostname = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`;
+  } catch {
+    return "";
+  }
+}
 
-  // Match pattern: ### N. [Title](URL)\nsnippet
-  const resultPattern = /###\s*\d+\.\s*\[([^\]]+)\]\(([^)]+)\)\s*\n([^\n#]+)/g;
-  let match;
+function getDomainName(url: string): string {
+  try {
+    const hostname = new URL(url).hostname;
+    return hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
 
-  while ((match = resultPattern.exec(result)) !== null) {
-    const [, title, url, snippet] = match;
-    if (title && url) {
-      results.push({
-        title: title.trim(),
-        url: url.trim(),
-        snippet: snippet?.trim() || "",
-      });
+function parseSearchResponse(result: string): ParsedSearchResponse | null {
+  if (!result) return null;
+  const trimmed = result.trim();
+
+  if (trimmed.startsWith("#") || trimmed.startsWith("Done") || trimmed.startsWith("##")) {
+    const markdownResults: SearchResult[] = [];
+
+    const linkPattern = /#+\s*\d*\.?\s*\[([^\]]+)\]\(([^)]+)\)\s*>?\s*([^\n#-]*)/g;
+    let match: RegExpExecArray | null = linkPattern.exec(trimmed);
+    while (match !== null) {
+      const [, title, url, snippet] = match;
+      if (title && url && !title.includes("Search results")) {
+        markdownResults.push({
+          title: title.trim(),
+          url: url.trim(),
+          snippet: snippet?.trim().replace(/^>\s*/, "").replace(/\*+/g, "") || "",
+        });
+      }
+      match = linkPattern.exec(trimmed);
+    }
+
+    if (markdownResults.length > 0) {
+      const queryMatch = trimmed.match(/Search results? for ['"]([^'"]+)['"]/);
+      return {
+        query: queryMatch ? queryMatch[1] : "",
+        results: markdownResults,
+        totalResults: markdownResults.length,
+      };
+    }
+    return null;
+  }
+
+  const jsonStart = trimmed.indexOf("{");
+  const jsonEnd = trimmed.lastIndexOf("}");
+
+  if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+    const jsonStr = trimmed.slice(jsonStart, jsonEnd + 1);
+    try {
+      const parsed = JSON.parse(jsonStr);
+      if (parsed.results && Array.isArray(parsed.results)) {
+        return parsed;
+      }
+    } catch {
+      // invalid json
     }
   }
 
-  return results;
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed.results && Array.isArray(parsed.results)) {
+      return parsed;
+    }
+  } catch {
+    // not json
+  }
+
+  return null;
 }
 
-/**
- * Web Search Tool Component
- * Compact, ergonomic design with real-time status updates
- * Uses glassmorphic styling from globals.css
- */
+function SearchResultCard({
+  result,
+  index,
+  isLight,
+}: {
+  result: SearchResult;
+  index: number;
+  isLight: boolean;
+}) {
+  const [imageError, setImageError] = useState(false);
+  const [snippetOpen, setSnippetOpen] = useState(false);
+  const domain = getDomainName(result.url);
+  const hasSnippet = Boolean(result.snippet);
+
+  return (
+    <motion.div
+      animate={{ opacity: 1, y: 0 }}
+      className={cn(
+        "rounded-lg border transition-colors duration-200",
+        isLight
+          ? "border-border/40 bg-background/30 hover:bg-background/60"
+          : "border-white/5 bg-white/2 hover:bg-white/5"
+      )}
+      initial={{ opacity: 0, y: 8 }}
+      transition={{ delay: index * 0.04, duration: 0.25 }}
+    >
+      {/* Compact main row */}
+      <div className="flex min-w-0 items-center gap-2 px-3 py-2">
+        {/* Favicon */}
+        <div className="shrink-0">
+          {!imageError ? (
+            <img
+              alt=""
+              className="h-4 w-4 rounded-sm"
+              loading="lazy"
+              src={getFaviconUrl(result.url)}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <Globe className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+
+        {/* Title */}
+        <a
+          className={cn(
+            "min-w-0 flex-1 truncate text-xs font-medium leading-none transition-colors duration-150",
+            "hover:text-violet-400",
+            "text-foreground"
+          )}
+          href={result.url}
+          rel="noopener noreferrer"
+          target="_blank"
+          title={result.title}
+        >
+          {result.title}
+        </a>
+
+        {/* Domain */}
+        <span className="shrink-0 max-w-[120px] truncate text-[10px] text-violet-400/70" title={result.url}>
+          {domain}
+        </span>
+
+        {/* External link icon */}
+        <a
+          className="shrink-0 text-muted-foreground/40 hover:text-violet-400 transition-colors duration-150"
+          href={result.url}
+          rel="noopener noreferrer"
+          target="_blank"
+          aria-label="Open link"
+        >
+          <ExternalLink className="h-3 w-3" />
+        </a>
+
+        {/* Snippet chevron — only if snippet exists */}
+        {hasSnippet && (
+          <button
+            type="button"
+            aria-label="Toggle snippet"
+            className="shrink-0 text-muted-foreground/40 hover:text-violet-400 transition-colors duration-150"
+            onClick={() => setSnippetOpen((v) => !v)}
+          >
+            <motion.div animate={{ rotate: snippetOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+              <ChevronDown className="h-3 w-3" />
+            </motion.div>
+          </button>
+        )}
+      </div>
+
+      {/* Collapsible snippet */}
+      <AnimatePresence initial={false}>
+        {snippetOpen && hasSnippet && (
+          <motion.div
+            animate={{ height: "auto", opacity: 1 }}
+            className="overflow-hidden"
+            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+          >
+            <p
+              className={cn(
+                "border-t px-3 py-2 text-[11px] leading-relaxed",
+                isLight
+                  ? "border-border/30 text-muted-foreground"
+                  : "border-white/5 text-muted-foreground"
+              )}
+            >
+              {result.snippet}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 export function WebSearchTool({
   toolName,
   status,
@@ -71,196 +241,230 @@ export function WebSearchTool({
   isLoading,
 }: WebSearchToolProps) {
   const [expanded, setExpanded] = useState(false);
-  const config = getToolUIConfig(toolName);
   const { themeMode } = useTheme();
   const isLight = themeMode === "light";
 
-  // Get the search query
-  const query = args?.query || args?.q || args?.search || "";
+  const query = String(args?.query || args?.q || args?.search || "");
 
-  // Parse search results from markdown format
-  const searchResults = useMemo(() => {
-    if (!result) return [];
-
-    // Try parsing markdown format first
-    const markdownResults = parseMarkdownResults(result);
-    if (markdownResults.length > 0) {
-      return markdownResults;
-    }
-
-    // Fallback: try JSON parse
-    try {
-      const parsed = JSON.parse(result);
-      if (Array.isArray(parsed)) return parsed;
-      if (parsed.results) return parsed.results;
-    } catch {
-      // Not JSON, return empty - will show raw result
-    }
-
-    return [];
+  const searchData = useMemo((): ParsedSearchResponse | null => {
+    if (!result) return null;
+    return parseSearchResponse(result);
   }, [result]);
 
-  // Determine if we have actual results to show
-  const hasResults = searchResults.length > 0;
+  const hasResults = searchData && searchData.results.length > 0;
   const isSearching = (isLoading || status === "executing") && !result && !error;
 
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
-      className={cn(
-        "overflow-hidden rounded-xl",
-        "glass" // Use glassmorphic class from globals.css
-      )}
+      className={cn("overflow-hidden rounded-2xl", "glass")}
       initial={{ opacity: 0, y: 10 }}
     >
-      {/* Compact Header */}
-      <div
-        className={cn(
-          "flex cursor-pointer items-center justify-between px-3 py-2",
-          "hover:bg-primary/5 transition-colors"
-        )}
+      <button
+        className={cn("group relative w-full overflow-hidden text-left", "cursor-pointer")}
         onClick={() => setExpanded(!expanded)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded(!expanded);
+          }
+        }}
+        type="button"
       >
-        <div className="flex items-center gap-2">
-          <div className={cn("rounded-lg p-1.5", config.icon.bgColor)}>
-            <Search className={cn("h-4 w-4", config.icon.color)} />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">
-              {query ? `"${query.slice(0, 30)}${query.length > 30 ? "..." : ""}"` : "Web Search"}
-            </span>
-            {hasResults && status === "completed" && (
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-xs",
-                  isLight ? "bg-primary/10 text-primary" : "bg-primary/20 text-primary-foreground"
+        <motion.div
+          className={cn(
+            "absolute inset-0 bg-linear-to-r from-violet-500/10 via-purple-500/5 to-transparent",
+            "opacity-0 transition-opacity duration-300",
+            "group-hover:opacity-100"
+          )}
+        />
+
+        <div className="relative z-10 flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ rotate: isSearching ? [0, 15, -15, 0] : 0 }}
+              transition={{
+                rotate: { duration: 0.5, repeat: isSearching ? Number.POSITIVE_INFINITY : 0 },
+              }}
+              className={cn(
+                "relative flex h-10 w-10 items-center justify-center rounded-xl",
+                "bg-linear-to-br from-violet-500/20 to-purple-500/20",
+                "border border-violet-500/20 shadow-lg shadow-violet-500/10"
+              )}
+            >
+              <Search className={cn("h-5 w-5 text-violet-400")} />
+              {isSearching && (
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                  className="absolute inset-0 rounded-xl bg-violet-400/20"
+                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }}
+                />
+              )}
+            </motion.div>
+
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm">
+                  {query
+                    ? `"${query.slice(0, 40)}${query.length > 40 ? "..." : ""}"`
+                    : "Web Search"}
+                </span>
+                {hasResults && status === "completed" && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={cn(
+                      "flex items-center gap-1 rounded-full px-2.5 py-0.5",
+                      "bg-linear-to-r from-violet-500/20 to-purple-500/20",
+                      "border border-violet-500/30"
+                    )}
+                  >
+                    <Sparkles className="h-3 w-3 text-violet-400" />
+                    <span className="text-xs font-semibold text-violet-400">
+                      {searchData.totalResults || searchData.results.length} results
+                    </span>
+                  </motion.div>
                 )}
-              >
-                {searchResults.length} results
-              </span>
-            )}
+              </div>
+              {query && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Globe className="h-3 w-3" />
+                  <span>via DuckDuckGo</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.3 }}>
+              <ChevronDown
+                className={cn(
+                  "h-5 w-5 transition-colors duration-200",
+                  isLight ? "text-muted-foreground" : "text-primary-foreground/60",
+                  "group-hover:text-violet-400"
+                )}
+              />
+            </motion.div>
           </div>
         </div>
-        <ToolStatusBadge status={status} />
-      </div>
+      </button>
 
-      {/* Expandable Content */}
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
             animate={{ height: "auto", opacity: 1 }}
             className="overflow-hidden"
             exit={{ height: 0, opacity: 0 }}
             initial={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             <div
-              className={cn(
-                "border-t px-3 py-2",
-                isLight ? "border-border/50" : "border-primary/10"
-              )}
+              className={cn("border-t px-4 py-4", isLight ? "border-border/50" : "border-white/5")}
             >
-              {/* Loading State */}
               {isSearching && (
-                <div className="flex items-center justify-center gap-3 py-4">
-                  <ModernSpinner size="sm" />
-                  <ShimmerText
-                    className={cn("text-sm", isLight ? "text-foreground" : "")}
-                    text="Searching..."
-                  />
-                </div>
-              )}
-
-              {/* Error State */}
-              {error && (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-2">
-                  <p className="text-destructive text-xs">{error}</p>
-                </div>
-              )}
-
-              {/* Results Grid - Compact */}
-              {hasResults && (
-                <div className="space-y-1.5">
-                  {searchResults.map((item: SearchResult, index: number) => (
-                    <motion.a
-                      animate={{ opacity: 1, x: 0 }}
+                <div className="flex flex-col items-center justify-center gap-4 py-8">
+                  <div className="relative">
+                    <ModernSpinner size="lg" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Search className="h-4 w-4 text-violet-400" />
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p
                       className={cn(
-                        "group flex items-start gap-2 rounded-lg p-2 transition-all",
-                        isLight
-                          ? "bg-muted/30 hover:bg-muted/50"
-                          : "bg-background/30 hover:bg-background/50"
+                        "text-sm font-medium",
+                        isLight ? "text-foreground" : "text-primary-foreground"
                       )}
-                      href={item.url}
-                      initial={{ opacity: 0, x: -10 }}
-                      key={`${item.url}-${index}`}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                      transition={{ delay: index * 0.05 }}
                     >
-                      <Globe
-                        className={cn(
-                          "mt-0.5 h-4 w-4 flex-shrink-0",
-                          isLight ? "text-primary" : "text-primary-foreground"
-                        )}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <h4
-                          className={cn(
-                            "line-clamp-1 font-medium text-sm",
-                            isLight
-                              ? "text-foreground group-hover:text-primary"
-                              : "text-foreground group-hover:text-primary-foreground"
-                          )}
-                        >
-                          {item.title}
-                        </h4>
-                        <p
-                          className={cn(
-                            "line-clamp-2 text-xs",
-                            isLight ? "text-muted-foreground" : "text-muted-foreground"
-                          )}
-                        >
-                          {item.snippet}
-                        </p>
-                        <span
-                          className={cn(
-                            "mt-0.5 flex items-center gap-1 text-xs",
-                            isLight
-                              ? "text-primary/60 group-hover:text-primary"
-                              : "text-primary-foreground/60 group-hover:text-primary-foreground"
-                          )}
-                        >
-                          {(() => {
-                            try {
-                              return new URL(item.url).hostname;
-                            } catch {
-                              return item.url.replace(/^https?:\/\//, "").split("/")[0];
-                            }
-                          })()}
-                          <ExternalLink className="h-2.5 w-2.5" />
-                        </span>
-                      </div>
-                    </motion.a>
+                      Searching the web...
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Looking for the best results
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {error && (
+                <motion.div
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border border-red-500/20",
+                    "bg-red-500/10 p-4"
+                  )}
+                  initial={{ opacity: 0, y: -10 }}
+                >
+                  <AlertCircle className="h-5 w-5 shrink-0 text-red-400" />
+                  <div>
+                    <p className="text-sm font-medium text-red-400">Search failed</p>
+                    <p className="text-xs text-red-400/70">{error}</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {hasResults && (
+                <div className="space-y-3">
+                  <div className="mb-4 flex items-center gap-2">
+                    <div className="h-px flex-1 bg-linear-to-r from-transparent via-violet-500/20 to-transparent" />
+                    <span className="text-xs text-muted-foreground">
+                      {searchData.results.length} results found
+                    </span>
+                    <div className="h-px flex-1 bg-linear-to-r from-transparent via-violet-500/20 to-transparent" />
+                  </div>
+
+                  {searchData.results.map((item: SearchResult, index: number) => (
+                    <SearchResultCard
+                      key={`${item.url}-${index}`}
+                      index={index}
+                      isLight={isLight}
+                      result={item}
+                    />
                   ))}
                 </div>
               )}
 
-              {/* Fallback: Raw result text (when no parsed results) */}
-              {!isSearching && !error && !hasResults && result && (
-                <div className={cn("rounded-lg p-2", isLight ? "bg-muted/30" : "bg-background/30")}>
-                  <pre className="whitespace-pre-wrap font-mono text-xs">{result}</pre>
+              {!isSearching && !error && !hasResults && searchData?.error && (
+                <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+                  <AlertCircle className="h-5 w-5 shrink-0 text-amber-400" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-400">No results found</p>
+                    <p className="text-xs text-amber-400/70">{searchData.error}</p>
+                  </div>
                 </div>
               )}
 
-              {/* No results message */}
-              {!isSearching && !error && !hasResults && !result && status === "completed" && (
-                <p
-                  className={cn(
-                    "py-2 text-center text-sm",
-                    isLight ? "text-muted-foreground" : "text-muted-foreground"
-                  )}
+              {!isSearching && !error && !hasResults && !searchData && result && (
+                <div
+                  className="rounded-xl border p-4"
+                  style={
+                    isLight
+                      ? { borderColor: "var(--border)", backgroundColor: "var(--muted)" }
+                      : {
+                          borderColor: "rgba(255,255,255,0.05)",
+                          backgroundColor: "rgba(255,255,255,0.02)",
+                        }
+                  }
                 >
-                  No results found
-                </p>
+                  <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    <span>Raw response</span>
+                  </div>
+                  <pre
+                    className={cn(
+                      "whitespace-pre-wrap text-xs leading-relaxed",
+                      isLight ? "text-foreground" : "text-primary-foreground/80"
+                    )}
+                  >
+                    {result}
+                  </pre>
+                </div>
+              )}
+
+              {!isSearching && !error && !hasResults && !result && status === "completed" && (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Search className="h-8 w-8 text-muted-foreground/50" />
+                  <p className="mt-2 text-sm text-muted-foreground">No results found</p>
+                </div>
               )}
             </div>
           </motion.div>
