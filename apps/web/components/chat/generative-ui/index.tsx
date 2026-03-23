@@ -6,3 +6,4 @@ export { ModernSpinner, ShimmerText, ToolStatusBadge } from "./loading-effects";
 export { ShellTool } from "./shell-tool";
 export { WeatherTool } from "./weather-tool";
 export { WebSearchTool } from "./web-search-tool";
+export { WorkerTool } from "./worker-tool";

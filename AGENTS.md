@@ -1,6 +1,6 @@
 # Horizon — Agent Coding Guidelines
 
-> **Last Updated:** 2026-03-06
+> **Last Updated:** 2026-03-21
 > **Maintained by:** AI coding agents working on Horizon
 
 **This document is the single source of truth for AI coding agents working on this codebase. It must be updated whenever the project structure, architecture, configuration, or workflows change. If you make changes that affect how agents should work on this project, update this document immediately.**
@@ -119,8 +119,7 @@ Horizon/
 │       │   │   │   ├── tool-execution.ts       # Execute approved tools
 │       │   │   │   └── end-middleware.ts        # Finalize, metrics
 │       │   │   ├── tools/
-│       │   │   │   ├── index.ts      # Tool registry & approval logic
-│       │   │   │   └── artifacts.ts  # create_artifact & present_artifact tools
+│       │   │   │   └── index.ts      # Tool registry, LangChain bindings, approval logic
 │       │   │   └── middleware/
 │       │   │       └── pii.ts        # PII detection patterns
 │       │   ├── assistants/           # Assistant CRUD system
@@ -141,8 +140,8 @@ Horizon/
 ├── packages/
 │   ├── ui/                           # Shared shadcn/ui component library
 │   ├── agent-memory/                 # Qdrant vector memory system
-│   ├── agent-web/                    # Web search & content extraction
-│   ├── shell/                        # Cross-platform shell execution
+│   ├── agent-tools/                  # Consolidated agent tools (shell, web, artifacts)
+│   ├── shared-utils/                 # Shared utilities including structured logger
 │   └── typescript-config/            # Shared TypeScript configs
 │
 ├── config/
@@ -303,8 +302,8 @@ This means:
 |---|---|
 | `@horizon/ui` | shadcn/ui component library with glassmorphic design tokens |
 | `@horizon/agent-memory` | Qdrant vector DB client, memory types, semantic retrieval |
-| `@horizon/agent-web` | DuckDuckGo search, URL content extraction (Cheerio) |
-| `@horizon/shell` | Cross-platform shell execution with danger detection |
+| `@horizon/agent-tools` | Consolidated tools — shell execution, web search, artifacts |
+| `@horizon/shared-utils` | Shared utilities including structured logger |
 | `@horizon/typescript-config` | Shared `tsconfig.json` presets |
 
 ### Infrastructure
@@ -425,7 +424,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 // 3. Workspace packages (@horizon/*)
-import { ShellExecutor } from "@horizon/shell";
+import { ShellExecutor } from "@horizon/agent-tools";
 import { Button } from "@horizon/ui/components/ui/button";
 
 // 4. App-level imports (@/*)
@@ -450,18 +449,89 @@ import type { AgentState } from "../state.js";
 - Use App Router metadata API for SEO (not `next/head`).
 - React 19: Use `ref` as a prop directly — no `React.forwardRef`.
 
+### Logger (`@horizon/shared-utils`)
+
+**All logging across the app must go through `@horizon/shared-utils`** — never use `console.log` or `console.error` directly.
+
+**Import:**
+```typescript
+import { createLogger, LogLevel } from "@horizon/shared-utils";
+```
+
+**Core API:**
+```typescript
+const logger = createLogger("Agent");         // Context label
+logger.trace("Detailed trace info");
+logger.debug("Debug info", { key: "value" });
+logger.info("Info message");
+logger.success("Operation succeeded");
+logger.warn("Warning message");
+logger.error("Something went wrong", new Error("boom"));
+logger.fatal("Fatal crash", error);
+```
+
+**Scoped sub-loggers:**
+```typescript
+const apiLogger = logger.withPrefix("API");
+apiLogger.info("GET /users");        // logs with [API] prefix
+
+const child = logger.withTag("Memory");
+child.info("Retrieving memories");    // logs with [Memory] tag
+```
+
+**Utilities:**
+```typescript
+logger.box("Deployment complete", "Summary");  // Unicode box output
+
+const spin = logger.spinner("Loading...");
+spin.success("Done!");
+spin.fail("Failed!");
+spin.warn("Warning!");
+
+logger.table([{ name: "Alice", age: 30 }]);     // Pretty ASCII table
+```
+
+**Configuration options:**
+```typescript
+const logger = createLogger("Agent", {
+  minLevel: LogLevel.DEBUG,        // Show debug logs
+  timestamps: true,                // HH:MM:SS.mmm timestamps
+  colors: true,                     // Auto-false in CI environments
+  format: "fancy",                 // "fancy" | "simple" | "quiet"
+  showCaller: false,                // Show file:line attribution
+  trailingNewline: true,
+});
+```
+
+**Log levels (lowest → highest severity):** `TRACE` (-1) → `DEBUG` (0) → `INFO` (1) → `SUCCESS` (2) → `WARN` (3) → `ERROR` (4) → `FATAL` (5). Default minimum is `INFO`.
+
+**CI auto-detection:** Colors and fancy format are automatically disabled when `CI=true`, `TERM_PROGRAM=vscode`, or `NODE_ENV=test`.
+
+**Exports:**
+```typescript
+// All from "@horizon/shared-utils"
+createLogger, childLogger, createFileLogger,
+LogLevel, Level (alias),
+Logger, LoggerOptions, SpinnerInstance,
+DataArg, ErrorArg, FormatMode
+```
+
 ### Error Handling
 
 - Always wrap async operations in `try/catch` with **context-prefixed logging**:
 
   ```typescript
-  console.error("[Chat] Failed to send message:", error);
+  const logger = createLogger("Agent");
+  try {
+    await someOperation();
+  } catch (error) {
+    logger.error("Failed to send message", error instanceof Error ? error : { cause: error });
+  }
   ```
 
 - Throw `Error` objects with descriptive messages, not strings.
 - Use early returns to reduce nesting.
 - Don't catch errors just to rethrow them without adding context.
-- In production, remove `console.log` and `debugger` statements — use structured logging.
 
 ### Security
 
@@ -594,16 +664,17 @@ Each node is a pure function `(state: AgentState) => Partial<AgentState>` in `sr
 
 ### Tool System
 
-Tools are defined in `src/agent/tools/index.ts` and `src/agent/tools/artifacts.ts`:
+Tools are defined in `src/agent/tools/index.ts` (LangChain bindings) and sourced from `@horizon/agent-tools`:
 
 | Tool | Source | Description |
 |---|---|---|
-| `web_search` | `@horizon/agent-web` | DuckDuckGo web search |
-| `fetch_url_content` | `@horizon/agent-web` | Extract page content via Cheerio |
-| `duckduckgo_search` | `@horizon/agent-web` | Alternative search tool |
-| `shell_execute` | Local (wraps `@horizon/shell`) | Execute shell commands with structured JSON output |
-| `create_artifact` | `tools/artifacts.ts` | Store HTML/SVG/Mermaid/React/code artifact, format with Prettier, return ID |
-| `present_artifact` | `tools/artifacts.ts` | Fetch artifact by ID and signal frontend to render ArtifactCard |
+| `web_search` | `@horizon/agent-tools` | DuckDuckGo web search |
+| `fetch_url_content` | `@horizon/agent-tools` | Extract page content via Cheerio |
+| `duckduckgo_search` | `@horizon/agent-tools` | Alternative search tool |
+| `shell_execute` | `@horizon/agent-tools` | Execute shell commands with structured JSON output |
+| `create_artifact` | `@horizon/agent-tools` | Store HTML/SVG/Mermaid/React/code artifact, format with Prettier, return ID |
+| `present_artifact` | `@horizon/agent-tools` | Fetch artifact by ID and signal frontend to render ArtifactCard |
+| `spawn_subagents` | `agent/tools/subagent.ts` | Spawn multiple parallel workers for complex multi-part tasks |
 
 **Tool Approval Modes:**
 
@@ -618,14 +689,59 @@ Tools are defined in `src/agent/tools/index.ts` and `src/agent/tools/artifacts.t
 - **Safe**: `web_search`, `fetch_url_content`, `duckduckgo_search`, `get_weather`, `create_artifact`, `present_artifact`
 - **Dangerous**: `shell_execute`, `file_write`, `file_delete`
 
-### Shell Execution Safety (`@horizon/shell`)
+### Shell Execution Safety (`@horizon/agent-tools`)
 
-The shell package has multiple safety layers:
+The shell module in `@horizon/agent-tools` has multiple safety layers:
 
 - **Dangerous pattern detection**: `rm -rf`, `sudo`, `chmod`, `mkfs`, `dd`, `npm install -g`, `git push --force`, `DROP TABLE`, etc.
 - **Configurable timeouts**: Default 30 seconds.
 - **Output limits**: 1MB max output, truncated with a flag.
 - **Working directory**: Restricted to the configured workspace path from `config/horizon.json`.
+
+### Parallel Workers (`spawn_subagents`)
+
+The main agent can spawn multiple parallel workers to handle complex multi-part tasks. This is an **implicit decision** - the LLM decides when to use this based on task complexity.
+
+**Architecture:**
+
+```
+Main Agent → spawn_subagents tool → Workers (parallel) → Results → Continue
+```
+
+**Key Files:**
+- `apps/agent/src/agent/tools/subagent.ts` - The spawn_subagents tool
+- `apps/agent/src/agent/workers/` - Worker execution module
+- `apps/web/components/chat/generative-ui/worker-tool.tsx` - Worker visualization
+
+**How It Works:**
+1. Main agent decides a task is complex enough to parallelize
+2. Calls `spawn_subagents` with array of worker configs
+3. Each worker runs independently with its own system prompt, tools, and context
+4. Workers execute in parallel (default) or sequentially
+5. Results are aggregated and returned to main agent
+6. Main agent continues with the aggregated results
+
+**Worker Configuration:**
+```typescript
+{
+  name: "Worker Name",           // Descriptive name
+  task: "The specific task",     // What this worker should do
+  systemPrompt: "Custom prompt", // Worker-specific instructions
+  tools: ["shell_execute"],      // Tools to give this worker
+  modelConfig: {...},           // Optional model override
+  timeout: 300000               // Timeout in ms
+}
+```
+
+**When to Use:**
+- Complex projects with independent components (frontend + backend + tests)
+- Multiple research topics to explore in parallel
+- Tasks that benefit from parallel execution speed
+
+**Future Enhancements:**
+- Real-time worker progress streaming (nested tool calls visible)
+- Worker-to-worker handoffs
+- Async mode (main agent continues while workers run)
 
 ### Configuration System
 
@@ -918,7 +1034,7 @@ Update this file whenever you:
 
 ### Shell Execution
 
-- Dangerous pattern detection in `@horizon/shell`.
+- Dangerous pattern detection in `@horizon/agent-tools`.
 - Approval workflow prevents accidental destructive commands.
 - Configurable timeouts and output limits.
 - Workspace path restriction via `config/horizon.json`.

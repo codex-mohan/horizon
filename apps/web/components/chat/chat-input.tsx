@@ -95,9 +95,8 @@ function getToolDisplayName(toolName: string): string {
     shell_execute: "Shell Execute",
     file_write: "File Write",
     file_delete: "File Delete",
-    web_search: "Web Search",
+    search_web: "Web Search",
     fetch_url_content: "Fetch URL",
-    duckduckgo_search: "DuckDuckGo Search",
   };
   return names[toolName] || toolName;
 }

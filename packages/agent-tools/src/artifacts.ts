@@ -2,9 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import { getGlobalDataDir } from "@horizon/shared-utils";
 
-const dataDir = path.join(process.cwd(), "data");
-const artifactsDbPath = path.join(dataDir, "artifacts.json");
+function getArtifactsDbPath(): string {
+  return path.join(getGlobalDataDir(), "artifacts.json");
+}
 
 interface StoredArtifact {
   id: string;
@@ -24,14 +26,13 @@ interface ArtifactsDb {
 }
 
 function ensureDataDir() {
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
+  getGlobalDataDir(); // This creates the directory if it doesn't exist
 }
 
 function loadArtifactsDb(): ArtifactsDb {
   try {
     ensureDataDir();
+    const artifactsDbPath = getArtifactsDbPath();
     if (fs.existsSync(artifactsDbPath)) {
       return JSON.parse(fs.readFileSync(artifactsDbPath, "utf-8"));
     }
@@ -43,6 +44,7 @@ function loadArtifactsDb(): ArtifactsDb {
 
 function saveArtifactsDb(db: ArtifactsDb): void {
   ensureDataDir();
+  const artifactsDbPath = getArtifactsDbPath();
   fs.writeFileSync(artifactsDbPath, JSON.stringify(db, null, 2));
 }
 

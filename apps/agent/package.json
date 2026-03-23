@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bunx @langchain/langgraph-cli dev",
-    "start": "bun run src/index.ts",
+    "start": "bun --bun run src/index.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
@@ -32,7 +32,6 @@
   "devDependencies": {
     "@horizon/typescript-config": "workspace:*",
     "@types/node": "^22.19.13",
-    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }

@@ -15,6 +15,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, parse, resolve } from "node:path";
+import { getGlobalDataDir } from "@horizon/shared-utils";
 import { z } from "zod";
 
 /**
@@ -64,16 +65,6 @@ export const DEFAULT_CONFIG: HorizonConfig = {
 };
 
 /**
- * Configuration file names to look for
- */
-const CONFIG_FILENAMES = ["horizon.json", ".horizon.json"];
-
-/**
- * Configuration directory names to look for
- */
-const CONFIG_DIRNAMES = [".horizon", ".config/horizon"];
-
-/**
  * Monorepo root markers
  */
 const MONOREPO_MARKERS = ["pnpm-workspace.yaml", "turbo.json", "lerna.json"];
@@ -103,22 +94,7 @@ function findMonorepoRoot(startDir: string): string | null {
   return null;
 }
 
-/**
- * Get monorepo config path (config/horizon.json)
- */
-function getMonorepoConfigPath(): string | null {
-  const cwd = process.cwd();
-  const monorepoRoot = findMonorepoRoot(cwd);
-
-  if (monorepoRoot) {
-    const configPath = join(monorepoRoot, "config", "horizon.json");
-    if (existsSync(configPath)) {
-      return configPath;
-    }
-  }
-
-  return null;
-}
+// getMonorepoConfigPath removed as it is no longer used
 
 /**
  * Get example config path in monorepo
@@ -138,39 +114,71 @@ function getMonorepoExampleConfigPath(): string | null {
 }
 
 /**
- * Find configuration file by walking up directories
+ * Get monorepo config path (config/horizon.json)
  */
-function findConfigInParentDirs(startDir: string): string | null {
-  let currentDir = startDir;
-  const root = parse(currentDir).root;
+function getMonorepoConfigPath(): string | null {
+  const cwd = process.cwd();
+  const monorepoRoot = findMonorepoRoot(cwd);
 
-  while (currentDir !== root) {
-    // Check for config files in current directory
-    for (const filename of CONFIG_FILENAMES) {
-      const configPath = join(currentDir, filename);
-      if (existsSync(configPath)) {
-        return configPath;
-      }
+  if (monorepoRoot) {
+    const configPath = join(monorepoRoot, "config", "horizon.json");
+    if (existsSync(configPath)) {
+      return configPath;
     }
-
-    // Check for config in config directories
-    for (const dirname of CONFIG_DIRNAMES) {
-      const configPath = join(currentDir, dirname, "config.json");
-      if (existsSync(configPath)) {
-        return configPath;
-      }
-    }
-
-    // Move to parent directory
-    const parentDir = dirname(currentDir);
-    if (parentDir === currentDir) {
-      break;
-    }
-    currentDir = parentDir;
   }
 
   return null;
 }
+
+/**
+ * Expand tilde (~) to user's home directory
+ */
+function expandTilde(filepath: string): string {
+  if (filepath === "~") {
+    return homedir();
+  }
+  if (filepath.startsWith("~/") || filepath.startsWith("~\\")) {
+    return join(homedir(), filepath.slice(2));
+  }
+  return filepath;
+}
+
+/**
+ * Resolve workspace path with fallback chain
+ */
+export function resolveWorkspacePath(config: HorizonConfig): string {
+  let workspacePath: string;
+
+  // 1. Check WORKSPACE_PATH environment variable
+  if (process.env.WORKSPACE_PATH) {
+    workspacePath = resolve(expandTilde(process.env.WORKSPACE_PATH));
+    console.log(`[Config] Using WORKSPACE_PATH: ${workspacePath}`);
+  }
+  // 2. Check config file defaultPath
+  else if (config.workspace.defaultPath) {
+    workspacePath = resolve(expandTilde(config.workspace.defaultPath));
+    console.log(`[Config] Using configured workspace: ${workspacePath}`);
+  }
+  // 3. Fallback to current working directory
+  else {
+    workspacePath = process.cwd();
+    console.log(`[Config] Using current directory as workspace: ${workspacePath}`);
+  }
+
+  // Ensure workspace directory exists
+  if (!existsSync(workspacePath)) {
+    try {
+      mkdirSync(workspacePath, { recursive: true });
+      console.log(`[Config] Created workspace directory: ${workspacePath}`);
+    } catch (error) {
+      console.error(`[Config] Failed to create workspace directory ${workspacePath}:`, error);
+    }
+  }
+
+  return workspacePath;
+}
+
+// findConfigInParentDirs removed as it is no longer used
 
 /**
  * Get user-level config path
@@ -193,28 +201,7 @@ function getUserConfigPath(): string | null {
   return null;
 }
 
-/**
- * Get system-wide config path
- */
-function getSystemConfigPath(): string | null {
-  // Unix: /etc/horizon/config.json
-  if (process.platform !== "win32") {
-    const etcConfig = "/etc/horizon/config.json";
-    if (existsSync(etcConfig)) {
-      return etcConfig;
-    }
-  }
-
-  // Windows: %APPDATA%/horizon/config.json
-  if (process.platform === "win32" && process.env.APPDATA) {
-    const appDataConfig = join(process.env.APPDATA, "horizon", "config.json");
-    if (existsSync(appDataConfig)) {
-      return appDataConfig;
-    }
-  }
-
-  return null;
-}
+// getSystemConfigPath removed as it is no longer used
 
 /**
  * Load and parse configuration file
@@ -239,70 +226,14 @@ function loadConfigFile(configPath: string): HorizonConfig | null {
 }
 
 /**
- * Create config file from example
- */
-function createConfigFromExample(targetPath: string): HorizonConfig | null {
-  const examplePath = getMonorepoExampleConfigPath();
-
-  if (!examplePath) {
-    return null;
-  }
-
-  try {
-    // Ensure target directory exists
-    const targetDir = dirname(targetPath);
-    if (!existsSync(targetDir)) {
-      mkdirSync(targetDir, { recursive: true });
-    }
-
-    // Copy example to target
-    copyFileSync(examplePath, targetPath);
-    console.log(`[Config] Created configuration from example: ${targetPath}`);
-
-    // Load and return the newly created config
-    return loadConfigFile(targetPath);
-  } catch (error) {
-    console.error(`[Config] Failed to create config from example:`, error);
-    return null;
-  }
-}
-
-/**
- * Resolve workspace path with fallback chain
- */
-export function resolveWorkspacePath(config: HorizonConfig): string {
-  // 1. Check WORKSPACE_PATH environment variable
-  if (process.env.WORKSPACE_PATH) {
-    const workspacePath = resolve(process.env.WORKSPACE_PATH);
-    console.log(`[Config] Using WORKSPACE_PATH: ${workspacePath}`);
-    return workspacePath;
-  }
-
-  // 2. Check config file defaultPath
-  if (config.workspace.defaultPath) {
-    const workspacePath = resolve(config.workspace.defaultPath);
-    console.log(`[Config] Using configured workspace: ${workspacePath}`);
-    return workspacePath;
-  }
-
-  // 3. Fallback to current working directory
-  const cwd = process.cwd();
-  console.log(`[Config] Using current directory as workspace: ${cwd}`);
-  return cwd;
-}
-
-/**
  * Find and load Horizon configuration
  *
  * Priority order:
  * 1. HORIZON_CONFIG environment variable (explicit path)
- * 2. Monorepo config directory: config/horizon.json (for development)
- * 3. Current working directory: ./horizon.json
- * 4. Parent directories (walking up): .horizon/config.json or horizon.json
- * 5. User home directory: ~/.horizon/config.json or ~/.config/horizon/config.json
- * 6. System-wide: /etc/horizon/config.json (Unix) or %APPDATA%/horizon/config.json (Windows)
- * 7. Auto-create from config/horizon.example.json
- * 8. Default fallback values
+ * 2. Monorepo config: config/horizon.json (for development)
+ * 3. User home directory: ~/.horizon/config.json or ~/.config/horizon/config.json
+ * 4. Auto-create from config/horizon.example.json into ~/.horizon/config.json
+ * 5. Default fallback values
  */
 export function loadHorizonConfig(): HorizonConfig {
   // 1. Check HORIZON_CONFIG environment variable
@@ -317,7 +248,7 @@ export function loadHorizonConfig(): HorizonConfig {
     console.warn(`[Config] HORIZON_CONFIG path does not exist: ${configPath}`);
   }
 
-  // 2. Check monorepo config directory (for development)
+  // 2. Check monorepo config directory
   const monorepoConfigPath = getMonorepoConfigPath();
   if (monorepoConfigPath) {
     const config = loadConfigFile(monorepoConfigPath);
@@ -326,28 +257,7 @@ export function loadHorizonConfig(): HorizonConfig {
     }
   }
 
-  // 3. Check current working directory
-  const cwd = process.cwd();
-  for (const filename of CONFIG_FILENAMES) {
-    const configPath = join(cwd, filename);
-    if (existsSync(configPath)) {
-      const config = loadConfigFile(configPath);
-      if (config) {
-        return config;
-      }
-    }
-  }
-
-  // 4. Walk up parent directories
-  const parentConfigPath = findConfigInParentDirs(dirname(cwd));
-  if (parentConfigPath) {
-    const config = loadConfigFile(parentConfigPath);
-    if (config) {
-      return config;
-    }
-  }
-
-  // 5. Check user home directory
+  // 3. Check user home directory
   const userConfigPath = getUserConfigPath();
   if (userConfigPath) {
     const config = loadConfigFile(userConfigPath);
@@ -356,26 +266,25 @@ export function loadHorizonConfig(): HorizonConfig {
     }
   }
 
-  // 6. Check system-wide config
-  const systemConfigPath = getSystemConfigPath();
-  if (systemConfigPath) {
-    const config = loadConfigFile(systemConfigPath);
-    if (config) {
-      return config;
+  // 4. Auto-create from example
+  const examplePath = getMonorepoExampleConfigPath();
+  if (examplePath) {
+    const targetPath = join(getGlobalDataDir(), "config.json");
+    try {
+      if (!existsSync(targetPath)) {
+        copyFileSync(examplePath, targetPath);
+        console.log(`[Config] Created configuration from example: ${targetPath}`);
+      }
+      const config = loadConfigFile(targetPath);
+      if (config) {
+        return config;
+      }
+    } catch (error) {
+      console.error(`[Config] Failed to create config from example:`, error);
     }
   }
 
-  // 7. Auto-create from example (for development)
-  const monorepoRoot = findMonorepoRoot(cwd);
-  if (monorepoRoot) {
-    const targetPath = join(monorepoRoot, "config", "horizon.json");
-    const config = createConfigFromExample(targetPath);
-    if (config) {
-      return config;
-    }
-  }
-
-  // 8. No config found, use defaults
+  // 5. No config found, use defaults
   console.log("[Config] No configuration file found, using defaults");
   return DEFAULT_CONFIG;
 }

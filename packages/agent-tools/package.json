@@ -30,9 +30,9 @@
     "lint": "eslint src/"
   },
   "dependencies": {
+    "@horizon/shared-utils": "workspace:*",
     "@langchain/core": "^0.3.0",
     "@langchain/community": "^0.3.0",
-    "bun-types": "^1.0.0",
     "cheerio": "^1.0.0",
     "picocolors": "^1.1.1",
     "prettier": "^3.4.0",
@@ -40,7 +40,6 @@
   },
   "devDependencies": {
     "@horizon/typescript-config": "workspace:*",
-    "@types/bun": "latest",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.3"
   },

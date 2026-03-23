@@ -5,6 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { getGlobalDataDir } from "@horizon/shared-utils";
 
 export interface Assistant {
   id: string;
@@ -29,17 +30,14 @@ interface Database {
   assistants: Assistant[];
 }
 
-// Ensure data directory exists
-const dataDir = path.join(process.cwd(), "data");
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+function getDbPath(): string {
+  return path.join(getGlobalDataDir(), "assistants.json");
 }
-
-const dbPath = path.join(dataDir, "assistants.json");
 
 // Load or initialize database
 function loadDb(): Database {
   try {
+    const dbPath = getDbPath();
     if (fs.existsSync(dbPath)) {
       const data = fs.readFileSync(dbPath, "utf-8");
       return JSON.parse(data);
@@ -51,6 +49,7 @@ function loadDb(): Database {
 }
 
 function saveDb(db: Database): void {
+  const dbPath = getDbPath();
   fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
 }
 

@@ -24,6 +24,27 @@ interface WeatherResponse {
   current: WeatherCurrent;
 }
 
+interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+interface SearchSummary {
+  resultIndex: number;
+  url: string;
+  title: string;
+  content: string | null;
+}
+
+interface SearchResponse {
+  query: string;
+  results: SearchResult[];
+  totalResults: number;
+  error?: string;
+  summaries?: SearchSummary[];
+}
+
 async function extractUrlContent(url: string): Promise<string> {
   try {
     const response = await fetch(url, {
@@ -56,8 +77,10 @@ async function extractUrlContent(url: string): Promise<string> {
   }
 }
 
+export type { SearchResult, SearchResponse };
+
 export const searchWeb = tool(
-  async ({ query, fetchContent = true }) => {
+  async ({ query, fetchContent = false }) => {
     try {
       const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
 
@@ -77,7 +100,7 @@ export const searchWeb = tool(
       const html = await response.text();
       const $ = cheerio.load(html);
 
-      const results: Array<{ title: string; url: string; snippet: string }> = [];
+      const results: SearchResult[] = [];
 
       $(".result").each((_, element) => {
         const $result = $(element);
@@ -94,16 +117,23 @@ export const searchWeb = tool(
       });
 
       if (results.length === 0) {
-        return `No search results found for '${query}'.`;
+        return JSON.stringify({
+          query,
+          results: [],
+          totalResults: 0,
+          error: `No search results found for '${query}'.`,
+        } satisfies SearchResponse);
       }
 
-      const topResults = results.slice(0, 5);
+      const topResults = results.slice(0, 8);
 
-      let output = `## Search results for '${query}'\n\n`;
+      const searchResponse: SearchResponse = {
+        query,
+        results: topResults,
+        totalResults: results.length,
+      };
 
       if (fetchContent && topResults.length > 0) {
-        output += `### Summary of Results\n\n`;
-
         const fetchPromises = topResults.slice(0, 3).map(async (result) => {
           const content = await extractUrlContent(result.url);
           return { ...result, content };
@@ -111,61 +141,39 @@ export const searchWeb = tool(
 
         const resultsWithContent = await Promise.all(fetchPromises);
 
-        for (const result of resultsWithContent) {
-          output += `#### [${result.title}](${result.url})\n`;
-          if (result.snippet) {
-            output += `> ${result.snippet}\n\n`;
-          }
-          if (result.content) {
-            output += `${result.content.slice(0, 1500)}\n\n`;
-          }
-          output += "---\n\n";
-        }
+        // Add structured summaries to the response
+        searchResponse.summaries = resultsWithContent.map((r, index) => ({
+          resultIndex: index,
+          url: r.url,
+          title: r.title,
+          content: r.content?.slice(0, 2000) || null,
+        }));
 
-        if (topResults.length > 3) {
-          output += `### Additional Results\n\n`;
-          for (let i = 3; i < topResults.length; i++) {
-            const result = topResults[i];
-            if (result) {
-              output += `- [${result.title}](${result.url})`;
-              if (result.snippet) {
-                output += ` - ${result.snippet}`;
-              }
-              output += "\n";
-            }
-          }
-        }
-      } else {
-        for (let i = 0; i < topResults.length; i++) {
-          const result = topResults[i];
-          if (result) {
-            output += `### ${i + 1}. [${result.title}](${result.url})\n`;
-            if (result.snippet) {
-              output += `${result.snippet}\n`;
-            }
-            output += "\n";
-          }
-        }
+        return JSON.stringify(searchResponse);
       }
 
-      return output;
+      return JSON.stringify(searchResponse);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      return `Search failed: ${errorMessage}`;
+      return JSON.stringify({
+        query,
+        results: [],
+        totalResults: 0,
+        error: `Search failed: ${errorMessage}`,
+      } satisfies SearchResponse);
     }
   },
   {
     name: "search_web",
     description:
-      "Search the web for information using DuckDuckGo. Returns relevant search results with titles, URLs, snippets, and optionally fetches content from top results for more context.",
+      "Search the web for information using DuckDuckGo. Returns structured search results with titles, URLs, and snippets. Use fetchContent=true to include brief content summaries from top results.",
     schema: z.object({
       query: z.string().describe("The search query to look up."),
       fetchContent: z
         .boolean()
-        .nullable()
-        .default(true)
+        .default(false)
         .describe(
-          "Whether to fetch and include content from top results. Set to false for faster results with just links and snippets."
+          "Whether to fetch and include brief content summaries from top 2 results. Default is false for faster results."
         ),
     }),
   }

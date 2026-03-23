@@ -1,0 +1,70 @@
+{
+  "266a3e9a-b6db-42e9-a4a0-3edc6124edbe": {
+    "thread_id": "266a3e9a-b6db-42e9-a4a0-3edc6124edbe",
+    "created_at": "2026-03-22T16:06:56.479Z",
+    "updated_at": "2026-03-22T16:06:56.479Z",
+    "metadata": {},
+    "status": "idle"
+  },
+  "2612d1ed-122a-4f8e-a164-cdfe25471a98": {
+    "thread_id": "2612d1ed-122a-4f8e-a164-cdfe25471a98",
+    "created_at": "2026-03-22T16:06:56.479Z",
+    "updated_at": "2026-03-22T16:06:56.479Z",
+    "metadata": {},
+    "status": "idle"
+  },
+  "f7e705ae-a591-4f42-862b-a869611e1dae": {
+    "thread_id": "f7e705ae-a591-4f42-862b-a869611e1dae",
+    "created_at": "2026-03-22T16:06:56.479Z",
+    "updated_at": "2026-03-22T16:06:56.479Z",
+    "metadata": {},
+    "status": "idle"
+  },
+  "d5744835-6509-458b-bada-7458ce35a641": {
+    "thread_id": "d5744835-6509-458b-bada-7458ce35a641",
+    "created_at": "2026-03-22T16:08:27.297Z",
+    "updated_at": "2026-03-22T16:08:28.001Z",
+    "metadata": {
+      "user_id": "cfae84e8-b7bf-494f-9763-2e2871eeb523",
+      "title": "What are the latest trends in AI?"
+    },
+    "status": "idle"
+  },
+  "4ffea962-3211-4784-8a95-1ffe599b746f": {
+    "thread_id": "4ffea962-3211-4784-8a95-1ffe599b746f",
+    "created_at": "2026-03-22T16:12:10.413Z",
+    "updated_at": "2026-03-22T16:12:10.733Z",
+    "metadata": {
+      "user_id": "cfae84e8-b7bf-494f-9763-2e2871eeb523",
+      "title": "Explain quantum computing in simple terms"
+    },
+    "status": "idle"
+  },
+  "eb06a3ff-466a-43af-9b76-e6393dcedae6": {
+    "thread_id": "eb06a3ff-466a-43af-9b76-e6393dcedae6",
+    "created_at": "2026-03-23T06:37:36.511Z",
+    "updated_at": "2026-03-23T06:37:38.423Z",
+    "metadata": {
+      "user_id": "cfae84e8-b7bf-494f-9763-2e2871eeb523",
+      "title": "Explain quantum computing in simple terms"
+    },
+    "status": "idle"
+  },
+  "fe6e4e64-e9b6-456a-af19-49b770c73fd1": {
+    "thread_id": "fe6e4e64-e9b6-456a-af19-49b770c73fd1",
+    "created_at": "2026-03-23T07:02:47.874Z",
+    "updated_at": "2026-03-23T07:02:51.402Z",
+    "metadata": {
+      "user_id": "cfae84e8-b7bf-494f-9763-2e2871eeb523",
+      "title": "Help me plan a trip to Japan"
+    },
+    "status": "idle"
+  },
+  "11dad0fd-7908-434c-9aa6-b3e6081a6758": {
+    "thread_id": "11dad0fd-7908-434c-9aa6-b3e6081a6758",
+    "created_at": "2026-03-23T07:10:09.060Z",
+    "updated_at": "2026-03-23T07:10:09.060Z",
+    "metadata": {},
+    "status": "idle"
+  }
+}

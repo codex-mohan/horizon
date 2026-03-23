@@ -48,14 +48,7 @@ export {
 } from "./web/index.js";
 
 export const TOOL_CATEGORIES = {
-  safe: [
-    "web_search",
-    "fetch_url_content",
-    "duckduckgo_search",
-    "get_weather",
-    "create_artifact",
-    "present_artifact",
-  ],
+  safe: ["search_web", "fetch_url_content", "get_weather", "create_artifact", "present_artifact"],
   dangerous: ["shell_execute", "file_write", "file_delete"],
 } as const;
 

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getGlobalDataDir } from "@horizon/shared-utils";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { BaseCheckpointSaver, type Checkpoint, type CheckpointTuple } from "@langchain/langgraph";
 
@@ -13,7 +14,7 @@ export class FileSystemCheckpointer extends BaseCheckpointSaver {
 
   constructor(filePath = ".checkpoints.json") {
     super();
-    this.filePath = path.resolve(process.cwd(), filePath);
+    this.filePath = path.resolve(getGlobalDataDir(), filePath);
     this.load();
   }
 
@@ -137,5 +138,21 @@ export class FileSystemCheckpointer extends BaseCheckpointSaver {
       delete this.checkpoints[thread_id];
       this.save();
     }
+  }
+
+  /**
+   * Get all thread IDs that have checkpoints stored.
+   */
+  getThreadIds(): string[] {
+    this.load();
+    return Object.keys(this.checkpoints);
+  }
+
+  /**
+   * Check if a thread exists in the checkpoint storage.
+   */
+  hasThread(thread_id: string): boolean {
+    this.load();
+    return thread_id in this.checkpoints;
   }
 }
