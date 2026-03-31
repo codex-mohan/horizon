@@ -1,5 +1,6 @@
 import { MessagesValue, ReducedValue, StateSchema } from "@langchain/langgraph";
 import { z } from "zod/v4";
+import type { RuntimeModelConfig } from "../lib/llm.js";
 
 /**
  * UI Message Definition for Generative UI
@@ -30,6 +31,54 @@ export interface ToolCall {
   retry_count: number;
   started_at?: number;
   completed_at?: number;
+}
+
+/**
+ * Sub-Agent Task Definition
+ * Represents a task assigned to a sub-agent worker
+ */
+export interface SubAgentTask {
+  id: string;
+  name: string;
+  description: string;
+  status: "pending" | "spawning" | "running" | "completed" | "failed";
+  result?: string;
+  error?: string;
+  created_at: number;
+  started_at?: number;
+  completed_at?: number;
+  assigned_agent_id?: string;
+}
+
+/**
+ * Sub-Agent Result
+ * Result returned by a completed sub-agent worker
+ */
+export interface SubAgentResult {
+  task_id: string;
+  agent_id: string;
+  status: "success" | "failure";
+  output: string;
+  artifacts_created?: string[];
+  errors?: string[];
+  metrics?: {
+    tokens_used?: number;
+    execution_time_ms?: number;
+  };
+}
+
+/**
+ * Sub-Agent Configuration
+ * Configuration passed to a worker subgraph
+ */
+export interface SubAgentConfig {
+  id: string;
+  name: string;
+  systemPrompt: string;
+  tools: string[];
+  modelConfig?: RuntimeModelConfig;
+  timeout?: number;
+  context?: Record<string, any>;
 }
 
 /**
@@ -155,6 +204,15 @@ export const AgentStateAnnotation = new StateSchema({
 
   // Tool rejection flag for routing decisions
   tools_rejected: z.boolean().default(false),
+
+  // Sub-agent tasks for parallel execution
+  subagent_tasks: z.array(z.any()).default(() => []) as any,
+
+  // Active sub-agent results
+  subagent_results: z.array(z.any()).default(() => []) as any,
+
+  // Number of active sub-agents
+  active_subagents: z.number().default(0),
 });
 
 /**
@@ -174,6 +232,9 @@ export interface AgentState {
   errors: string[];
   ui: UIMessage[];
   tools_rejected: boolean;
+  subagent_tasks: SubAgentTask[];
+  subagent_results: SubAgentResult[];
+  active_subagents: number;
 }
 
 export type ToolApprovalMode = "always_ask" | "dangerous_only" | "never_ask";

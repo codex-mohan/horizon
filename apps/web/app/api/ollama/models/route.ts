@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     const models = data.models?.map((m: any) => m.name) || [];
 
     return NextResponse.json({ models, available: true });
-  } catch (error) {
+  } catch (_error) {
     // If fetch failed completely (e.g. connection refused), return no models
     return NextResponse.json({ models: [], available: false }, { status: 503 });
   }

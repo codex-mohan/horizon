@@ -13,7 +13,7 @@ import {
   Terminal,
   XCircle,
 } from "lucide-react";
-import React, { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export interface ToolApprovalData {
   type: "tool_approval_required";
@@ -75,6 +75,22 @@ export function ToolApprovalBanner({
   isLoading = false,
 }: ToolApprovalBannerProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const isProcessingRef = useRef(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleApprove = useCallback(() => {
+    if (isProcessingRef.current || isLoading || isProcessing) return;
+    isProcessingRef.current = true;
+    setIsProcessing(true);
+    onApprove();
+  }, [isLoading, isProcessing, onApprove]);
+
+  const handleReject = useCallback(() => {
+    if (isProcessingRef.current || isLoading || isProcessing) return;
+    isProcessingRef.current = true;
+    setIsProcessing(true);
+    onReject();
+  }, [isLoading, isProcessing, onReject]);
 
   const toolCall = data.tool_call;
   const riskLevel = getToolRiskLevel(toolCall.name);
@@ -168,19 +184,24 @@ export function ToolApprovalBanner({
             <Button
               size="sm"
               variant="outline"
-              onClick={onReject}
-              disabled={isLoading}
+              onClick={handleReject}
+              disabled={isLoading || isProcessing}
               className="h-8"
             >
-              {isLoading ? (
+              {isLoading || isProcessing ? (
                 <Loader2 className="h-3 w-3 animate-spin mr-1" />
               ) : (
                 <XCircle className="h-3 w-3 mr-1" />
               )}
               Reject
             </Button>
-            <Button size="sm" onClick={onApprove} disabled={isLoading} className="h-8">
-              {isLoading ? (
+            <Button
+              size="sm"
+              onClick={handleApprove}
+              disabled={isLoading || isProcessing}
+              className="h-8"
+            >
+              {isLoading || isProcessing ? (
                 <Loader2 className="h-3 w-3 animate-spin mr-1" />
               ) : (
                 <CheckCircle2 className="h-3 w-3 mr-1" />

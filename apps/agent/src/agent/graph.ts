@@ -62,6 +62,8 @@ const shouldContinue = (_state: AgentState): "AgentNode" => {
   return "AgentNode";
 };
 
+export const checkpointer = new FileSystemCheckpointer();
+
 export const graph = new StateGraph(AgentStateAnnotation)
   .addNode("StartMiddleware", StartMiddleware)
   .addNode("MemoryRetrieval", MemoryRetrieval)
@@ -96,7 +98,7 @@ export const graph = new StateGraph(AgentStateAnnotation)
 
   .addEdge("EndMiddleware", END)
 
-  .compile({ checkpointer: new FileSystemCheckpointer() });
+  .compile({ checkpointer });
 
 console.log("[Graph] Simplified graph compiled:");
 console.log("  Flow: START → Start → Memory → Agent → ApprovalGate → [Tools | Agent] → End → END");

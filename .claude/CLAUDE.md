@@ -1,6 +1,6 @@
 # Horizon — Agent Coding Guidelines
 
-> **Last Updated:** 2026-03-06
+> **Last Updated:** 2026-03-20
 > **Maintained by:** AI coding agents working on Horizon
 
 **This document is the single source of truth for AI coding agents working on this codebase. It must be updated whenever the project structure, architecture, configuration, or workflows change. If you make changes that affect how agents should work on this project, update this document immediately.**
@@ -119,8 +119,7 @@ Horizon/
 │       │   │   │   ├── tool-execution.ts       # Execute approved tools
 │       │   │   │   └── end-middleware.ts        # Finalize, metrics
 │       │   │   ├── tools/
-│       │   │   │   ├── index.ts      # Tool registry & approval logic
-│       │   │   │   └── artifacts.ts  # create_artifact & present_artifact tools
+│       │   │   │   └── index.ts      # Tool registry, LangChain bindings, approval logic
 │       │   │   └── middleware/
 │       │   │       └── pii.ts        # PII detection patterns
 │       │   ├── assistants/           # Assistant CRUD system
@@ -141,8 +140,8 @@ Horizon/
 ├── packages/
 │   ├── ui/                           # Shared shadcn/ui component library
 │   ├── agent-memory/                 # Qdrant vector memory system
-│   ├── agent-web/                    # Web search & content extraction
-│   ├── shell/                        # Cross-platform shell execution
+│   ├── agent-tools/                  # Consolidated agent tools (shell, web, artifacts)
+│   ├── shared-utils/                 # Shared utilities including structured logger
 │   └── typescript-config/            # Shared TypeScript configs
 │
 ├── config/
@@ -303,8 +302,8 @@ This means:
 |---|---|
 | `@horizon/ui` | shadcn/ui component library with glassmorphic design tokens |
 | `@horizon/agent-memory` | Qdrant vector DB client, memory types, semantic retrieval |
-| `@horizon/agent-web` | DuckDuckGo search, URL content extraction (Cheerio) |
-| `@horizon/shell` | Cross-platform shell execution with danger detection |
+| `@horizon/agent-tools` | Consolidated tools — shell execution, web search, artifacts |
+| `@horizon/shared-utils` | Shared utilities including structured logger |
 | `@horizon/typescript-config` | Shared `tsconfig.json` presets |
 
 ### Infrastructure
@@ -425,7 +424,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 // 3. Workspace packages (@horizon/*)
-import { ShellExecutor } from "@horizon/shell";
+import { ShellExecutor } from "@horizon/agent-tools";
 import { Button } from "@horizon/ui/components/ui/button";
 
 // 4. App-level imports (@/*)
@@ -594,16 +593,16 @@ Each node is a pure function `(state: AgentState) => Partial<AgentState>` in `sr
 
 ### Tool System
 
-Tools are defined in `src/agent/tools/index.ts` and `src/agent/tools/artifacts.ts`:
+Tools are defined in `src/agent/tools/index.ts` (LangChain bindings) and sourced from `@horizon/agent-tools`:
 
 | Tool | Source | Description |
 |---|---|---|
-| `web_search` | `@horizon/agent-web` | DuckDuckGo web search |
-| `fetch_url_content` | `@horizon/agent-web` | Extract page content via Cheerio |
-| `duckduckgo_search` | `@horizon/agent-web` | Alternative search tool |
-| `shell_execute` | Local (wraps `@horizon/shell`) | Execute shell commands with structured JSON output |
-| `create_artifact` | `tools/artifacts.ts` | Store HTML/SVG/Mermaid/React/code artifact, format with Prettier, return ID |
-| `present_artifact` | `tools/artifacts.ts` | Fetch artifact by ID and signal frontend to render ArtifactCard |
+| `web_search` | `@horizon/agent-tools` | DuckDuckGo web search |
+| `fetch_url_content` | `@horizon/agent-tools` | Extract page content via Cheerio |
+| `duckduckgo_search` | `@horizon/agent-tools` | Alternative search tool |
+| `shell_execute` | `@horizon/agent-tools` | Execute shell commands with structured JSON output |
+| `create_artifact` | `@horizon/agent-tools` | Store HTML/SVG/Mermaid/React/code artifact, format with Prettier, return ID |
+| `present_artifact` | `@horizon/agent-tools` | Fetch artifact by ID and signal frontend to render ArtifactCard |
 
 **Tool Approval Modes:**
 
@@ -618,9 +617,9 @@ Tools are defined in `src/agent/tools/index.ts` and `src/agent/tools/artifacts.t
 - **Safe**: `web_search`, `fetch_url_content`, `duckduckgo_search`, `get_weather`, `create_artifact`, `present_artifact`
 - **Dangerous**: `shell_execute`, `file_write`, `file_delete`
 
-### Shell Execution Safety (`@horizon/shell`)
+### Shell Execution Safety (`@horizon/agent-tools`)
 
-The shell package has multiple safety layers:
+The shell module in `@horizon/agent-tools` has multiple safety layers:
 
 - **Dangerous pattern detection**: `rm -rf`, `sudo`, `chmod`, `mkfs`, `dd`, `npm install -g`, `git push --force`, `DROP TABLE`, etc.
 - **Configurable timeouts**: Default 30 seconds.
@@ -918,7 +917,7 @@ Update this file whenever you:
 
 ### Shell Execution
 
-- Dangerous pattern detection in `@horizon/shell`.
+- Dangerous pattern detection in `@horizon/agent-tools`.
 - Approval workflow prevents accidental destructive commands.
 - Configurable timeouts and output limits.
 - Workspace path restriction via `config/horizon.json`.

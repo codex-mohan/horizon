@@ -27,7 +27,7 @@ export async function POST(request: Request) {
         "Transfer-Encoding": "chunked",
       },
     });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: "Failed to connect to Ollama" }, { status: 503 });
   }
 }

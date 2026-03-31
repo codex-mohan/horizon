@@ -1,26 +1,20 @@
 /**
  * Shell Executor - Core command execution engine using Bun's shell
  *
- * Bun's shell ($`command`) provides cross-platform shell execution:
- * - Unix-style commands work on Windows (ls, cat, grep, etc.)
- * - Proper escaping and interpolation
- * - Streaming output support
+ * Bun's shell ($`command`) is a cross-platform bash-like implementation:
+ * - Built-in Unix commands work on all platforms (ls, cat, rm, mkdir, grep, etc.)
+ * - Safe interpolation - variables are auto-escaped
  * - Pipe and redirection support
+ * - Environment variable and working directory control
  */
 
-import * as child_process from "node:child_process";
+import { $ } from "bun";
 import { ExitError, PermissionError, ShellError, TimeoutError } from "./errors.js";
 import { CommandHistory } from "./history.js";
 import { getPlatformInfo, type PlatformInfo } from "./platform.js";
 
-/**
- * Execution approval modes
- */
 export type ApprovalMode = "always" | "never" | "dangerous" | "custom";
 
-/**
- * Shell executor configuration
- */
 export interface ShellConfig {
   cwd?: string;
   env?: Record<string, string>;
@@ -37,9 +31,6 @@ export interface ShellConfig {
   onComplete?: (result: ExecutionResult) => void;
 }
 
-/**
- * Context provided to approval function
- */
 export interface ApprovalContext {
   command: string;
   cwd: string;
@@ -49,9 +40,6 @@ export interface ApprovalContext {
   platform: PlatformInfo;
 }
 
-/**
- * Result of command execution
- */
 export interface ExecutionResult {
   id: string;
   command: string;
@@ -67,14 +55,9 @@ export interface ExecutionResult {
   approved?: boolean;
 }
 
-/**
- * Default dangerous command patterns
- */
 const DEFAULT_DANGEROUS_PATTERNS: RegExp[] = [
   /\brm\s+(-rf?|--recursive|--force)/i,
   /\brmdir\s+/i,
-  /\bdel\s+\/[sfq]/i,
-  /\brd\s+\/s/i,
   /\bsudo\s+/i,
   /\bchmod\s+/i,
   /\bchown\s+/i,
@@ -88,15 +71,9 @@ const DEFAULT_DANGEROUS_PATTERNS: RegExp[] = [
   /\bgit\s+(push|reset\s+--hard|clean\s+-[fd]|checkout\s+--)/i,
   /\b(DROP|DELETE|TRUNCATE|ALTER)\s+(TABLE|DATABASE|INDEX)/i,
   /\bkill\s+(-9|-KILL)/i,
-  /\btaskkill\s+/i,
   /\breg\s+(add|delete)/i,
-  /\bexport\s+\w+=/,
-  /\bsetx?\s+\w+/i,
 ];
 
-/**
- * Shell Executor - Main class for command execution
- */
 export class ShellExecutor {
   private readonly config: Required<
     Omit<ShellConfig, "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete">
@@ -191,7 +168,7 @@ export class ShellExecutor {
   ): Promise<ExecutionResult> {
     const cwd = options.cwd ?? this.config.cwd;
     const env = { ...this.config.env, ...options.env };
-    const timeout = options.timeout ?? this.config.timeout;
+    const _timeout = options.timeout ?? this.config.timeout;
 
     const { isDangerous, matchedPatterns } = this.checkDangerous(command);
 
@@ -223,93 +200,30 @@ export class ShellExecutor {
     const startTime = Date.now();
     let stdout = "";
     let stderr = "";
-    let combined = "";
     let exitCode = 0;
-    let signal: string | undefined;
-    let truncated = false;
 
     try {
-      const isBun = typeof process !== "undefined" && !!process.versions && !!process.versions.bun;
-
-      let execPromise: Promise<{
-        stdout: string;
-        stderr: string;
+      let result: {
+        stdout: { toString(): string };
+        stderr: { toString(): string };
         exitCode: number;
-      }>;
+      };
 
-      if (isBun) {
-        execPromise = (async () => {
-          const { $ } = await import("bun");
-          const proc = $`sh -c ${command}`.cwd(cwd).env(env).quiet();
-
-          const res = await proc;
-          return {
-            stdout: res.stdout.toString(),
-            stderr: res.stderr.toString(),
-            exitCode: res.exitCode,
-          };
-        })();
+      if (this.platform.isWindows) {
+        result = await $`${{ raw: command }}`.cwd(cwd).env(env);
       } else {
-        execPromise = new Promise((resolve, reject) => {
-          const child = child_process.spawn(command, {
-            cwd,
-            env,
-            shell: true,
-            stdio: ["ignore", "pipe", "pipe"],
-          });
-
-          const stdoutChunks: Buffer[] = [];
-          const stderrChunks: Buffer[] = [];
-
-          child.stdout?.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));
-          child.stderr?.on("data", (chunk: Buffer) => stderrChunks.push(chunk));
-
-          child.on("error", (err: Error) => reject(err));
-
-          child.on("close", (code: number | null) => {
-            resolve({
-              stdout: Buffer.concat(stdoutChunks).toString(),
-              stderr: Buffer.concat(stderrChunks).toString(),
-              exitCode: code ?? 1,
-            });
-          });
-        });
+        result = await $`${{ raw: command }}`.cwd(cwd).env(env);
       }
 
-      let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        if (timeout > 0) {
-          timeoutHandle = setTimeout(() => {
-            reject(new TimeoutError(command, timeout, { command, cwd }));
-          }, timeout);
-        }
-      });
+      stdout = result.stdout.toString();
+      stderr = result.stderr.toString();
+      exitCode = result.exitCode;
 
-      try {
-        const result = await Promise.race([execPromise, timeoutPromise]);
-
-        stdout = result.stdout;
-        stderr = result.stderr;
-        exitCode = result.exitCode;
-
-        if (stdout && this.config.onStdout) {
-          this.config.onStdout(stdout);
-        }
-        if (stderr && this.config.onStderr) {
-          this.config.onStderr(stderr);
-        }
-
-        combined = stdout + stderr;
-
-        if (combined.length > this.config.maxOutputSize) {
-          const half = Math.floor(this.config.maxOutputSize / 2);
-          combined = `${combined.slice(0, half)}\n\n... [truncated] ...\n\n${combined.slice(-half)}`;
-          truncated = true;
-        }
-      } finally {
-        if (timeoutHandle) {
-          clearTimeout(timeoutHandle);
-        }
+      if (stdout && this.config.onStdout) {
+        this.config.onStdout(stdout);
+      }
+      if (stderr && this.config.onStderr) {
+        this.config.onStderr(stderr);
       }
     } catch (error) {
       if (error instanceof TimeoutError) {
@@ -319,18 +233,18 @@ export class ShellExecutor {
         throw error;
       }
 
-      const err = error as Error & {
-        exitCode?: number;
-        stdout?: Buffer;
-        stderr?: Buffer;
-        signal?: string;
-      };
-
+      const err = error as { exitCode?: number; stderr?: { toString(): string }; message: string };
       exitCode = err.exitCode ?? 1;
-      stdout = err.stdout?.toString() ?? "";
       stderr = err.stderr?.toString() ?? err.message;
-      signal = err.signal;
-      combined = stdout + stderr;
+    }
+
+    let combined = stdout + stderr;
+    let truncated = false;
+
+    if (combined.length > this.config.maxOutputSize) {
+      const half = Math.floor(this.config.maxOutputSize / 2);
+      combined = `${combined.slice(0, half)}\n\n... [truncated] ...\n\n${combined.slice(-half)}`;
+      truncated = true;
     }
 
     const duration = Date.now() - startTime;
@@ -351,7 +265,6 @@ export class ShellExecutor {
       duration,
       cwd,
       truncated,
-      signal,
       approved: true,
     };
 
@@ -408,11 +321,7 @@ export class ShellExecutor {
 
   async commandExists(command: string): Promise<boolean> {
     try {
-      if (this.platform.isWindows) {
-        await this.execute(`where ${command}`, { skipApproval: true });
-      } else {
-        await this.execute(`which ${command}`, { skipApproval: true });
-      }
+      await this.execute(`command -v ${command}`, { skipApproval: true });
       return true;
     } catch {
       return false;

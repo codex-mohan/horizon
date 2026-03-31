@@ -40,8 +40,8 @@ import {
   Terminal,
   Wrench,
 } from "lucide-react";
-import type React from "react";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import type * as React from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useClipboardPaste } from "@/hooks/use-clipboard-paste";
 import { type AttachedFile, processFiles } from "@/lib/file-processing";
@@ -95,9 +95,8 @@ function getToolDisplayName(toolName: string): string {
     shell_execute: "Shell Execute",
     file_write: "File Write",
     file_delete: "File Delete",
-    web_search: "Web Search",
+    search_web: "Web Search",
     fetch_url_content: "Fetch URL",
-    duckduckgo_search: "DuckDuckGo Search",
   };
   return names[toolName] || toolName;
 }
@@ -132,14 +131,22 @@ export const ChatInput = memo(function ChatInput({
     existingFiles: attachedFiles,
   });
 
-  useEffect(() => {
+  const adjustTextareaHeight = useCallback(() => {
     const el = textareaRef.current;
     if (el) {
       el.style.height = "auto";
       const newHeight = Math.min(el.scrollHeight, 100);
       el.style.height = `${newHeight}px`;
     }
-  }, [text]);
+  }, []);
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setText(e.target.value);
+      adjustTextareaHeight();
+    },
+    [adjustTextareaHeight]
+  );
 
   const handleSubmit = useCallback(() => {
     const trimmed = text.trim();
@@ -190,9 +197,9 @@ export const ChatInput = memo(function ChatInput({
   return (
     <div className="flex flex-col gap-3">
       <Textarea
-        className="custom-scrollbar max-h-[100px] min-h-[36px] resize-none overflow-y-auto overflow-x-hidden border-0 bg-transparent py-2 text-sm focus-visible:ring-0"
+        className="custom-scrollbar max-h-[100px] min-h-[36px] resize-none border-0 bg-transparent py-2 text-sm focus-visible:ring-0 scrollbar-thin"
         disabled={disabled}
-        onChange={(e) => setText(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         placeholder={placeholder}

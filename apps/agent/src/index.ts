@@ -1,4 +1,7 @@
+import fs from "node:fs";
+import path from "node:path";
 import { serve } from "@hono/node-server";
+import { getGlobalDataDir } from "@horizon/shared-utils";
 import { ToolMessage } from "@langchain/core/messages";
 import { Command } from "@langchain/langgraph";
 import { Hono } from "hono";
@@ -20,14 +23,150 @@ interface OllamaPullProgress {
   completed?: number;
 }
 
-import { graph } from "./agent/graph.js";
+import { checkpointer, graph } from "./agent/graph.js";
 import type { ToolApprovalConfig } from "./agent/state.js";
+import { type WorkerEvent, workerEventEmitter } from "./agent/subgraphs/events.js";
 import { TOOL_CATEGORIES } from "./agent/tools/index.js";
 import { assistantsDb } from "./assistants/db.js";
 import assistantsRouter from "./assistants/router.js";
 import type { Assistant } from "./assistants/types.js";
 import { agentConfig } from "./lib/config.js";
 import { getHorizonConfig, resolveWorkspacePath } from "./lib/config-loader.js";
+
+// ---------------------------------------------------------------------------
+// Thread Metadata Store — persists thread metadata to a JSON file
+// The checkpointer stores conversation state but not thread-level metadata
+// (title, user_id, created_at, etc.). This store fills that gap.
+// ---------------------------------------------------------------------------
+interface ThreadMetadata {
+  thread_id: string;
+  created_at: string;
+  updated_at: string;
+  metadata: Record<string, unknown>;
+  status: string;
+}
+
+class ThreadMetadataStore {
+  private readonly filePath: string;
+  private threads: Record<string, ThreadMetadata> = {};
+
+  constructor(filePath = ".thread-metadata.json") {
+    this.filePath = path.resolve(getGlobalDataDir(), filePath);
+    this.load();
+  }
+
+  private load() {
+    try {
+      if (fs.existsSync(this.filePath)) {
+        this.threads = JSON.parse(fs.readFileSync(this.filePath, "utf-8"));
+      }
+    } catch (e) {
+      console.error("[ThreadMetadataStore] Failed to load:", e);
+      this.threads = {};
+    }
+  }
+
+  private save() {
+    try {
+      fs.writeFileSync(this.filePath, JSON.stringify(this.threads, null, 2));
+    } catch (e) {
+      console.error("[ThreadMetadataStore] Failed to save:", e);
+    }
+  }
+
+  create(threadId: string, metadata: Record<string, unknown> = {}): ThreadMetadata {
+    const now = new Date().toISOString();
+    const thread: ThreadMetadata = {
+      thread_id: threadId,
+      created_at: now,
+      updated_at: now,
+      metadata,
+      status: "idle",
+    };
+    this.threads[threadId] = thread;
+    this.save();
+    return thread;
+  }
+
+  get(threadId: string): ThreadMetadata | undefined {
+    this.load();
+    return this.threads[threadId];
+  }
+
+  update(threadId: string, metadata: Record<string, unknown>): ThreadMetadata {
+    this.load();
+    const existing = this.threads[threadId];
+    if (existing) {
+      existing.metadata = { ...existing.metadata, ...metadata };
+      existing.updated_at = new Date().toISOString();
+      this.save();
+      return existing;
+    }
+    // If thread doesn't exist in metadata store, create it
+    return this.create(threadId, metadata);
+  }
+
+  delete(threadId: string): boolean {
+    this.load();
+    if (this.threads[threadId]) {
+      delete this.threads[threadId];
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  search(metadataFilter?: Record<string, unknown>, limit = 100, offset = 0): ThreadMetadata[] {
+    this.load();
+    let results = Object.values(this.threads);
+
+    // Apply metadata filter
+    if (metadataFilter && Object.keys(metadataFilter).length > 0) {
+      results = results.filter((thread) => {
+        for (const [key, value] of Object.entries(metadataFilter)) {
+          if (thread.metadata[key] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+
+    // Sort by updated_at descending (most recent first)
+    results.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+
+    return results.slice(offset, offset + limit);
+  }
+
+  /**
+   * Ensure threads from the checkpointer are reflected here.
+   * Call this on startup to sync any threads that exist in checkpoint storage
+   * but not in the metadata store.
+   */
+  syncFromCheckpointer(threadIds: string[]) {
+    this.load();
+    let dirty = false;
+    for (const id of threadIds) {
+      if (!this.threads[id]) {
+        this.threads[id] = {
+          thread_id: id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          metadata: {},
+          status: "idle",
+        };
+        dirty = true;
+      }
+    }
+    if (dirty) {
+      this.save();
+    }
+  }
+}
+
+const threadStore = new ThreadMetadataStore();
+// Sync any pre-existing checkpoints into the thread metadata store
+threadStore.syncFromCheckpointer(checkpointer.getThreadIds());
 
 interface Variables {
   db: {
@@ -52,7 +191,7 @@ app.use(
   "/*",
   cors({
     origin: (origin) => origin,
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "x-api-key"],
     exposeHeaders: ["Content-Length"],
     credentials: true,
@@ -77,12 +216,198 @@ app.get("/health", (c) =>
   })
 );
 
+app.get("/workers/events", (c) => {
+  let eventCount = 0;
+
+  return streamSSE(c, async (streamWriter) => {
+    const sendEvent = (event: WorkerEvent) => {
+      eventCount++;
+      streamWriter.writeSSE({
+        data: JSON.stringify(event),
+        event: event.type,
+        id: String(eventCount),
+      });
+    };
+
+    const unsubscribe = workerEventEmitter.onWorkerEvent(sendEvent);
+
+    streamWriter.writeSSE({
+      data: JSON.stringify({ type: "connected", timestamp: Date.now() }),
+      event: "connected",
+    });
+
+    try {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 60000);
+      });
+    } finally {
+      unsubscribe();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Thread Management Routes — implements the LangGraph Platform Thread API
+// These are the endpoints that @langchain/langgraph-sdk client expects.
+// ---------------------------------------------------------------------------
+
+/** POST /threads — Create a new thread */
 app.post("/threads", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const threadId = body.thread_id || uuidv4();
-  return c.json({ thread_id: threadId });
+  const metadata = body.metadata || {};
+  const thread = threadStore.create(threadId, metadata);
+  return c.json(thread);
 });
 
+/** POST /threads/search — Search/list threads with optional metadata filter */
+app.post("/threads/search", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const metadataFilter = body.metadata as Record<string, unknown> | undefined;
+  const limit = body.limit || 100;
+  const offset = body.offset || 0;
+  const results = threadStore.search(metadataFilter, limit, offset);
+  return c.json(results);
+});
+
+/** GET /threads/:threadId — Get a single thread */
+app.get("/threads/:threadId", async (c) => {
+  const threadId = c.req.param("threadId");
+  const thread = threadStore.get(threadId);
+  if (thread) {
+    return c.json(thread);
+  }
+  // Thread might exist in checkpointer but not metadata store
+  if (checkpointer.hasThread(threadId)) {
+    const created = threadStore.create(threadId, {});
+    return c.json(created);
+  }
+  // Return a synthetic thread so the SDK doesn't crash
+  return c.json({
+    thread_id: threadId,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    metadata: {},
+    status: "idle",
+  });
+});
+
+/** PATCH /threads/:threadId — Update thread metadata */
+app.patch("/threads/:threadId", async (c) => {
+  const threadId = c.req.param("threadId");
+  const body = await c.req.json().catch(() => ({}));
+  const metadata = body.metadata || {};
+  const thread = threadStore.update(threadId, metadata);
+  return c.json(thread);
+});
+
+/** DELETE /threads/:threadId — Delete a thread */
+app.delete("/threads/:threadId", async (c) => {
+  const threadId = c.req.param("threadId");
+  threadStore.delete(threadId);
+  await checkpointer.deleteThread(threadId);
+  return c.json({ success: true });
+});
+
+// ---------------------------------------------------------------------------
+// Helper: Convert LangGraph.js StateSnapshot → LangGraph Platform ThreadState
+// The SDK's useStream expects the Platform API format (checkpoint.checkpoint_id,
+// created_at, parent_checkpoint) — not the LangGraph.js internal StateSnapshot
+// format (config.configurable.checkpoint_id, createdAt, parentConfig).
+// Returning the wrong format causes onSuccess() to wipe stream values and the
+// UI to revert to an empty state after every response.
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Helper: Serialize messages to LangGraph Platform format
+// LangChain BaseMessage objects have a .toJSON() that returns {"lc": 1, ...}
+// but the SDK UI expects raw objects like { type: "human", content: "..." }.
+// ---------------------------------------------------------------------------
+function serializeMessage(msg: any): any {
+  if (!msg) return msg;
+
+  if (msg.lc === 1 && msg.type === "constructor" && Array.isArray(msg.id)) {
+    const className = msg.id[msg.id.length - 1];
+    let type = "system";
+    if (className.includes("Human")) type = "human";
+    else if (className.includes("AI")) type = "ai";
+    else if (className.includes("Tool")) type = "tool";
+
+    return {
+      type,
+      id: msg.kwargs?.id ?? msg.id,
+      content: msg.kwargs?.content ?? "",
+      name: msg.kwargs?.name,
+      tool_calls: msg.kwargs?.tool_calls ?? msg.kwargs?.tool_call_chunks,
+      tool_call_id: msg.kwargs?.tool_call_id,
+      additional_kwargs: msg.kwargs?.additional_kwargs,
+      response_metadata: msg.kwargs?.response_metadata,
+      invalid_tool_calls: msg.kwargs?.invalid_tool_calls,
+      usage_metadata: msg.kwargs?.usage_metadata,
+    };
+  }
+
+  const type = typeof msg._getType === "function" ? msg._getType() : msg.type;
+  return {
+    type: type || "unknown",
+    id: msg.id,
+    content: msg.content ?? "",
+    name: msg.name,
+    tool_calls: msg.tool_calls ?? msg.tool_call_chunks,
+    tool_call_id: msg.tool_call_id,
+    additional_kwargs: msg.additional_kwargs,
+    response_metadata: msg.response_metadata,
+    invalid_tool_calls: msg.invalid_tool_calls,
+    usage_metadata: msg.usage_metadata,
+  };
+}
+
+function serializeMessagesInObject(obj: any): any {
+  if (!obj || typeof obj !== "object") return obj;
+  const result = { ...obj };
+  if (Array.isArray(result.messages)) {
+    result.messages = result.messages.map(serializeMessage);
+  } else if (result.messages) {
+    result.messages = serializeMessage(result.messages);
+  }
+  return result;
+}
+
+function snapshotToThreadState(snapshot: {
+  values: unknown;
+  next: string[];
+  config?: {
+    configurable?: { thread_id?: string; checkpoint_id?: string; checkpoint_ns?: string };
+  };
+  metadata?: unknown;
+  createdAt?: string;
+  parentConfig?: { configurable?: { thread_id?: string; checkpoint_id?: string } };
+  tasks?: unknown[];
+}) {
+  const cfg = snapshot.config?.configurable ?? {};
+  const parentCfg = snapshot.parentConfig?.configurable;
+  return {
+    values: serializeMessagesInObject(snapshot.values ?? {}),
+    next: snapshot.next ?? [],
+    config: snapshot.config,
+    checkpoint: {
+      checkpoint_id: cfg.checkpoint_id,
+      thread_id: cfg.thread_id,
+      checkpoint_ns: cfg.checkpoint_ns ?? "",
+    },
+    metadata: snapshot.metadata ?? {},
+    created_at: snapshot.createdAt ?? new Date().toISOString(),
+    parent_checkpoint: parentCfg
+      ? {
+          checkpoint_id: parentCfg.checkpoint_id,
+          thread_id: parentCfg.thread_id,
+          checkpoint_ns: "",
+        }
+      : null,
+    tasks: snapshot.tasks ?? [],
+  };
+}
+
+/** GET /threads/:threadId/state — Get current thread state */
 app.get("/threads/:threadId/state", async (c) => {
   const threadId = c.req.param("threadId");
   try {
@@ -90,34 +415,40 @@ app.get("/threads/:threadId/state", async (c) => {
       configurable: { thread_id: threadId },
     });
 
-    // Log for debugging
-    if (state.next && state.next.length > 0) {
-      console.log(`[GET /state] Thread ${threadId} has pending tasks:`, state.next);
-      if (state.tasks) {
-        console.log(`[GET /state] Tasks:`, JSON.stringify(state.tasks, null, 2));
-      }
-    }
-
-    return c.json(state);
+    return c.json(snapshotToThreadState(state as any));
   } catch (_e) {
-    return c.json({ values: {}, next: [], tasks: [] });
+    return c.json({
+      values: {},
+      next: [],
+      tasks: [],
+      checkpoint: null,
+      metadata: {},
+      created_at: new Date().toISOString(),
+    });
   }
 });
 
-app.get("/threads/:threadId/history", async (c) => {
+/** GET & POST /threads/:threadId/history — Get state history */
+const getHistoryHandler = async (c: any) => {
   const threadId = c.req.param("threadId");
   try {
+    const body = await c.req.json().catch(() => ({}));
+    const limit = body.limit ?? 100;
     const history = [];
-    for await (const state of graph.getStateHistory({
-      configurable: { thread_id: threadId },
-    })) {
-      history.push(state);
+    for await (const state of graph.getStateHistory(
+      { configurable: { thread_id: threadId } },
+      { limit }
+    )) {
+      history.push(snapshotToThreadState(state as any));
     }
     return c.json(history);
   } catch (_e) {
     return c.json([]);
   }
-});
+};
+
+app.get("/threads/:threadId/history", getHistoryHandler);
+app.post("/threads/:threadId/history", getHistoryHandler);
 
 function getDefaultToolApprovalConfig(): ToolApprovalConfig {
   return {
@@ -135,16 +466,32 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
   const config = body.config || {};
   const command = body.command;
 
-  console.log(`[POST /runs/stream] Thread: ${threadId}`);
-  console.log(`[POST /runs/stream] Full body:`, JSON.stringify(body).slice(0, 2000));
-  console.log(`[POST /runs/stream] config object:`, JSON.stringify(config));
-  console.log(`[POST /runs/stream] config.configurable:`, JSON.stringify(config.configurable));
-  console.log(`[POST /runs/stream] body.model_config:`, JSON.stringify(body.model_config));
-  console.log(`[POST /runs/stream] body.configurable:`, JSON.stringify(body.configurable));
-  console.log(`[POST /runs/stream] Has Command: ${!!command}`);
-  console.log(`[POST /runs/stream] Command:`, command ? JSON.stringify(command) : "null");
+  // ---------------------------------------------------------------------------
+  // Normalize stream_mode: the SDK sends LangGraph Platform-specific mode names
+  // (e.g. "messages-tuple") that LangGraph.js doesn't understand. Map them.
+  // Also always include "values" so the SDK's setStreamValues() gets called,
+  // which populates stream.values.messages — required for renders to show messages.
+  // ---------------------------------------------------------------------------
+  const PLATFORM_TO_LGJS: Record<string, string> = {
+    "messages-tuple": "messages",
+  };
+  const VALID_LGJS_MODES = new Set(["values", "updates", "messages", "debug", "custom"]);
 
-  const streamMode = body.stream_mode || ["updates", "messages", "custom"];
+  const requestedModes: string[] = Array.isArray(body.stream_mode)
+    ? body.stream_mode
+    : body.stream_mode
+      ? [body.stream_mode]
+      : ["updates", "messages", "custom"];
+
+  const normalizedModeSet = new Set<string>();
+  for (const m of requestedModes) {
+    const mapped = PLATFORM_TO_LGJS[m] ?? m;
+    if (VALID_LGJS_MODES.has(mapped)) normalizedModeSet.add(mapped);
+  }
+  // Always include "values" — this is what the SDK uses to render messages
+  normalizedModeSet.add("values");
+
+  const streamMode = [...normalizedModeSet];
 
   // Try multiple paths to find model_config - LangGraph SDK might send it differently
   const modelConfigFromBody =
@@ -160,94 +507,78 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
       tool_approval: toolApprovalConfig,
       model_config: modelConfigFromBody,
     },
-    streamMode,
+    streamMode: streamMode as any,
     recursionLimit: 150,
   };
 
   try {
-    let stream;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let stream: any;
 
     if (command) {
-      console.log("[POST /runs/stream] Creating Command with:", JSON.stringify(command));
       const resumeCommand = new Command(command);
       stream = await graph.stream(resumeCommand, runConfig);
     } else {
       stream = await graph.stream(input, runConfig);
     }
 
+    const runId = uuidv4();
     return streamSSE(c, async (streamWriter) => {
+      // Send metadata event first — the SDK uses this to initialize run tracking
+      await streamWriter.writeSSE({
+        event: "metadata",
+        data: JSON.stringify({ run_id: runId }),
+      });
       try {
         for await (const chunk of stream) {
-          const chunkRecord = chunk as Record<string, unknown>;
+          // When multiple streamModes are used (e.g. ["updates", "messages", "custom"]),
+          // graph.stream() yields [eventName, payload] tuples.
+          // When a single streamMode is used, it yields the payload directly.
+          let eventName: string;
+          let payload: unknown;
 
-          console.log("[POST /runs/stream] Chunk:", JSON.stringify(chunkRecord).slice(0, 500));
-
-          // Check for __interrupt__ in the chunk (LangGraph interrupt format)
-          if (chunkRecord.__interrupt__) {
-            console.log(
-              "[POST /runs/stream] __interrupt__ detected:",
-              JSON.stringify(chunkRecord.__interrupt__)
-            );
-
-            // Extract interrupt value from LangGraph Interrupt object
-            const interruptValue =
-              (chunkRecord.__interrupt__ as any)?.value || chunkRecord.__interrupt__;
-
-            await streamWriter.writeSSE({
-              data: JSON.stringify(interruptValue),
-              event: "__interrupt__",
-            });
-            return; // Stream ends after interrupt
-          }
-
-          // Check for updates mode with node names as keys
-          const keys = Object.keys(chunkRecord);
-          for (const key of keys) {
-            if (key === "__interrupt__") {
-              const interruptValue = (chunkRecord[key] as any)?.value || chunkRecord[key];
-              console.log(
-                "[POST /runs/stream] Interrupt in updates:",
-                JSON.stringify(interruptValue)
-              );
-
-              await streamWriter.writeSSE({
-                data: JSON.stringify(interruptValue),
-                event: "__interrupt__",
-              });
-              return;
-            }
-          }
-
-          // Normal chunk processing
-          const eventType = chunkRecord.event as string | undefined;
-          const eventData = chunkRecord.data;
-
-          if (eventType && eventData !== undefined) {
-            await streamWriter.writeSSE({
-              data: JSON.stringify(eventData),
-              event: eventType,
-            });
+          if (Array.isArray(chunk) && chunk.length === 2 && typeof chunk[0] === "string") {
+            // Multi-mode: chunk is [eventName, payload]
+            [eventName, payload] = chunk;
           } else {
-            // For updates mode, the chunk is { nodeName: updateData }
-            await streamWriter.writeSSE({
-              data: JSON.stringify(chunk),
-              event: "updates",
-            });
+            // Single-mode fallback: treat the whole chunk as an "updates" payload
+            eventName = "updates";
+            payload = chunk;
           }
+
+          // Serialize message objects to simple POJOs
+          if (eventName === "values") {
+            payload = serializeMessagesInObject(payload);
+          } else if (eventName === "updates") {
+            const newPayload: any = {};
+            for (const key in payload as any) {
+              newPayload[key] = serializeMessagesInObject((payload as any)[key]);
+            }
+            payload = newPayload;
+          } else if (eventName === "messages" && Array.isArray(payload) && payload.length >= 1) {
+            payload = [serializeMessage(payload[0]), ...payload.slice(1)];
+          }
+
+          await streamWriter.writeSSE({
+            data: JSON.stringify(payload),
+            event: eventName,
+          });
         }
       } catch (streamError: unknown) {
         const error = streamError as Error;
-        console.error("Stream processing error:", error);
+        console.error(`[stream] thread=${threadId} error during streaming:`, error.message);
+        if (error.stack) console.error(error.stack);
         await streamWriter.writeSSE({
-          data: JSON.stringify({ error: error.message }),
+          data: JSON.stringify({ error: error.message, type: error.name }),
           event: "error",
         });
       }
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Stream error:", err);
-    return c.json({ error: err.message }, 500);
+    console.error(`[stream] thread=${threadId} failed to start:`, err.message);
+    if (err.stack) console.error(err.stack);
+    return c.json({ error: err.message, type: err.name }, 500);
   }
 });
 
@@ -282,10 +613,6 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
   const approval = body.approval as ApprovalPayload | undefined;
   const checkpointId = body.checkpoint_id;
 
-  console.log(`[POST /runs/resume] Thread: ${threadId}`);
-  console.log(`[POST /runs/resume] Checkpoint ID: ${checkpointId}`);
-  console.log(`[POST /runs/resume] Approval:`, JSON.stringify(approval));
-
   const runConfig = {
     configurable: {
       thread_id: threadId,
@@ -308,7 +635,6 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
         APPROVAL_TOOL_NAME
       );
 
-      console.log("[POST /runs/resume] Injecting approval ToolMessage");
       await graph.updateState(
         { configurable: { thread_id: threadId } },
         { messages: [toolMessage] }
@@ -323,21 +649,33 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
       return streamSSE(c, async (streamWriter) => {
         try {
           for await (const chunk of stream) {
-            const chunkRecord = chunk as Record<string, unknown>;
-            const eventType = chunkRecord.event as string | undefined;
-            const eventData = chunkRecord.data;
+            let eventName: string;
+            let payload: unknown;
 
-            if (eventType && eventData !== undefined) {
-              await streamWriter.writeSSE({
-                data: JSON.stringify(eventData),
-                event: eventType,
-              });
+            if (Array.isArray(chunk) && chunk.length === 2 && typeof chunk[0] === "string") {
+              [eventName, payload] = chunk;
             } else {
-              await streamWriter.writeSSE({
-                data: JSON.stringify(chunk),
-                event: "data",
-              });
+              eventName = "updates";
+              payload = chunk;
             }
+
+            // Serialize message objects to simple POJOs
+            if (eventName === "values") {
+              payload = serializeMessagesInObject(payload);
+            } else if (eventName === "updates") {
+              const newPayload: any = {};
+              for (const key in payload as any) {
+                newPayload[key] = serializeMessagesInObject((payload as any)[key]);
+              }
+              payload = newPayload;
+            } else if (eventName === "messages" && Array.isArray(payload) && payload.length >= 1) {
+              payload = [serializeMessage(payload[0]), ...payload.slice(1)];
+            }
+
+            await streamWriter.writeSSE({
+              data: JSON.stringify(payload),
+              event: eventName,
+            });
           }
         } catch (streamError: unknown) {
           const error = streamError as Error;
@@ -382,7 +720,8 @@ app.post("/threads/:threadId/runs", async (c) => {
   };
 
   try {
-    let result;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let result: any;
 
     if (command) {
       const resumeCommand = new Command(command);
@@ -443,14 +782,14 @@ app.post("/ollama/pull", async (c) => {
       if (!response.ok) {
         const errorText = await response.text();
         stream.write(
-          JSON.stringify({ status: "error", error: `Failed to pull model: ${errorText}` }) + "\n"
+          `${JSON.stringify({ status: "error", error: `Failed to pull model: ${errorText}` })}\n`
         );
         return;
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
-        stream.write(JSON.stringify({ status: "error", error: "No response body" }) + "\n");
+        stream.write(`${JSON.stringify({ status: "error", error: "No response body" })}\n`);
         return;
       }
 
@@ -469,19 +808,19 @@ app.post("/ollama/pull", async (c) => {
           if (line.trim()) {
             try {
               const data = JSON.parse(line) as OllamaPullProgress;
-              stream.write(JSON.stringify(data) + "\n");
+              stream.write(`${JSON.stringify(data)}\n`);
             } catch {
-              stream.write(JSON.stringify({ status: line }) + "\n");
+              stream.write(`${JSON.stringify({ status: line })}\n`);
             }
           }
         }
       }
 
-      stream.write(JSON.stringify({ status: "complete", model: modelName }) + "\n");
+      stream.write(`${JSON.stringify({ status: "complete", model: modelName })}\n`);
     } catch (error) {
       const err = error as Error;
       console.error("Ollama pull error:", err);
-      stream.write(JSON.stringify({ status: "error", error: err.message }) + "\n");
+      stream.write(`${JSON.stringify({ status: "error", error: err.message })}\n`);
     }
   });
 });
@@ -519,17 +858,7 @@ app.route("/assistants", assistantsRouter);
 const horizonConfig = getHorizonConfig();
 const workspacePath = resolveWorkspacePath(horizonConfig);
 
-console.log(`Server running on port ${agentConfig.PORT}`);
-console.log("Assistants API: /assistants");
-console.log(`Workspace: ${workspacePath}`);
-console.log("Enhanced Agent Features:");
-console.log("  - ReAct Pattern: Enabled");
-console.log("  - Human-in-the-Loop: Enabled");
-console.log("  - Tool Approval: Enabled (with configurable modes)");
-console.log(`  - Rate Limiting: ${agentConfig.ENABLE_RATE_LIMITING ? "Enabled" : "Disabled"}`);
-console.log(`  - Token Tracking: ${agentConfig.ENABLE_TOKEN_TRACKING ? "Enabled" : "Disabled"}`);
-console.log(`  - PII Detection: ${agentConfig.ENABLE_PII_DETECTION ? "Enabled" : "Disabled"}`);
-console.log(`  - Tool Retry: ${agentConfig.ENABLE_TOOL_RETRY ? "Enabled" : "Disabled"}`);
+console.log(`Horizon agent running on port ${agentConfig.PORT} | workspace: ${workspacePath}`);
 
 serve({
   fetch: app.fetch,

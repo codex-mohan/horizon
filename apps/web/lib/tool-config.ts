@@ -8,6 +8,7 @@
  */
 
 import {
+  Bot,
   Cloud,
   Code,
   Database,
@@ -239,6 +240,33 @@ export const toolUIRegistry: Record<string, ToolUIConfig> = {
       collapseResult: true,
     },
   },
+
+  spawn_subagents: {
+    toolName: "spawn_subagents",
+    displayName: "Parallel Workers",
+    description: "Spawn multiple AI workers to handle complex tasks in parallel",
+    namespace: "special",
+    icon: {
+      name: "Bot",
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/10",
+    },
+    component: {
+      name: "WorkerTool",
+      useCustom: true,
+    },
+    statusColors: {
+      pending: "text-amber-400",
+      executing: "text-blue-400",
+      completed: "text-emerald-400",
+      failed: "text-red-400",
+    },
+    metadata: {
+      showArgs: true,
+      collapseResult: false,
+      maxResultHeight: "500px",
+    },
+  },
 };
 
 /**
@@ -304,6 +332,7 @@ export function getToolIcon(toolName: string): LucideIcon {
     Cloud,
     Sparkles,
     Package,
+    Bot,
   };
   return iconMap[config.icon.name] || Wrench;
 }

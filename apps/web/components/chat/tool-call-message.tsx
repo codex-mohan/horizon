@@ -3,6 +3,7 @@
 import { json } from "@codemirror/lang-json";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { cn } from "@horizon/ui/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, ChevronDown, Loader2, XCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 import React, { useMemo } from "react";
@@ -128,16 +129,20 @@ export function ToolCallMessage({ toolCalls, isLoading = false, className }: Too
   const FirstToolIcon = toolCalls.length > 0 ? getToolIcon(toolCalls[0].name) : null;
 
   return (
-    <div
+    <motion.div
       className={cn(
-        "overflow-hidden rounded-xl transition-all duration-500 ease-out",
+        "overflow-hidden rounded-xl",
         isLightTheme
           ? "border border-white/50 bg-white/40 shadow-lg backdrop-blur-xl"
           : "glass-strong border border-primary/20 shadow-xl",
         className
       )}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
     >
       <button
+        type="button"
         className={cn(
           "flex w-full items-center justify-between px-4 py-3",
           "transition-colors duration-300",
@@ -157,11 +162,16 @@ export function ToolCallMessage({ toolCalls, isLoading = false, className }: Too
                 className={cn(
                   "h-4 w-4",
                   isLoading
-                    ? "animate-pulse text-primary"
+                    ? "text-primary"
                     : isLightTheme
                       ? "text-slate-500"
                       : "text-muted-foreground"
                 )}
+                style={
+                  isLoading
+                    ? { animation: "pulse-dot-smooth 1.4s ease-in-out infinite" }
+                    : undefined
+                }
               />
             )}
             {toolCalls.length === 1 && firstToolConfig
@@ -193,123 +203,127 @@ export function ToolCallMessage({ toolCalls, isLoading = false, className }: Too
           </span>
         </div>
 
-        <ChevronDown
-          className={cn(
-            "ml-2 h-4 w-4 transition-transform duration-300",
-            isLightTheme ? "text-slate-500" : "text-muted-foreground",
-            isExpanded && "rotate-180"
-          )}
-        />
+        <motion.div
+          animate={{ rotate: isExpanded ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          className={cn("ml-2", isLightTheme ? "text-slate-500" : "text-muted-foreground")}
+        >
+          <ChevronDown className="h-4 w-4" />
+        </motion.div>
       </button>
 
-      {isExpanded && (
-        <div
-          className={cn(
-            "overflow-hidden transition-all duration-500 ease-out",
-            "animate-slide-down"
-          )}
-        >
-          <div
-            className={cn(
-              "custom-scrollbar max-h-96 space-y-2 overflow-y-auto p-3",
-              isLightTheme ? "scrollbar-light" : ""
-            )}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.33, 1, 0.68, 1] }}
+            style={{ overflow: "hidden" }}
           >
-            {toolCalls.length > 0 ? (
-              toolCalls.map((toolCall, index) => {
-                const isLast = index === toolCalls.length - 1;
-                const showConnector = !isLast;
-                const toolConfig = getToolUIConfig(toolCall.name);
-                const ToolIcon = getToolIcon(toolCall.name);
+            <div
+              className={cn(
+                "custom-scrollbar max-h-96 space-y-2 overflow-y-auto p-3",
+                isLightTheme ? "scrollbar-light" : ""
+              )}
+            >
+              {toolCalls.length > 0 ? (
+                toolCalls.map((toolCall, index) => {
+                  const isLast = index === toolCalls.length - 1;
+                  const showConnector = !isLast;
+                  const toolConfig = getToolUIConfig(toolCall.name);
+                  const ToolIcon = getToolIcon(toolCall.name);
 
-                return (
-                  <div
-                    className={cn(
-                      "stagger-item relative animate-slide-up pb-3 pl-7",
-                      "transition-all duration-500 ease-out"
-                    )}
-                    key={toolCall.id || index}
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    {showConnector && (
-                      <div
-                        className={cn(
-                          "absolute top-8 left-[11px] h-[calc(100%-2rem)] w-px",
-                          isLightTheme
-                            ? "bg-gradient-to-b from-transparent via-slate-300 to-transparent"
-                            : "bg-gradient-to-b from-transparent via-primary/20 to-transparent"
-                        )}
-                      />
-                    )}
-
-                    <div
-                      className={cn(
-                        "absolute top-1 left-0 h-6 w-6 rounded-full",
-                        "flex items-center justify-center",
-                        `bg-gradient-to-br ${getStatusBgColor(toolCall.status)}`,
-                        "shadow-lg ring-4 ring-background/50",
-                        "transition-transform duration-300 hover:scale-110"
-                      )}
+                  return (
+                    <motion.div
+                      className="relative pb-3 pl-7"
+                      key={toolCall.id || index}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, delay: index * 0.05 }}
                     >
-                      <span className="text-white">{getStatusIcon(toolCall.status)}</span>
-                    </div>
-
-                    <div className="pt-0.5">
-                      <div className="mb-1 flex items-center gap-2">
-                        {ToolIcon && (
-                          <ToolIcon
-                            className={cn("h-3.5 w-3.5", getStatusColor(toolCall.status))}
-                          />
-                        )}
-                        <span
-                          className={cn(
-                            "font-medium text-sm",
-                            isLightTheme ? "text-slate-700" : "text-foreground"
-                          )}
-                        >
-                          {toolConfig.displayName}
-                        </span>
-                      </div>
-
-                      {toolCall.arguments && Object.keys(toolCall.arguments).length > 0 && (
-                        <div className="ml-5">
-                          <JsonViewer data={toolCall.arguments} maxHeight="150px" />
-                        </div>
-                      )}
-
-                      {toolCall.result && (
-                        <div className="mt-2 ml-5">
-                          <JsonViewer data={toolCall.result} maxHeight="150px" />
-                        </div>
-                      )}
-
-                      {toolCall.error && (
+                      {showConnector && (
                         <div
                           className={cn(
-                            "mt-2 ml-5 rounded p-2 text-xs",
-                            isLightTheme ? "bg-red-50 text-red-600" : "bg-red-950/30 text-red-400"
+                            "absolute top-8 left-[11px] h-[calc(100%-2rem)] w-px",
+                            isLightTheme
+                              ? "bg-gradient-to-b from-transparent via-slate-300 to-transparent"
+                              : "bg-gradient-to-b from-transparent via-primary/20 to-transparent"
                           )}
-                        >
-                          Error: {toolCall.error}
-                        </div>
+                        />
                       )}
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div
-                className={cn(
-                  "py-4 text-center text-sm",
-                  isLightTheme ? "text-slate-500" : "text-muted-foreground"
-                )}
-              >
-                No tool calls
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+
+                      <motion.div
+                        className={cn(
+                          "absolute top-1 left-0 h-6 w-6 rounded-full",
+                          "flex items-center justify-center",
+                          `bg-gradient-to-br ${getStatusBgColor(toolCall.status)}`,
+                          "shadow-lg ring-4 ring-background/50"
+                        )}
+                        whileHover={{ scale: 1.1 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <span className="text-white">{getStatusIcon(toolCall.status)}</span>
+                      </motion.div>
+
+                      <div className="pt-0.5">
+                        <div className="mb-1 flex items-center gap-2">
+                          {ToolIcon && (
+                            <ToolIcon
+                              className={cn("h-3.5 w-3.5", getStatusColor(toolCall.status))}
+                            />
+                          )}
+                          <span
+                            className={cn(
+                              "font-medium text-sm",
+                              isLightTheme ? "text-slate-700" : "text-foreground"
+                            )}
+                          >
+                            {toolConfig.displayName}
+                          </span>
+                        </div>
+
+                        {toolCall.arguments && Object.keys(toolCall.arguments).length > 0 && (
+                          <div className="ml-5">
+                            <JsonViewer data={toolCall.arguments} maxHeight="150px" />
+                          </div>
+                        )}
+
+                        {toolCall.result && (
+                          <div className="mt-2 ml-5">
+                            <JsonViewer data={toolCall.result} maxHeight="150px" />
+                          </div>
+                        )}
+
+                        {toolCall.error && (
+                          <div
+                            className={cn(
+                              "mt-2 ml-5 rounded p-2 text-xs",
+                              isLightTheme ? "bg-red-50 text-red-600" : "bg-red-950/30 text-red-400"
+                            )}
+                          >
+                            Error: {toolCall.error}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })
+              ) : (
+                <div
+                  className={cn(
+                    "py-4 text-center text-sm",
+                    isLightTheme ? "text-slate-500" : "text-muted-foreground"
+                  )}
+                >
+                  No tool calls
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

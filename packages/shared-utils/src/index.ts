@@ -18,3 +18,5 @@ export {
   LogLevel as Level,
   type SpinnerInstance,
 } from "./logger";
+
+export * from "./paths";

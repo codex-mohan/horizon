@@ -2,7 +2,7 @@
 
 import { cn } from "@horizon/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, Check, ChevronDown, ChevronUp, Copy, Terminal, Wrench } from "lucide-react";
+import { AlertTriangle, Check, Copy, Terminal, Wrench } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
 import { getToolUIConfig } from "@/lib/tool-config";
@@ -265,6 +265,7 @@ export function ShellTool({ toolName, status, args, result, error, isLoading }: 
                     </span>
                   </code>
                   <button
+                    type="button"
                     className="absolute right-2 top-6 rounded bg-background/80 p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
                     onClick={(e) => {
                       e.stopPropagation();

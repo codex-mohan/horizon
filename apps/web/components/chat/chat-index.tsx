@@ -49,7 +49,7 @@ export const ChatIndex = React.memo(function ChatIndex({
   visibleIds,
   onJump,
 }: ChatIndexProps) {
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const [_focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
   // Pre-compute unique group IDs with a Map for O(1) lookups
   const { groupIds, groupIdSet, groupIdToIndex } = useMemo(() => {

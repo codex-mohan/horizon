@@ -11,6 +11,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import { z } from "zod";
 import { getHorizonConfig, resolveWorkspacePath } from "../../lib/config-loader.js";
 import type { ToolApprovalConfig } from "../state.js";
+import { spawnSubagentsTool } from "./subagent.js";
 
 const horizonConfig = getHorizonConfig();
 const workspacePath = resolveWorkspacePath(horizonConfig);
@@ -50,7 +51,6 @@ export function needsApproval(toolName: string, approvalConfig: ToolApprovalConf
       return false;
     case "always_ask":
       return true;
-    case "dangerous_only":
     default:
       return isDangerousTool(toolName);
   }
@@ -124,5 +124,11 @@ export const shellTool = tool(
   }
 );
 
-export const tools = [...webTools, shellTool, createArtifactTool, presentArtifactTool];
+export const tools = [
+  ...webTools,
+  shellTool,
+  createArtifactTool,
+  presentArtifactTool,
+  spawnSubagentsTool,
+];
 export const toolMap = Object.fromEntries(tools.map((t) => [t.name, t]));

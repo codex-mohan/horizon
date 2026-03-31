@@ -50,7 +50,6 @@ export async function ApprovalGate(
   const lastMessage = state.messages.at(-1);
 
   if (!lastMessage || lastMessage._getType() !== "ai") {
-    console.log("[ApprovalGate] No AI message found, skipping");
     return { tools_rejected: false };
   }
 
@@ -58,7 +57,6 @@ export async function ApprovalGate(
   const toolCalls = aiMessage.tool_calls || [];
 
   if (toolCalls.length === 0) {
-    console.log("[ApprovalGate] No tool calls found, skipping");
     return { tools_rejected: false };
   }
 
@@ -76,13 +74,8 @@ export async function ApprovalGate(
     }
   }
 
-  console.log(
-    `[ApprovalGate] ${toolCalls.length} tool(s): ${autoApprovedTools.length} auto-approved, ${toolsNeedingApproval.length} need approval`
-  );
-
   // If no tools need approval, proceed directly
   if (toolsNeedingApproval.length === 0) {
-    console.log("[ApprovalGate] All tools auto-approved");
     return { tools_rejected: false };
   }
 
@@ -99,15 +92,10 @@ export async function ApprovalGate(
     })),
   };
 
-  console.log("[ApprovalGate] Calling interrupt() for user approval");
-
   // Use LangGraph's interrupt() - pauses execution until user responds
   const decisions = interrupt(hitlRequest);
 
-  console.log("[ApprovalGate] interrupt() returned:", typeof decisions, Array.isArray(decisions));
-
   if (!decisions || !Array.isArray(decisions)) {
-    console.log("[ApprovalGate] Invalid decisions, treating as rejection");
     // Return ToolMessage for all tools needing approval
     const toolMessages = toolsNeedingApproval.map(
       (tc) =>
@@ -135,7 +123,6 @@ export async function ApprovalGate(
     const decision = decisions[i] as HitlDecision | undefined;
 
     if (!decision || decision.type === "reject") {
-      console.log("[ApprovalGate] Tool rejected:", tc.name);
       rejectedToolNames.push(tc.name);
 
       // Return ToolMessage so LLM knows the tool was rejected
@@ -147,7 +134,6 @@ export async function ApprovalGate(
         )
       );
     } else if (decision.type === "approve") {
-      console.log("[ApprovalGate] Tool approved:", tc.name);
       if (tc.id) {
         approvedToolIds.add(tc.id);
       }
@@ -156,7 +142,6 @@ export async function ApprovalGate(
 
   // If all tools needing approval were rejected
   if (rejectedToolNames.length === toolsNeedingApproval.length) {
-    console.log("[ApprovalGate] All tools rejected, returning to AgentNode with feedback");
     return {
       messages: toolMessages,
       tools_rejected: true,
@@ -165,9 +150,6 @@ export async function ApprovalGate(
 
   // If some tools were rejected but others approved
   if (rejectedToolNames.length > 0) {
-    console.log(
-      `[ApprovalGate] Partial rejection: ${rejectedToolNames.length} rejected, proceeding with approved tools`
-    );
     // Return ToolMessages for rejected tools, but allow approved ones to proceed
     return {
       messages: toolMessages,
@@ -176,6 +158,6 @@ export async function ApprovalGate(
   }
 
   // All tools approved
-  console.log("[ApprovalGate] All tools approved, proceeding to ToolExecution");
+
   return { tools_rejected: false };
 }

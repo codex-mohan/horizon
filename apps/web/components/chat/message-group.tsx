@@ -18,7 +18,7 @@ import type { Message } from "./chat-interface";
 import { GenerativeUIRenderer } from "./generative-ui-renderer";
 import type { ToolApprovalData } from "./tool-approval-banner";
 import { ToolApprovalBanner } from "./tool-approval-banner";
-import { type ToolCall, ToolCallMessage } from "./tool-call-message";
+import { ToolCallMessage } from "./tool-call-message";
 
 interface MessageGroupProps {
   id: string;

@@ -161,6 +161,6 @@ export const useChatSettings = create<ChatSettingsState>()(
 
 export const DANGEROUS_TOOLS = ["shell_execute", "file_write", "file_delete"];
 
-export const SAFE_TOOLS = ["web_search", "fetch_url_content", "duckduckgo_search"];
+export const SAFE_TOOLS = ["search_web", "fetch_url_content"];
 
 export const ALL_TOOLS = [...SAFE_TOOLS, ...DANGEROUS_TOOLS];

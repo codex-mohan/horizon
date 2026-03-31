@@ -102,6 +102,7 @@ export default function ChatPage() {
                 {/* Edit human messages */}
                 {isUser && (
                   <button
+                    type="button"
                     className="text-muted-foreground text-xs transition-colors hover:text-primary"
                     onClick={() => {
                       const newContent = prompt("Edit message:", message.content as string);
@@ -122,6 +123,7 @@ export default function ChatPage() {
                 {/* Regenerate AI messages */}
                 {!isUser && (
                   <button
+                    type="button"
                     className="text-muted-foreground text-xs transition-colors hover:text-primary"
                     onClick={() => stream.submit(undefined, { checkpoint: parentCheckpoint })}
                   >

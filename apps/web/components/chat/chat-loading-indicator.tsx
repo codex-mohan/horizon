@@ -16,26 +16,9 @@ export function ChatLoadingIndicator({ isLightTheme }: ChatLoadingIndicatorProps
   return (
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-1.5">
-        <span
-          className={cn(
-            "h-2 w-2 rounded-full animate-pulse-dot",
-            "bg-gradient-to-r from-[var(--gradient-from)] to-[var(--gradient-via)]"
-          )}
-        />
-        <span
-          className={cn(
-            "h-2 w-2 rounded-full animate-pulse-dot",
-            "bg-gradient-to-r from-[var(--gradient-via)] to-[var(--gradient-to)]",
-            "animation-delay-150"
-          )}
-        />
-        <span
-          className={cn(
-            "h-2 w-2 rounded-full animate-pulse-dot",
-            "bg-gradient-to-r from-[var(--gradient-to)] to-[var(--gradient-from)]",
-            "animation-delay-300"
-          )}
-        />
+        <LoadingDot delay={0} />
+        <LoadingDot delay={0.15} />
+        <LoadingDot delay={0.3} />
       </div>
       <span
         className={cn(
@@ -46,5 +29,19 @@ export function ChatLoadingIndicator({ isLightTheme }: ChatLoadingIndicatorProps
         Generating...
       </span>
     </div>
+  );
+}
+
+function LoadingDot({ delay }: { delay: number }) {
+  return (
+    <span
+      className="h-2 w-2 shrink-0 rounded-full"
+      style={{
+        background:
+          "linear-gradient(90deg, var(--gradient-from), var(--gradient-via), var(--gradient-to))",
+        animation: "pulse-dot-smooth 1.4s ease-in-out infinite",
+        animationDelay: `${delay}s`,
+      }}
+    />
   );
 }

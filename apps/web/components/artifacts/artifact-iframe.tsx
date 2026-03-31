@@ -135,8 +135,6 @@ function buildSrcdoc(content: string, type: ArtifactType): string {
 <body><pre style="white-space: pre-wrap; word-wrap: break-word;">${escaped}</pre></body>
 </html>`;
     }
-
-    case "code":
     default: {
       const escaped = content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       return `<!DOCTYPE html>
@@ -168,7 +166,7 @@ export function ArtifactIframe({ content, type, language, className }: ArtifactI
   useEffect(() => {
     setIsLoading(true);
     setHasError(false);
-  }, [content, type]);
+  }, []);
 
   return (
     <div className={cn("relative overflow-hidden rounded-lg border border-border", className)}>
