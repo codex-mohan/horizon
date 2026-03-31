@@ -22,7 +22,6 @@ import {
   DialogTitle,
 } from "@horizon/ui/components/dialog";
 import { Input } from "@horizon/ui/components/input";
-import { ScrollArea } from "@horizon/ui/components/scroll-area";
 import { Separator } from "@horizon/ui/components/separator";
 import CodeMirror from "@uiw/react-codemirror";
 import {
@@ -349,6 +348,7 @@ export default function CheckpointEditorPage() {
           <div className="flex-1 overflow-y-auto p-2">
             {filteredThreads.map((thread) => (
               <button
+                type="button"
                 key={thread.id}
                 onClick={() => handleThreadSelect(thread.id)}
                 className={`w-full rounded-lg p-3 text-left transition-colors mb-1 ${
@@ -485,6 +485,7 @@ export default function CheckpointEditorPage() {
                 <div className="flex gap-1">
                   {threadData.checkpoints.map((cp, index) => (
                     <button
+                      type="button"
                       key={cp.checkpoint.id}
                       onClick={() => handleCheckpointSelect(index)}
                       className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${

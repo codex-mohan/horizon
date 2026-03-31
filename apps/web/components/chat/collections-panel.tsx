@@ -12,6 +12,7 @@ export function CollectionsPanel() {
     <div className="space-y-2 p-4">
       {[1, 2, 3].map((i) => (
         <button
+          type="button"
           className="glass hover-lift stagger-item w-full rounded-lg p-3 text-left transition-all duration-200 hover:bg-primary/20"
           key={i}
         >

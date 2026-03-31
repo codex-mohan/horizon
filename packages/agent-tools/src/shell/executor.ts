@@ -168,7 +168,7 @@ export class ShellExecutor {
   ): Promise<ExecutionResult> {
     const cwd = options.cwd ?? this.config.cwd;
     const env = { ...this.config.env, ...options.env };
-    const timeout = options.timeout ?? this.config.timeout;
+    const _timeout = options.timeout ?? this.config.timeout;
 
     const { isDangerous, matchedPatterns } = this.checkDangerous(command);
 

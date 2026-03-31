@@ -31,6 +31,7 @@ export interface ProcessedEvent {
 
 export interface MessageMetadata {
   firstSeenState?: {
+    checkpoint?: { checkpoint_id: string };
     parent_checkpoint?: { checkpoint_id: string };
   };
   branch?: string;
@@ -118,13 +119,16 @@ export type ContentBlock =
   | { type: "image_url"; image_url: { url: string } };
 
 function classifyError(error: unknown): ChatError {
+  // Always log the raw error so it's visible in devtools
+  console.error("[chat] raw error:", error);
+
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
 
     if (message.includes("rate limit") || message.includes("429")) {
       return {
         type: "rate_limit",
-        message: "Rate limit exceeded. Please wait a moment before trying again.",
+        message: `Rate limit exceeded: ${error.message}`,
         details: error,
       };
     }
@@ -132,7 +136,7 @@ function classifyError(error: unknown): ChatError {
     if (message.includes("500") || message.includes("internal server")) {
       return {
         type: "server_error",
-        message: "Server error. Please try again.",
+        message: error.message, // preserve the real message — don't swallow it
         details: error,
       };
     }
@@ -140,7 +144,7 @@ function classifyError(error: unknown): ChatError {
     if (message.includes("network") || message.includes("fetch")) {
       return {
         type: "network_error",
-        message: "Network error. Please check your connection.",
+        message: `Network error: ${error.message}`,
         details: error,
       };
     }
@@ -279,6 +283,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   const [hasPendingTasks, setHasPendingTasks] = useState(false);
   const onThreadIdCalledRef = useRef(false);
   const toolApprovalRef = useRef(toolApproval);
+  const hasCheckedPendingTasksRef = useRef(false);
+  const hasPendingTasksRef = useRef(false);
 
   useEffect(() => {
     toolApprovalRef.current = toolApproval;
@@ -484,22 +490,25 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     setIsActivelyResuming(false);
   }, [initialThreadId]);
 
-  // Check for pending interrupts when thread is loaded
+  // Determine hasPendingTasks synchronously before useStream.
+  // We use a ref (not state) to avoid re-renders that would change useStream options.
+  // The ref is set once here; the delayed state update (for UI) is fire-and-forget.
   useEffect(() => {
-    if (!currentThreadId || isActivelyResuming) {
-      // No thread or actively resuming - ensure interrupt is cleared appropriately
+    if (!currentThreadId || isActivelyResuming || hasCheckedPendingTasksRef.current) {
       if (!isActivelyResuming) {
         setInterrupt(null);
-        setHasPendingTasks(false);
       }
       return;
     }
+
+    hasCheckedPendingTasksRef.current = true;
 
     const checkForInterrupt = async () => {
       try {
         const response = await fetch(`${apiUrl}/threads/${currentThreadId}/state`);
         if (!response.ok) {
           setHasPendingTasks(false);
+          hasPendingTasksRef.current = false;
           return;
         }
 
@@ -512,13 +521,14 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
         // Check if the thread has pending tasks (interrupt)
         if (state.next && state.next.length > 0) {
-          // Thread has pending execution - check for interrupt data
           setHasPendingTasks(true);
+          hasPendingTasksRef.current = true;
+
           if (state.tasks && Array.isArray(state.tasks)) {
             for (const task of state.tasks) {
               if (task.interrupts && task.interrupts.length > 0) {
                 const interruptValue = task.interrupts[0].value;
-                if (interruptValue && interruptValue.action_requests) {
+                if (interruptValue?.action_requests) {
                   console.log("[useChat] Found pending interrupt:", interruptValue);
                   setInterrupt(interruptValue as InterruptData);
                   return;
@@ -527,11 +537,10 @@ export function useChat(options: UseChatOptions): UseChatReturn {
             }
           }
 
-          // Also check state.values for __interrupt__ data
           if (state.values?.__interrupt__) {
             const interruptValue = state.values.__interrupt__;
             const value = interruptValue.value || interruptValue;
-            if (value && value.action_requests) {
+            if (value?.action_requests) {
               console.log("[useChat] Found interrupt in state.values:", value);
               setInterrupt(value as InterruptData);
               return;
@@ -539,15 +548,19 @@ export function useChat(options: UseChatOptions): UseChatReturn {
           }
         } else {
           setHasPendingTasks(false);
+          hasPendingTasksRef.current = false;
         }
       } catch (error) {
         console.error("[useChat] Error checking for interrupt:", error);
         setHasPendingTasks(false);
+        hasPendingTasksRef.current = false;
       }
     };
 
-    const timeoutId = setTimeout(checkForInterrupt, 300);
-    return () => clearTimeout(timeoutId);
+    // Immediate fetch — no delay. The result goes into the ref (for useStream)
+    // and state (for UI). Since the ref update won't trigger re-renders, useStream
+    // options stay stable and it reinitializes at most ONCE on mount.
+    checkForInterrupt();
   }, [currentThreadId, apiUrl, isActivelyResuming]);
 
   const stream = useStream<ChatState>({
@@ -561,7 +574,10 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     onInterrupt: handleInterrupt,
     onCustomEvent: handleCustomEvent,
     throttle: 30,
-    hasPendingTasks,
+    // Use ref (not state) so this value is stable across renders.
+    // State `hasPendingTasks` is still updated for UI consumption but
+    // does NOT cause useStream options to change and reinitialize.
+    hasPendingTasks: hasPendingTasksRef.current,
     fetchStateHistory,
     recursionLimit: 150,
   } as any);
@@ -575,14 +591,13 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     if (!streamInterrupt) return;
     if (interrupt) return; // Already have an interrupt, don't overwrite
     const interruptValue = streamInterrupt.value || streamInterrupt;
-    if (interruptValue && interruptValue.action_requests) {
+    if (interruptValue?.action_requests) {
       console.log("[useChat] stream.interrupt detected:", streamInterrupt);
       setInterrupt(interruptValue as InterruptData);
     } else if (typeof streamInterrupt === "object" && (streamInterrupt as any).action_requests) {
       setInterrupt(streamInterrupt as InterruptData);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [streamInterrupt, isActivelyResuming]);
+  }, [streamInterrupt, isActivelyResuming, interrupt]);
 
   const submit = useCallback(
     async (
@@ -760,7 +775,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
                   for (const task of state.tasks) {
                     if (task.interrupts && task.interrupts.length > 0) {
                       const interruptValue = task.interrupts[0].value;
-                      if (interruptValue && interruptValue.action_requests) {
+                      if (interruptValue?.action_requests) {
                         console.log("[useChat] Found interrupt in thread state after stream end");
                         setInterrupt(interruptValue as InterruptData);
                         return;
@@ -772,7 +787,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
                 if (state.values?.__interrupt__) {
                   const val = state.values.__interrupt__;
                   const interruptValue = (val as any).value || val;
-                  if (interruptValue && interruptValue.action_requests) {
+                  if (interruptValue?.action_requests) {
                     console.log("[useChat] Found interrupt in values after stream end");
                     setInterrupt(interruptValue as InterruptData);
                   }

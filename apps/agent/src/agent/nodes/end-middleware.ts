@@ -7,8 +7,6 @@ export async function EndMiddleware(
 ): Promise<Partial<AgentState>> {
   const updates: Partial<AgentState> = {};
 
-  console.log("[EndMiddleware] Finalizing...");
-
   const endTime = Date.now();
   const startTime = state.start_time || endTime;
   const executionTimeMs = endTime - startTime;
@@ -18,12 +16,6 @@ export async function EndMiddleware(
     ...state.middleware_metrics,
     processing_time_ms: executionTimeMs,
   };
-
-  console.log("[EndMiddleware] Summary:");
-  console.log(`  - Time: ${executionTimeMs}ms`);
-  console.log(`  - Model Calls: ${state.model_calls}`);
-  console.log(`  - Tools: ${state.executed_tool_calls?.length || 0}`);
-  console.log(`  - PII: ${state.middleware_metrics?.pii_detected}`);
 
   return updates;
 }

@@ -5,12 +5,29 @@
  * Supports: PDF, Word (docx), Excel (xlsx), CSV, plain text, code files, images
  */
 
-import mammoth from "mammoth";
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
+
+// Dynamic imports for Node.js-dependent libraries (browser only)
+let mammothLib: typeof import("mammoth") | null = null;
+let xlsxLib: typeof import("xlsx") | null = null;
 
 // Dynamic import for PDF.js to avoid SSR issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let pdfjsLib: typeof import("pdfjs-dist") | null = null;
+
+async function getMammoth() {
+  if (!mammothLib) {
+    mammothLib = await import("mammoth");
+  }
+  return mammothLib;
+}
+
+async function getXlsx() {
+  if (!xlsxLib) {
+    xlsxLib = await import("xlsx");
+  }
+  return xlsxLib;
+}
 
 async function getPdfLib() {
   if (!pdfjsLib) {
@@ -59,7 +76,11 @@ async function extractPdfContent(file: File): Promise<ExtractedContent> {
     for (let i = 1; i <= numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item: any) => item.str).join(" ");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pageText = (textContent.items as any[])
+        .filter((item) => "str" in item)
+        .map((item) => item.str as string)
+        .join(" ");
       fullText += `--- Page ${i} ---\n${pageText}\n\n`;
     }
 
@@ -85,7 +106,8 @@ async function extractPdfContent(file: File): Promise<ExtractedContent> {
 async function extractWordContent(file: File): Promise<ExtractedContent> {
   try {
     const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({ arrayBuffer });
+    const mammothModule = await getMammoth();
+    const result = await mammothModule.extractRawText({ arrayBuffer });
 
     return {
       text: result.value,
@@ -106,7 +128,8 @@ async function extractWordContent(file: File): Promise<ExtractedContent> {
 async function extractExcelContent(file: File): Promise<ExtractedContent> {
   try {
     const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: "array" });
+    const xlsx = await getXlsx();
+    const workbook = xlsx.read(arrayBuffer, { type: "array" });
 
     let fullText = "";
     const sheetNames: string[] = [];
@@ -114,13 +137,13 @@ async function extractExcelContent(file: File): Promise<ExtractedContent> {
     for (const sheetName of workbook.SheetNames) {
       sheetNames.push(sheetName);
       const sheet = workbook.Sheets[sheetName];
-      const csv = XLSX.utils.sheet_to_csv(sheet);
+      const csv = xlsx.utils.sheet_to_csv(sheet);
       fullText += `--- Sheet: ${sheetName} ---\n${csv}\n\n`;
     }
 
     // Get dimensions of first sheet
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const range = XLSX.utils.decode_range(firstSheet["!ref"] || "A1");
+    const range = xlsx.utils.decode_range(firstSheet["!ref"] || "A1");
 
     return {
       text: fullText.trim(),

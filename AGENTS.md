@@ -1,6 +1,6 @@
 # Horizon — Agent Coding Guidelines
 
-> **Last Updated:** 2026-03-21
+> **Last Updated:** 2026-03-31
 > **Maintained by:** AI coding agents working on Horizon
 
 **This document is the single source of truth for AI coding agents working on this codebase. It must be updated whenever the project structure, architecture, configuration, or workflows change. If you make changes that affect how agents should work on this project, update this document immediately.**
@@ -339,20 +339,64 @@ These principles govern all code written for Horizon. They are listed in order o
 
 This project uses **Ultracite**, a zero-config preset built on top of **Biome**, for all linting and formatting. There is **no ESLint or Prettier** — Biome handles everything.
 
-**Commands:**
+### Git Workflow
 
-```bash
-# Check for issues (CI-safe)
-bun x ultracite check
+This project uses Git for version control with a **commit-per-feature/fix** policy.
 
-# Auto-fix all fixable issues
-bun x ultracite fix
+#### Commit Policy
 
-# Diagnose setup problems
-bun x ultracite doctor
+- **Commit after completing each distinct feature, fix, or change** — don't batch multiple unrelated changes into one commit.
+- **One logical change per commit** — if two features are independent, they should be separate commits.
+- **Run `bun x ultracite fix` before committing** — most formatting and lint issues are auto-fixable.
+- **Never commit secrets, API keys, or `.env` files.**
+
+#### Commit Message Format
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>(<target>): <description>
+
+[optional body]
+
+[optional footer]
 ```
 
-**Always run `bun x ultracite fix` before committing.** Most formatting and lint issues are auto-fixable.
+**Types:**
+
+| Type | Description |
+|---|---|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation only changes |
+| `style` | Code style changes (formatting, no logic) |
+| `refactor` | Code refactoring (no feature/fix) |
+| `perf` | Performance improvements |
+| `test` | Adding or updating tests |
+| `build` | Build system or dependency changes |
+| `chore` | Maintenance tasks (deps, configs, tooling) |
+| `ci` | CI/CD changes |
+| `hotfix` | Critical production fix |
+
+**Target:** The affected area (e.g., `agent`, `web`, `ui`, `memory`, `tools`, `docs`, `config`, `agenda`)
+
+**Examples:**
+```
+feat(agent): add parallel worker support
+fix(web): resolve chat input freeze on long messages
+docs(config): update horizon.json schema documentation
+hotfix(agent): prevent dangerous shell pattern bypass
+```
+
+#### Pre-Commit Checklist
+
+> **IMPORTANT: Run `bun x ultracite fix` before EVERY commit.** This is mandatory per Ultracite standards.
+
+1. Run `bun x ultracite fix` to auto-fix formatting/lint issues
+2. Run `bun typecheck` to verify TypeScript compiles
+3. Verify no secrets or API keys are included
+4. Write a clear commit message following the format above
+5. If `AGENTS.md` was updated, mention it in the commit body
 
 **Active Biome Configuration** (`biome.json`):
 
@@ -930,6 +974,32 @@ This directory contains **manually curated documentation** for libraries that ar
 | `LANGCHAIN_USESTREAM.md` | Working with the `useStream` hook, SSE streaming, or modifying the chat data flow |
 
 **Why this matters:** LangGraph and LangChain are rapidly evolving libraries. Their APIs change frequently (e.g., the v0.x → v1.x migration broke many patterns). The documentation here serves as a **pinned, verified reference** — always prefer it over your training data when there's a conflict.
+
+### External Documentation (Context7)
+
+Use the **Context7** MCP tools to fetch up-to-date documentation for external libraries:
+
+| Tool | Purpose |
+|---|---|
+| `context7_resolve-library-id` | Resolve a library name to a Context7-compatible library ID |
+| `context7_query-docs` | Query documentation and code examples for a library |
+
+**When to use Context7:**
+- When working with a new or unfamiliar library
+- When the library has known frequent API changes
+- When `docs/LIBRARY_DOCS/` doesn't cover the specific API you need
+
+**Workflow:**
+1. Call `context7_resolve-library-id` with the library name (e.g., `"langchain"`, `"next.js"`)
+2. Use the returned library ID to call `context7_query-docs` with your specific question
+
+**When Context7 fails or docs are missing:**
+1. Check the library's official documentation site directly
+2. Search the library's GitHub repository for relevant examples or issues
+3. Check Stack Overflow or community forums for practical usage patterns
+4. Look at the library's type definitions or source code for API signatures
+5. If no reliable documentation can be found, proceed with a best-effort implementation and add a `// TODO` comment noting the uncertainty
+6. Document the working implementation in `docs/LIBRARY_DOCS/` so future agents benefit
 
 ### Reference Projects (`docs/REFERENCE_PROJECTS/`)
 

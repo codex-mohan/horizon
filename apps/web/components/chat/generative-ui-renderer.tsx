@@ -1,7 +1,14 @@
 "use client";
 
 import { hasCustomUI } from "@/lib/tool-config";
-import { FetchUrlTool, GenericTool, ShellTool, WeatherTool, WebSearchTool } from "./generative-ui";
+import {
+  FetchUrlTool,
+  GenericTool,
+  ShellTool,
+  WeatherTool,
+  WebSearchTool,
+  WorkerTool,
+} from "./generative-ui";
 import { ArtifactTool } from "./generative-ui/artifact-tool";
 import type { ToolCall } from "./tool-call-message";
 
@@ -49,6 +56,9 @@ function renderGenerativeUI(toolCall: ToolCall, isLoading: boolean): React.React
     case "create_artifact":
     case "present_artifact":
       return <ArtifactTool {...commonProps} />;
+
+    case "spawn_subagents":
+      return <WorkerTool {...commonProps} />;
 
     default:
       return <GenericTool {...commonProps} />;

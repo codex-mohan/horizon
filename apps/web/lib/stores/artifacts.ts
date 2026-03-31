@@ -7,7 +7,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Artifact, ArtifactType } from "@/lib/types/artifact";
+import type { Artifact } from "@/lib/types/artifact";
 
 interface ArtifactsState {
   /** Artifacts keyed by threadId */

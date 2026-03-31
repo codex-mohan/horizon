@@ -2,7 +2,15 @@
 
 import { cn } from "@horizon/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, ChevronDown, Clock, ExternalLink, Globe, Search, Sparkles } from "lucide-react";
+import {
+  AlertCircle,
+  ChevronDown,
+  Clock,
+  ExternalLink,
+  Globe,
+  Search,
+  Sparkles,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTheme } from "@/components/theme/theme-provider";
 import { ModernSpinner } from "./loading-effects";
@@ -39,10 +47,33 @@ interface WebSearchToolProps {
   isLoading?: boolean;
 }
 
+/**
+ * Resolve the real destination URL from a DuckDuckGo redirect URL.
+ * DDG returns protocol-relative redirect URLs like:
+ *   //duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com&...
+ * We extract the `uddg` param (the real URL). Otherwise return as-is.
+ */
+function resolveUrl(url: string): string {
+  try {
+    // Handle protocol-relative URLs (//duckduckgo.com/l/?uddg=...)
+    const normalized = url.startsWith("//") ? `https:${url}` : url;
+    const parsed = new URL(normalized);
+    // DuckDuckGo redirect: extract the actual destination from `uddg` param
+    if (parsed.hostname.includes("duckduckgo.com") && parsed.searchParams.has("uddg")) {
+      const real = parsed.searchParams.get("uddg");
+      if (real) return decodeURIComponent(real);
+    }
+    return normalized;
+  } catch {
+    return url;
+  }
+}
+
 function getFaviconUrl(url: string): string {
   try {
-    const hostname = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`;
+    const resolved = resolveUrl(url);
+    const hostname = new URL(resolved).hostname;
+    return `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`;
   } catch {
     return "";
   }
@@ -50,7 +81,8 @@ function getFaviconUrl(url: string): string {
 
 function getDomainName(url: string): string {
   try {
-    const hostname = new URL(url).hostname;
+    const resolved = resolveUrl(url);
+    const hostname = new URL(resolved).hostname;
     return hostname.replace(/^www\./, "");
   } catch {
     return url;
@@ -127,8 +159,11 @@ function SearchResultCard({
 }) {
   const [imageError, setImageError] = useState(false);
   const [snippetOpen, setSnippetOpen] = useState(false);
+  // Resolve the real destination URL once (strips DDG redirect wrappers)
+  const resolvedUrl = resolveUrl(result.url);
   const domain = getDomainName(result.url);
   const hasSnippet = Boolean(result.snippet);
+  const faviconSrc = getFaviconUrl(result.url);
 
   return (
     <motion.div
@@ -146,12 +181,12 @@ function SearchResultCard({
       <div className="flex min-w-0 items-center gap-2 px-3 py-2">
         {/* Favicon */}
         <div className="shrink-0">
-          {!imageError ? (
+          {faviconSrc && !imageError ? (
             <img
               alt=""
-              className="h-4 w-4 rounded-sm"
+              className="h-4 w-4 rounded-sm object-contain"
               loading="lazy"
-              src={getFaviconUrl(result.url)}
+              src={faviconSrc}
               onError={() => setImageError(true)}
             />
           ) : (
@@ -166,7 +201,7 @@ function SearchResultCard({
             "hover:text-violet-400",
             "text-foreground"
           )}
-          href={result.url}
+          href={resolvedUrl}
           rel="noopener noreferrer"
           target="_blank"
           title={result.title}
@@ -175,14 +210,17 @@ function SearchResultCard({
         </a>
 
         {/* Domain */}
-        <span className="shrink-0 max-w-[120px] truncate text-[10px] text-violet-400/70" title={result.url}>
+        <span
+          className="shrink-0 max-w-[120px] truncate text-[10px] text-violet-400/70"
+          title={resolvedUrl}
+        >
           {domain}
         </span>
 
         {/* External link icon */}
         <a
           className="shrink-0 text-muted-foreground/40 hover:text-violet-400 transition-colors duration-150"
-          href={result.url}
+          href={resolvedUrl}
           rel="noopener noreferrer"
           target="_blank"
           aria-label="Open link"

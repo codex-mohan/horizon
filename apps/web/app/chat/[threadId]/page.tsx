@@ -289,7 +289,11 @@ export default function ChatPage() {
           <p className="text-muted-foreground">
             This conversation doesn't exist or you don't have access to it.
           </p>
-          <button className="text-primary hover:underline" onClick={() => router.push("/chat/new")}>
+          <button
+            type="button"
+            className="text-primary hover:underline"
+            onClick={() => router.push("/chat/new")}
+          >
             Start a new conversation
           </button>
         </motion.div>

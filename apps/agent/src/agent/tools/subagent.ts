@@ -122,9 +122,7 @@ export interface WorkerConfig {
   task: string;
   systemPrompt: string;
   tools?: string[];
-  // biome-ignore: Model config typed as any for flexibility
   modelConfig?: any;
   timeout?: number;
-  // biome-ignore: Context is dynamic
   context?: Record<string, any>;
 }

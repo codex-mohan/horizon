@@ -93,6 +93,7 @@ export function ChatArea({
 
   // Error handler
   const handleError = useCallback((error: ChatError) => {
+    console.error("[chat] Error:", error.type, error.message, error);
     setChatError(error.message);
   }, []);
 
@@ -255,7 +256,7 @@ export function ChatArea({
       if (rafId !== null) cancelAnimationFrame(rafId);
       observer.disconnect();
     };
-  }, [messageGroups]);
+  }, []);
 
   // ============================================================================
   // ARTIFACT PANEL STATE
@@ -356,6 +357,7 @@ export function ChatArea({
       }
 
       if (parentCheckpoint) {
+        // Normal case: branch from the parent checkpoint (state before this message)
         chat.submit({ messages: [{ type: "human", content }] }, { checkpoint: parentCheckpoint });
         if (isLastGroup) {
           toast.success("Created new branch from edited message");
@@ -363,8 +365,25 @@ export function ChatArea({
           toast.success("Replacing conversation from edited message");
         }
       } else if (messageIndex === 0) {
-        chat.submit({ messages: [{ type: "human", content }] });
-        toast.success(isLastGroup ? "Message updated" : "Replacing conversation");
+        // First message: parent_checkpoint is null because it's the root.
+        // Use the message's own checkpoint (firstSeenState.checkpoint) to branch
+        // from the initial state. This creates a proper branch with the switcher
+        // instead of appending a duplicate message.
+        const rootCheckpoint = metadata?.firstSeenState?.checkpoint;
+        if (rootCheckpoint) {
+          chat.submit({ messages: [{ type: "human", content }] }, { checkpoint: rootCheckpoint });
+          if (isLastGroup) {
+            toast.success("Created new branch from edited message");
+          } else {
+            toast.success("Replacing conversation from edited message");
+          }
+        } else {
+          // Absolute fallback: no checkpoint metadata available at all
+          // This should rarely happen — only if history wasn't fetched
+          console.warn("[handleEdit] No checkpoint available for first message, appending");
+          chat.submit({ messages: [{ type: "human", content }] });
+          toast.success(isLastGroup ? "Message updated" : "Replacing conversation");
+        }
       } else {
         toast.error("Unable to edit: No checkpoint available");
         console.error("Missing checkpoint for message:", liveMessage);
@@ -377,6 +396,7 @@ export function ChatArea({
     (messageId: string, isLastGroup: boolean) => {
       const liveMessage = chat.messages.find((m) => m.id === messageId);
       if (!liveMessage) {
+        console.error("[handleRegenerate] Message not found:", messageId);
         toast.error("Message not found in current session");
         return;
       }
@@ -394,13 +414,32 @@ export function ChatArea({
 
       if (parentCheckpoint) {
         chat.submit(undefined, { checkpoint: parentCheckpoint });
-        if (isLastGroup) {
-          toast.success("Regenerating response in new branch");
-        } else {
-          toast.success("Replacing conversation from this point");
-        }
+        toast.success(
+          isLastGroup ? "Regenerating response…" : "Replacing conversation from this point"
+        );
       } else {
-        toast.error("Unable to regenerate: No checkpoint available");
+        // parentCheckpoint is null for AI messages that follow the very first user message.
+        // Fall back to the message's own checkpoint (firstSeenState.checkpoint) so we can
+        // still branch from the root rather than failing silently.
+        const rootCheckpoint = metadata?.firstSeenState?.checkpoint;
+        if (rootCheckpoint) {
+          console.log(
+            "[handleRegenerate] No parent checkpoint, using root checkpoint:",
+            rootCheckpoint.checkpoint_id
+          );
+          chat.submit(undefined, { checkpoint: rootCheckpoint });
+          toast.success(
+            isLastGroup ? "Regenerating response…" : "Replacing conversation from this point"
+          );
+        } else {
+          console.error(
+            "[handleRegenerate] No checkpoint available for message:",
+            messageId,
+            "metadata:",
+            metadata
+          );
+          toast.error("Unable to regenerate: checkpoint data not available");
+        }
       }
     },
     [chat]
@@ -593,7 +632,7 @@ export function ChatArea({
         pendingTitleRef.current = generateConversationTitle(text);
       }
     },
-    [chat, onAttachedFilesChange]
+    [chat, onAttachedFilesChange, settings.modelSettings]
   );
 
   const handleStop = useCallback(() => {
@@ -623,7 +662,7 @@ export function ChatArea({
         entries.push({ id: group.id, role: "user" });
       }
       if (group.assistantMessage || group.toolSteps.length > 0) {
-        entries.push({ id: group.id + "-assistant", role: "assistant" });
+        entries.push({ id: `${group.id}-assistant`, role: "assistant" });
       }
     }
     return entries;
@@ -673,6 +712,7 @@ export function ChatArea({
                 {chatError && (
                   <div className="relative rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
                     <button
+                      type="button"
                       aria-label="Close error"
                       className="absolute top-2 right-2 rounded-md p-1 opacity-60 hover:bg-destructive/20 hover:opacity-100"
                       onClick={() => setChatError(null)}

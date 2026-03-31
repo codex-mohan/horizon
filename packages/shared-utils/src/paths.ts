@@ -9,7 +9,7 @@ import path from "node:path";
 export function getGlobalDataDir(): string {
   const home = os.homedir();
   const dataDir = path.join(home, ".horizon");
-  
+
   if (!fs.existsSync(dataDir)) {
     try {
       fs.mkdirSync(dataDir, { recursive: true });
@@ -17,7 +17,7 @@ export function getGlobalDataDir(): string {
       console.error(`[SharedUtils] Failed to create global data directory at ${dataDir}:`, err);
     }
   }
-  
+
   return dataDir;
 }
 
@@ -28,7 +28,7 @@ export function getGlobalDataDir(): string {
 export function getGlobalSubdir(subdir: string): string {
   const globalDir = getGlobalDataDir();
   const targetDir = path.join(globalDir, subdir);
-  
+
   if (!fs.existsSync(targetDir)) {
     try {
       fs.mkdirSync(targetDir, { recursive: true });
@@ -36,6 +36,6 @@ export function getGlobalSubdir(subdir: string): string {
       console.error(`[SharedUtils] Failed to create subdirectory at ${targetDir}:`, err);
     }
   }
-  
+
   return targetDir;
 }

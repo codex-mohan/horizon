@@ -162,6 +162,7 @@ export function FetchUrlTool({
                   </div>
                   {shouldTruncate && (
                     <button
+                      type="button"
                       className={cn(
                         "mt-1.5 flex items-center gap-1 text-xs transition-colors",
                         "text-primary hover:text-primary/80"

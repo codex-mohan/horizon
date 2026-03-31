@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bunx @langchain/langgraph-cli dev",
+    "dev": "bun --bun --watch run src/index.ts",
     "start": "bun --bun run src/index.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"

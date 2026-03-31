@@ -27,6 +27,7 @@
     "@biomejs/biome": "2.3.13",
     "@horizon/typescript-config": "workspace:*",
     "baseline-browser-mapping": "latest",
+    "lefthook": "^2.1.4",
     "turbo": "^2.8.20",
     "typescript": "5.7.3",
     "ultracite": "7.1.5"

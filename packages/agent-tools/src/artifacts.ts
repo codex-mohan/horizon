@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getGlobalDataDir } from "@horizon/shared-utils";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
-import { getGlobalDataDir } from "@horizon/shared-utils";
 
 function getArtifactsDbPath(): string {
   return path.join(getGlobalDataDir(), "artifacts.json");

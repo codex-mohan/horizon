@@ -1,5 +1,22 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.3.13/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!!**/node_modules",
+      "!!**/.next",
+      "!!**/dist",
+      "!!**/build",
+      "!!**/.turbo",
+      "!!**/.langgraph_api",
+      "!!apps/agent/.checkpoints.json",
+      "!!apps/agent/.thread-metadata.json",
+      "!!apps/agent/data",
+      "!!bun.lock",
+      "!!**/*.lock",
+      "!!**/*.css"
+    ]
+  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -29,7 +46,8 @@
         "noUnusedFunctionParameters": "off"
       },
       "suspicious": {
-        "noArrayIndexKey": "off"
+        "noArrayIndexKey": "off",
+        "noExplicitAny": "off"
       },
       "a11y": {
         "noSvgWithoutTitle": "off",

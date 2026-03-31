@@ -37,24 +37,14 @@ export async function AgentNode(
   state: AgentState,
   _config: RunnableConfig
 ): Promise<Partial<AgentState>> {
-  console.log("[AgentNode] Full config:", JSON.stringify(_config.configurable, null, 2));
-
   const modelConfig = _config.configurable?.model_config as RuntimeModelConfig | undefined;
   const modelSettings = _config.configurable?.model_settings as Record<string, unknown> | undefined;
 
-  console.log("[AgentNode] modelConfig:", modelConfig);
-  console.log(
-    "[AgentNode] modelConfig valid?",
-    !!(modelConfig && modelConfig.provider && modelConfig.modelName)
-  );
-
-  let llm;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let llm: any;
   let modelName: string;
 
-  if (modelConfig && modelConfig.provider && modelConfig.modelName) {
-    console.log(
-      `[AgentNode] Using runtime model config: ${modelConfig.provider}/${modelConfig.modelName} (enableReasoning: ${modelConfig.enableReasoning})`
-    );
+  if (modelConfig?.provider && modelConfig.modelName) {
     llm = await createRuntimeLLM({
       provider: modelConfig.provider,
       modelName: modelConfig.modelName,
@@ -68,7 +58,6 @@ export async function AgentNode(
     });
     modelName = modelConfig.modelName;
   } else {
-    console.log("[AgentNode] Using default config from environment");
     const mergedConfig = { ...agentConfig };
     if (modelSettings) {
       if (modelSettings.temperature !== undefined)
@@ -125,14 +114,12 @@ export async function AgentNode(
   }
 
   const supportsVision = isVisionModel(modelName);
-  console.log("[AgentNode] Model:", modelName, "Vision support:", supportsVision);
 
-  const sanitizedMessages = messages.map((msg: any) => {
+  const sanitizedMessages = messages.map((msg: BaseMessage) => {
     if (Array.isArray(msg.content)) {
       const hasImages = isMultimodalContent(msg.content);
 
       if (hasImages && supportsVision) {
-        console.log("[AgentNode] Preserving multimodal content for vision model");
         return msg;
       }
 
@@ -155,6 +142,5 @@ export async function AgentNode(
 
   const response = await llmWithTools.invoke(sanitizedMessages);
 
-  console.log("[AgentNode] Complete");
   return { messages: [response], model_calls: 1 };
 }

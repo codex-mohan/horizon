@@ -190,6 +190,7 @@ export const ChatBubble = React.memo(
                 {isLongMessage && (
                   <div className="mt-2 flex justify-center border-t border-foreground/10 pt-2">
                     <button
+                      type="button"
                       onClick={() => setIsExpanded(!isExpanded)}
                       className="flex items-center gap-1.5 text-xs text-foreground/70 hover:text-foreground transition-colors font-medium cursor-pointer"
                     >

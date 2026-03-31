@@ -51,7 +51,6 @@ export function needsApproval(toolName: string, approvalConfig: ToolApprovalConf
       return false;
     case "always_ask":
       return true;
-    case "dangerous_only":
     default:
       return isDangerousTool(toolName);
   }

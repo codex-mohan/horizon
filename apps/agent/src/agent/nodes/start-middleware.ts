@@ -15,8 +15,6 @@ export async function StartMiddleware(
 ): Promise<Partial<AgentState>> {
   const updates: Partial<AgentState> = {};
 
-  console.log("[StartMiddleware] Initializing...");
-
   // Set start time
   updates.start_time = Date.now();
 
@@ -54,6 +52,5 @@ export async function StartMiddleware(
     }
   }
 
-  console.log("[StartMiddleware] Complete");
   return updates;
 }

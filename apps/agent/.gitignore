@@ -2,6 +2,10 @@
 # LangGraph API
 .langgraph_api
 
+# Runtime data files (large, auto-generated — never lint these)
+.checkpoints.json
+.thread-metadata.json
+
 # Data
 data/*
 !data/README.md

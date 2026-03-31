@@ -13,7 +13,6 @@ async function emitUIEvent(config: RunnableConfig, uiMessage: UIMessage): Promis
       data: uiMessage,
     });
   }
-  console.log(`[UI Event] ${uiMessage.name}: ${uiMessage.props.status}`);
 }
 
 /**
@@ -34,37 +33,32 @@ export async function ToolExecution(
     .find((msg) => msg._getType() === "ai" && (msg as AIMessage).tool_calls?.length);
 
   if (!aiMessage) {
-    console.log("[ToolExecution] No AI message with tool calls found, skipping");
     return {};
   }
 
   const toolCalls = (aiMessage as AIMessage).tool_calls || [];
 
   if (toolCalls.length === 0) {
-    console.log("[ToolExecution] No tool calls found, skipping");
     return {};
   }
 
   // Get tool_call_ids that already have ToolMessage responses (from ApprovalGate rejections)
   const existingToolCallIds = new Set(
     state.messages
-      .filter((msg: any) => msg._getType() === "tool")
-      .map((msg: any) => (msg as ToolMessage).tool_call_id)
+      .filter((msg) => msg._getType() === "tool")
+      .map((msg) => (msg as ToolMessage).tool_call_id)
   );
 
   // Filter out tools that already have responses (were rejected)
   const toolsToExecute = toolCalls.filter((tc) => !existingToolCallIds.has(tc.id || ""));
 
   if (toolsToExecute.length === 0) {
-    console.log("[ToolExecution] All tools already have responses, skipping");
     return {};
   }
 
   const toolMessages: ToolMessage[] = [];
   const uiMessages: UIMessage[] = [];
   let totalRetries = 0;
-
-  console.log(`[ToolExecution] Executing ${toolsToExecute.length} tool(s)`);
 
   for (const toolCall of toolsToExecute) {
     const toolName = toolCall.name;
@@ -128,10 +122,8 @@ export async function ToolExecution(
 
     while (true) {
       try {
-        console.log(`[ToolExecution] Invoking ${toolName}...`);
         const toolResult = await (tool as any).invoke(toolArgs);
         result = typeof toolResult === "string" ? toolResult : JSON.stringify(toolResult);
-        console.log(`[ToolExecution] ${toolName} completed`);
 
         // Emit completion UI message
         const completeUIMessage: UIMessage = {
@@ -195,8 +187,6 @@ export async function ToolExecution(
 
     toolMessages.push(new ToolMessage(result, toolCallId, toolName));
   }
-
-  console.log(`[ToolExecution] Completed ${toolMessages.length} tool(s)`);
 
   const updates: Partial<AgentState> = {
     messages: toolMessages,

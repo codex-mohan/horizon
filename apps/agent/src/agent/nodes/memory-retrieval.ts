@@ -22,7 +22,6 @@ export function initializeMemory(): MemoryClient | null {
     .initialize()
     .then(() => {
       memoryInitialized = true;
-      console.log("[Memory] Initialized");
     })
     .catch((err) => console.warn("[Memory] Unavailable:", err.message));
 
@@ -60,12 +59,9 @@ export async function MemoryRetrieval(
     return updates;
   }
 
+  const messageContent = lastUserMessage.content;
   const content =
-    typeof (lastUserMessage as any).content === "string"
-      ? (lastUserMessage as any).content
-      : JSON.stringify((lastUserMessage as any).content);
-
-  console.log("[MemoryRetrieval] Searching...");
+    typeof messageContent === "string" ? messageContent : JSON.stringify(messageContent);
 
   try {
     const memories = await memoryClient.retrieve({
@@ -76,7 +72,6 @@ export async function MemoryRetrieval(
     });
 
     if (memories.length > 0) {
-      console.log(`[MemoryRetrieval] Found ${memories.length} memories`);
       updates.metadata = {
         ...state.metadata,
         retrieved_memories: memories.map((m) => ({

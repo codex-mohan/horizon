@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "node:events";
 import type { SubAgentConfig, SubAgentResult } from "../state.js";
 
 export type WorkerEventType =

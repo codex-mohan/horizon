@@ -73,6 +73,7 @@ export function GenericTool({
     >
       {/* Header — click to expand/collapse */}
       <button
+        type="button"
         className={cn(
           "flex w-full items-center justify-between px-4 py-3 text-left transition-colors",
           isLight ? "hover:bg-muted/30" : "hover:bg-white/5"
@@ -154,6 +155,7 @@ export function GenericTool({
                       <code>{formatJSON(args)}</code>
                     </pre>
                     <button
+                      type="button"
                       className={cn(
                         "absolute top-2 right-2 rounded-md p-1.5 opacity-0 transition-opacity group-hover:opacity-100",
                         isLight
@@ -213,6 +215,7 @@ export function GenericTool({
                         <code className="whitespace-pre-wrap">{result}</code>
                       </pre>
                       <button
+                        type="button"
                         className={cn(
                           "absolute top-2 right-2 rounded-md p-1.5 opacity-0 transition-opacity group-hover:opacity-100",
                           isLight

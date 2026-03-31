@@ -1,38 +1,104 @@
 "use client";
 
-import { cn } from "@horizon/ui/lib/utils";
-import * as SwitchPrimitives from "@radix-ui/react-switch";
 import * as React from "react";
 
-const Switch = React.forwardRef<
-  React.ComponentRef<typeof SwitchPrimitives.Root>,
-  React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
->(({ className, ...props }, ref) => (
-  <SwitchPrimitives.Root
-    className={cn(
-      // Force explicit dimensions and prevent aspect-ratio interference
-      "peer inline-flex h-6 w-11 min-w-11 aspect-auto shrink-0",
-      "cursor-pointer items-center rounded-full border-2 border-transparent",
-      "p-0.5", // ← padding gives the thumb room to sit inside the track
-      "transition-colors focus-visible:outline-none focus-visible:ring-2",
-      "focus-visible:ring-ring focus-visible:ring-offset-2",
-      "focus-visible:ring-offset-background",
-      "disabled:cursor-not-allowed disabled:opacity-50",
-      "data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
-      className
-    )}
-    {...props}
-    ref={ref}
-  >
-    <SwitchPrimitives.Thumb
-      className={cn(
-        "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0",
-        "transition-transform duration-200",
-        "data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
-      )}
-    />
-  </SwitchPrimitives.Root>
-));
-Switch.displayName = SwitchPrimitives.Root.displayName;
+interface SwitchProps {
+  checked?: boolean;
+  defaultChecked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+  disabled?: boolean;
+  className?: string;
+  id?: string;
+  name?: string;
+  required?: boolean;
+}
 
-export { Switch };
+export function Switch({
+  checked,
+  defaultChecked,
+  onCheckedChange,
+  disabled = false,
+  className = "",
+  id,
+  name,
+  required,
+  ...props
+}: SwitchProps) {
+  const [isChecked, setIsChecked] = React.useState(defaultChecked ?? false);
+  const isControlled = checked !== undefined;
+  const isOn = isControlled ? checked : isChecked;
+
+  const handleClick = () => {
+    if (disabled) return;
+
+    const newValue = !isOn;
+
+    if (!isControlled) {
+      setIsChecked(newValue);
+    }
+
+    onCheckedChange?.(newValue);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
+  const trackStyle: React.CSSProperties = {
+    position: "relative",
+    display: "inline-flex",
+    alignItems: "center",
+    width: "44px",
+    height: "24px",
+    borderRadius: "12px",
+    border: "none",
+    padding: "2px",
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.5 : 1,
+    backgroundColor: isOn ? "var(--primary, #8b5cf6)" : "var(--input, #e5e5e5)",
+    transition: "background-color 200ms ease-out",
+    outline: "none",
+  };
+
+  const thumbStyle: React.CSSProperties = {
+    position: "absolute",
+    left: isOn ? "22px" : "2px",
+    width: "20px",
+    height: "20px",
+    borderRadius: "50%",
+    backgroundColor: "#ffffff",
+    boxShadow:
+      "0 1px 3px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.9)",
+    border: "1px solid rgba(0,0,0,0.1)",
+    transition: "left 200ms ease-out",
+    pointerEvents: "none",
+  };
+
+  return (
+    <button
+      id={id}
+      name={name}
+      type="button"
+      role="switch"
+      aria-checked={isOn}
+      aria-required={required}
+      disabled={disabled}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onFocus={(e) => {
+        e.currentTarget.style.boxShadow = "0 0 0 2px var(--ring, #8b5cf6)";
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.boxShadow = "none";
+      }}
+      style={trackStyle}
+      className={className}
+      {...props}
+    >
+      <span style={thumbStyle} />
+    </button>
+  );
+}

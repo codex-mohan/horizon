@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { serve } from "@hono/node-server";
+import { getGlobalDataDir } from "@horizon/shared-utils";
 import { ToolMessage } from "@langchain/core/messages";
 import { Command } from "@langchain/langgraph";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
 import { v4 as uuidv4 } from "uuid";
-import { getGlobalDataDir } from "@horizon/shared-utils";
 
 interface OllamaModel {
   name: string;
@@ -375,7 +375,9 @@ function serializeMessagesInObject(obj: any): any {
 function snapshotToThreadState(snapshot: {
   values: unknown;
   next: string[];
-  config?: { configurable?: { thread_id?: string; checkpoint_id?: string; checkpoint_ns?: string } };
+  config?: {
+    configurable?: { thread_id?: string; checkpoint_id?: string; checkpoint_ns?: string };
+  };
   metadata?: unknown;
   createdAt?: string;
   parentConfig?: { configurable?: { thread_id?: string; checkpoint_id?: string } };
@@ -413,16 +415,16 @@ app.get("/threads/:threadId/state", async (c) => {
       configurable: { thread_id: threadId },
     });
 
-    if (state.next && state.next.length > 0) {
-      console.log(`[GET /state] Thread ${threadId} has pending tasks:`, state.next);
-      if (state.tasks) {
-        console.log(`[GET /state] Tasks:`, JSON.stringify(state.tasks, null, 2));
-      }
-    }
-
     return c.json(snapshotToThreadState(state as any));
   } catch (_e) {
-    return c.json({ values: {}, next: [], tasks: [], checkpoint: null, metadata: {}, created_at: new Date().toISOString() });
+    return c.json({
+      values: {},
+      next: [],
+      tasks: [],
+      checkpoint: null,
+      metadata: {},
+      created_at: new Date().toISOString(),
+    });
   }
 });
 
@@ -464,15 +466,6 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
   const config = body.config || {};
   const command = body.command;
 
-  console.log(`[POST /runs/stream] Thread: ${threadId}`);
-  console.log(`[POST /runs/stream] Full body:`, JSON.stringify(body).slice(0, 2000));
-  console.log(`[POST /runs/stream] config object:`, JSON.stringify(config));
-  console.log(`[POST /runs/stream] config.configurable:`, JSON.stringify(config.configurable));
-  console.log(`[POST /runs/stream] body.model_config:`, JSON.stringify(body.model_config));
-  console.log(`[POST /runs/stream] body.configurable:`, JSON.stringify(body.configurable));
-  console.log(`[POST /runs/stream] Has Command: ${!!command}`);
-  console.log(`[POST /runs/stream] Command:`, command ? JSON.stringify(command) : "null");
-
   // ---------------------------------------------------------------------------
   // Normalize stream_mode: the SDK sends LangGraph Platform-specific mode names
   // (e.g. "messages-tuple") that LangGraph.js doesn't understand. Map them.
@@ -499,8 +492,6 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
   normalizedModeSet.add("values");
 
   const streamMode = [...normalizedModeSet];
-  console.log(`[POST /runs/stream] requested modes: ${requestedModes} → normalized: ${streamMode}`);
-
 
   // Try multiple paths to find model_config - LangGraph SDK might send it differently
   const modelConfigFromBody =
@@ -521,10 +512,10 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
   };
 
   try {
-    let stream;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let stream: any;
 
     if (command) {
-      console.log("[POST /runs/stream] Creating Command with:", JSON.stringify(command));
       const resumeCommand = new Command(command);
       stream = await graph.stream(resumeCommand, runConfig);
     } else {
@@ -568,11 +559,6 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
             payload = [serializeMessage(payload[0]), ...payload.slice(1)];
           }
 
-          console.log(
-            `[POST /runs/stream] event=${eventName}`,
-            JSON.stringify(payload).slice(0, 300)
-          );
-
           await streamWriter.writeSSE({
             data: JSON.stringify(payload),
             event: eventName,
@@ -580,17 +566,19 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
         }
       } catch (streamError: unknown) {
         const error = streamError as Error;
-        console.error("Stream processing error:", error);
+        console.error(`[stream] thread=${threadId} error during streaming:`, error.message);
+        if (error.stack) console.error(error.stack);
         await streamWriter.writeSSE({
-          data: JSON.stringify({ error: error.message }),
+          data: JSON.stringify({ error: error.message, type: error.name }),
           event: "error",
         });
       }
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Stream error:", err);
-    return c.json({ error: err.message }, 500);
+    console.error(`[stream] thread=${threadId} failed to start:`, err.message);
+    if (err.stack) console.error(err.stack);
+    return c.json({ error: err.message, type: err.name }, 500);
   }
 });
 
@@ -625,10 +613,6 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
   const approval = body.approval as ApprovalPayload | undefined;
   const checkpointId = body.checkpoint_id;
 
-  console.log(`[POST /runs/resume] Thread: ${threadId}`);
-  console.log(`[POST /runs/resume] Checkpoint ID: ${checkpointId}`);
-  console.log(`[POST /runs/resume] Approval:`, JSON.stringify(approval));
-
   const runConfig = {
     configurable: {
       thread_id: threadId,
@@ -651,7 +635,6 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
         APPROVAL_TOOL_NAME
       );
 
-      console.log("[POST /runs/resume] Injecting approval ToolMessage");
       await graph.updateState(
         { configurable: { thread_id: threadId } },
         { messages: [toolMessage] }
@@ -688,11 +671,6 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
             } else if (eventName === "messages" && Array.isArray(payload) && payload.length >= 1) {
               payload = [serializeMessage(payload[0]), ...payload.slice(1)];
             }
-
-            console.log(
-              `[POST /runs/resume] event=${eventName}`,
-              JSON.stringify(payload).slice(0, 300)
-            );
 
             await streamWriter.writeSSE({
               data: JSON.stringify(payload),
@@ -742,7 +720,8 @@ app.post("/threads/:threadId/runs", async (c) => {
   };
 
   try {
-    let result;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let result: any;
 
     if (command) {
       const resumeCommand = new Command(command);
@@ -803,14 +782,14 @@ app.post("/ollama/pull", async (c) => {
       if (!response.ok) {
         const errorText = await response.text();
         stream.write(
-          JSON.stringify({ status: "error", error: `Failed to pull model: ${errorText}` }) + "\n"
+          `${JSON.stringify({ status: "error", error: `Failed to pull model: ${errorText}` })}\n`
         );
         return;
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
-        stream.write(JSON.stringify({ status: "error", error: "No response body" }) + "\n");
+        stream.write(`${JSON.stringify({ status: "error", error: "No response body" })}\n`);
         return;
       }
 
@@ -829,19 +808,19 @@ app.post("/ollama/pull", async (c) => {
           if (line.trim()) {
             try {
               const data = JSON.parse(line) as OllamaPullProgress;
-              stream.write(JSON.stringify(data) + "\n");
+              stream.write(`${JSON.stringify(data)}\n`);
             } catch {
-              stream.write(JSON.stringify({ status: line }) + "\n");
+              stream.write(`${JSON.stringify({ status: line })}\n`);
             }
           }
         }
       }
 
-      stream.write(JSON.stringify({ status: "complete", model: modelName }) + "\n");
+      stream.write(`${JSON.stringify({ status: "complete", model: modelName })}\n`);
     } catch (error) {
       const err = error as Error;
       console.error("Ollama pull error:", err);
-      stream.write(JSON.stringify({ status: "error", error: err.message }) + "\n");
+      stream.write(`${JSON.stringify({ status: "error", error: err.message })}\n`);
     }
   });
 });
@@ -879,17 +858,7 @@ app.route("/assistants", assistantsRouter);
 const horizonConfig = getHorizonConfig();
 const workspacePath = resolveWorkspacePath(horizonConfig);
 
-console.log(`Server running on port ${agentConfig.PORT}`);
-console.log("Assistants API: /assistants");
-console.log(`Workspace: ${workspacePath}`);
-console.log("Enhanced Agent Features:");
-console.log("  - ReAct Pattern: Enabled");
-console.log("  - Human-in-the-Loop: Enabled");
-console.log("  - Tool Approval: Enabled (with configurable modes)");
-console.log(`  - Rate Limiting: ${agentConfig.ENABLE_RATE_LIMITING ? "Enabled" : "Disabled"}`);
-console.log(`  - Token Tracking: ${agentConfig.ENABLE_TOKEN_TRACKING ? "Enabled" : "Disabled"}`);
-console.log(`  - PII Detection: ${agentConfig.ENABLE_PII_DETECTION ? "Enabled" : "Disabled"}`);
-console.log(`  - Tool Retry: ${agentConfig.ENABLE_TOOL_RETRY ? "Enabled" : "Disabled"}`);
+console.log(`Horizon agent running on port ${agentConfig.PORT} | workspace: ${workspacePath}`);
 
 serve({
   fetch: app.fetch,

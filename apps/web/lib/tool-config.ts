@@ -332,6 +332,7 @@ export function getToolIcon(toolName: string): LucideIcon {
     Cloud,
     Sparkles,
     Package,
+    Bot,
   };
   return iconMap[config.icon.name] || Wrench;
 }

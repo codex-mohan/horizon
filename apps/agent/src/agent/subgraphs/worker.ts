@@ -26,15 +26,18 @@ export async function runWorker(config: SubAgentConfig): Promise<SubAgentResult>
   workerEventEmitter.emitWorkerStarted(config);
 
   try {
+    const timeoutMs = config.timeout || 300000;
+    let isTimedOut = false;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        isTimedOut = true;
+        reject(new Error(`Worker timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
     const llm = await createRuntimeLLM(
       config.modelConfig || {
-        provider: agentConfig.MODEL_PROVIDER as
-          | "openai"
-          | "anthropic"
-          | "google"
-          | "ollama"
-          | "groq"
-          | "nvidia_nim",
+        provider: agentConfig.MODEL_PROVIDER as any,
         modelName: agentConfig.MODEL_NAME,
         apiKey:
           agentConfig.MODEL_PROVIDER === "openai"
@@ -85,107 +88,113 @@ export async function runWorker(config: SubAgentConfig): Promise<SubAgentResult>
     const maxIterations = 15;
     let iteration = 0;
 
-    while (iteration < maxIterations) {
-      iteration++;
+    const executeWorker = async () => {
+      while (iteration < maxIterations) {
+        if (isTimedOut) throw new Error(`Worker timed out after ${timeoutMs}ms`);
+        iteration++;
 
-      workerEventEmitter.emitWorkerProgress(
-        config.id,
-        config.name,
-        "running",
-        `Iteration ${iteration}/${maxIterations}`
-      );
-
-      const response = await llmWithTools.invoke(messages);
-
-      messages = [...messages, response];
-
-      if (!response.tool_calls || response.tool_calls.length === 0) {
-        console.log(`[Worker ${config.id}] No more tool calls, finishing.`);
-        break;
-      }
-
-      for (const toolCall of response.tool_calls) {
         workerEventEmitter.emitWorkerProgress(
           config.id,
           config.name,
-          "tool_call",
-          `Calling ${toolCall.name}`,
-          {
-            name: toolCall.name,
-            args: toolCall.args as Record<string, unknown>,
-          }
+          "running",
+          `Iteration ${iteration}/${maxIterations}`
         );
 
-        const tool = toolMap[toolCall.name];
-        if (!tool) {
-          const errorMsg = `Tool not found: ${toolCall.name}`;
-          console.error(`[Worker ${config.id}] ${errorMsg}`);
-          messages = [
-            ...messages,
-            new ToolMessage({
-              content: errorMsg,
-              tool_call_id: toolCall.id,
-              name: toolCall.name,
-            }),
-          ];
-          continue;
+        const response = await llmWithTools.invoke(messages);
+
+        messages = [...messages, response];
+
+        if (!response.tool_calls || response.tool_calls.length === 0) {
+          console.log(`[Worker ${config.id}] No more tool calls, finishing.`);
+          break;
         }
 
-        try {
-          const args = toolCall.args as Record<string, unknown>;
-          // biome-ignore: LangChain tool typing requires any
-          const result = await (tool as any).invoke(args);
-
-          const resultStr = typeof result === "string" ? result : JSON.stringify(result);
-          messages = [
-            ...messages,
-            new ToolMessage({
-              content: resultStr,
-              tool_call_id: toolCall.id,
-              name: toolCall.name,
-            }),
-          ];
-
+        for (const toolCall of response.tool_calls) {
+          if (isTimedOut) throw new Error(`Worker timed out after ${timeoutMs}ms`);
           workerEventEmitter.emitWorkerProgress(
             config.id,
             config.name,
-            "running",
-            `Completed ${toolCall.name}`
-          );
-        } catch (toolError) {
-          const errorMsg = toolError instanceof Error ? toolError.message : String(toolError);
-          console.error(`[Worker ${config.id}] Tool error: ${errorMsg}`);
-          messages = [
-            ...messages,
-            new ToolMessage({
-              content: `Error: ${errorMsg}`,
-              tool_call_id: toolCall.id,
+            "tool_call",
+            `Calling ${toolCall.name}`,
+            {
               name: toolCall.name,
-            }),
-          ];
+              args: toolCall.args as Record<string, unknown>,
+            }
+          );
+
+          const tool = toolMap[toolCall.name];
+          if (!tool) {
+            const errorMsg = `Tool not found: ${toolCall.name}`;
+            console.error(`[Worker ${config.id}] ${errorMsg}`);
+            messages = [
+              ...messages,
+              new ToolMessage({
+                content: errorMsg,
+                tool_call_id: toolCall.id,
+                name: toolCall.name,
+              }),
+            ];
+            continue;
+          }
+
+          try {
+            const args = toolCall.args as Record<string, unknown>;
+            // biome-ignore: LangChain tool typing requires any
+            const result = await (tool as any).invoke(args);
+
+            const resultStr = typeof result === "string" ? result : JSON.stringify(result);
+            messages = [
+              ...messages,
+              new ToolMessage({
+                content: resultStr,
+                tool_call_id: toolCall.id,
+                name: toolCall.name,
+              }),
+            ];
+
+            workerEventEmitter.emitWorkerProgress(
+              config.id,
+              config.name,
+              "running",
+              `Completed ${toolCall.name}`
+            );
+          } catch (toolError) {
+            const errorMsg = toolError instanceof Error ? toolError.message : String(toolError);
+            console.error(`[Worker ${config.id}] Tool error: ${errorMsg}`);
+            messages = [
+              ...messages,
+              new ToolMessage({
+                content: `Error: ${errorMsg}`,
+                tool_call_id: toolCall.id,
+                name: toolCall.name,
+              }),
+            ];
+          }
         }
       }
-    }
 
-    const lastMessage = messages[messages.length - 1];
-    const output = (lastMessage?.content as string) || "";
+      const lastMessage = messages[messages.length - 1];
+      const output = (lastMessage?.content as string) || "";
 
-    const executionTime = Date.now() - startTime;
-    console.log(`[Worker ${config.id}] Completed in ${executionTime}ms`);
+      const executionTime = Date.now() - startTime;
+      console.log(`[Worker ${config.id}] Completed in ${executionTime}ms`);
 
-    const result: SubAgentResult = {
-      task_id: config.id,
-      agent_id: config.id,
-      status: "success",
-      output,
-      metrics: {
-        execution_time_ms: executionTime,
-      },
+      const result: SubAgentResult = {
+        task_id: config.id,
+        agent_id: config.id,
+        status: "success",
+        output,
+        metrics: {
+          execution_time_ms: executionTime,
+        },
+      };
+
+      workerEventEmitter.emitWorkerCompleted(result, config.name);
+
+      return result;
     };
 
-    workerEventEmitter.emitWorkerCompleted(result, config.name);
-
-    return result;
+    return await Promise.race([executeWorker(), timeoutPromise]);
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error(`[Worker ${config.id}] Failed: ${errorMsg}`);

@@ -1,0 +1,10 @@
+# Lefthook configuration for Ultracite pre-commit hooks
+
+pre-commit:
+  commands:
+    lint:
+      run: bunx ultracite check
+      staged: true
+    fix:
+      run: bunx ultracite fix
+      staged: true

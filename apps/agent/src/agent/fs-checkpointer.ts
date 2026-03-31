@@ -77,7 +77,7 @@ export class FileSystemCheckpointer extends BaseCheckpointSaver {
     return undefined;
   }
 
-  async *list(config: RunnableConfig, _options?: any): AsyncGenerator<CheckpointTuple> {
+  async *list(config: RunnableConfig, _options?: unknown): AsyncGenerator<CheckpointTuple> {
     const thread_id = config.configurable?.thread_id;
     if (!thread_id) {
       return;
