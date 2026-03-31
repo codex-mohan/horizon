@@ -12,7 +12,7 @@ import { languages } from "@codemirror/language-data";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { langs } from "@uiw/codemirror-extensions-langs";
 import dynamic from "next/dynamic";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FiCheck, FiCopy, FiDownload } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -293,6 +293,7 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
               className="flex items-center gap-1.5 rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-muted"
               onClick={handleDownload}
               title="Download code"
+              type="button"
             >
               <FiDownload size={14} />
               Download
@@ -301,6 +302,7 @@ const CodeBlock: React.FC<{ code: string; langHint?: string }> = React.memo(
               className="flex items-center gap-1.5 rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-muted"
               onClick={handleCopy}
               title="Copy code"
+              type="button"
             >
               {isCopied ? (
                 <>
@@ -359,6 +361,80 @@ const getYouTubeVideoId = (url: string): string | null => {
     /(?:youtube\.com\/(?:[^/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
   const match: any = url.match(regex);
   return match ? match[1] : null;
+};
+
+// Extracted table component with hooks at top level
+const MarkdownTable: React.FC<{ children: React.ReactNode; props: any }> = ({
+  children,
+  props,
+}) => {
+  const [showDownload, setShowDownload] = useState(false);
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  const downloadCSV = () => {
+    try {
+      if (!tableRef.current) {
+        return;
+      }
+
+      const rows = Array.from(tableRef.current.querySelectorAll("tr"));
+      const tableData = rows.map((row) =>
+        Array.from(row.querySelectorAll("th, td")).map((cell) =>
+          (cell.textContent || "").trim().replace(/"/g, '""')
+        )
+      );
+
+      if (tableData.length === 0) {
+        return;
+      }
+
+      const csvContent = tableData
+        .map((row) => row.map((cell) => `"${cell}"`).join(","))
+        .join("\n");
+
+      const blob = new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "table-data.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading CSV:", error);
+    }
+  };
+
+  return (
+    <div
+      className="my-2 w-full rounded-lg border"
+      onMouseEnter={() => setShowDownload(true)}
+      onMouseLeave={() => setShowDownload(false)}
+    >
+      <div className="relative">
+        {showDownload && (
+          <button
+            className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-md bg-primary px-2 py-1 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
+            onClick={downloadCSV}
+            title="Download as CSV"
+            type="button"
+          >
+            <FiDownload size={12} />
+            CSV
+          </button>
+        )}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" ref={tableRef} {...props}>
+            {children}
+          </table>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // MAIN FIX: Wrap MarkdownView in React.memo to prevent re-renders when parent state changes.
@@ -422,74 +498,7 @@ const MarkdownView: React.FC<{ text: string }> = React.memo(({ text }) => {
           {...props}
         />
       ),
-      table: ({ children, ...props }: any) => {
-        const [showDownload, setShowDownload] = useState(false);
-        const tableRef = React.useRef<HTMLTableElement>(null);
-
-        const downloadCSV = () => {
-          try {
-            if (!tableRef.current) {
-              return;
-            }
-
-            const rows = Array.from(tableRef.current.querySelectorAll("tr"));
-            const tableData = rows.map((row) =>
-              Array.from(row.querySelectorAll("th, td")).map((cell) =>
-                (cell.textContent || "").trim().replace(/"/g, '""')
-              )
-            );
-
-            if (tableData.length === 0) {
-              return;
-            }
-
-            const csvContent = tableData
-              .map((row) => row.map((cell) => `"${cell}"`).join(","))
-              .join("\n");
-
-            const blob = new Blob([csvContent], {
-              type: "text/csv;charset=utf-8;",
-            });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "table-data.csv");
-            link.style.visibility = "hidden";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          } catch (error) {
-            console.error("Error downloading CSV:", error);
-          }
-        };
-
-        return (
-          <div
-            className="my-2 w-full rounded-lg border"
-            onMouseEnter={() => setShowDownload(true)}
-            onMouseLeave={() => setShowDownload(false)}
-          >
-            <div className="relative">
-              {showDownload && (
-                <button
-                  className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-md bg-primary px-2 py-1 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
-                  onClick={downloadCSV}
-                  title="Download as CSV"
-                >
-                  <FiDownload size={12} />
-                  CSV
-                </button>
-              )}
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm" ref={tableRef} {...props}>
-                  {children}
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-      },
+      table: ({ children, ...props }: any) => <MarkdownTable {...props}>{children}</MarkdownTable>,
       thead: (props: any) => <thead className="bg-muted" {...props} />,
       tr: (props: any) => <tr className="m-0 p-0 odd:bg-muted/30 even:bg-muted/60" {...props} />,
       th: (props: any) => <th className="px-2 py-1 text-left font-bold" {...props} />,

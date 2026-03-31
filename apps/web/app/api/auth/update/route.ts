@@ -19,12 +19,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { displayName, avatarUrl } = body;
 
+    // Only include defined values in updates to avoid overwriting existing data
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (displayName !== undefined) {
+      updates.displayName = displayName;
+    }
+    if (avatarUrl !== undefined) {
+      updates.avatarUrl = avatarUrl;
+    }
+
     // Update user in database
-    const updatedUser = db.users.update(result.user.id, {
-      displayName,
-      avatarUrl,
-      updatedAt: new Date(),
-    });
+    const updatedUser = db.users.update(result.user.id, updates);
 
     if (!updatedUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });

@@ -37,9 +37,10 @@ const CODE_BLOCK_REGEX = /```(\w+)?\s*\n([\s\S]*?)\n```/g;
 function parseAttributes(attrString: string): Record<string, string> {
   const attrs: Record<string, string> = {};
   const regex = /(\w+)=["']([^"']+)["']/g;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(attrString)) !== null) {
+  let match = regex.exec(attrString);
+  while (match !== null) {
     attrs[match[1]] = match[2];
+    match = regex.exec(attrString);
   }
   return attrs;
 }
@@ -143,10 +144,10 @@ export function parseArtifacts(messageContent: string): ParsedArtifact[] {
   const processedRanges: Array<{ start: number; end: number }> = [];
 
   // Pass 1: Explicit :::artifact{...} fences (highest priority)
-  let match: RegExpExecArray | null;
   const fenceRegex = new RegExp(ARTIFACT_FENCE_REGEX.source, "g");
+  let match = fenceRegex.exec(messageContent);
 
-  while ((match = fenceRegex.exec(messageContent)) !== null) {
+  while (match !== null) {
     const attrs = parseAttributes(match[1]);
     const content = match[2].trim();
     const type = (attrs.type as ArtifactType) || inferTypeFromContent(content);
@@ -164,17 +165,21 @@ export function parseArtifacts(messageContent: string): ParsedArtifact[] {
       start: match.index,
       end: match.index + match[0].length,
     });
+
+    match = fenceRegex.exec(messageContent);
   }
 
   // Pass 2: Auto-detect from standard code blocks
   const codeRegex = new RegExp(CODE_BLOCK_REGEX.source, "g");
+  match = codeRegex.exec(messageContent);
 
-  while ((match = codeRegex.exec(messageContent)) !== null) {
+  while (match !== null) {
     const blockStart = match.index;
     const blockEnd = match.index + match[0].length;
 
     // Skip if this range overlaps with an explicit fence
     if (processedRanges.some((r) => blockStart >= r.start && blockEnd <= r.end)) {
+      match = codeRegex.exec(messageContent);
       continue;
     }
 

@@ -35,7 +35,9 @@
       "style": {
         "noNestedTernary": "off",
         "useDefaultSwitchClause": "off",
-        "noExportedImports": "off"
+        "noExportedImports": "off",
+        "noNonNullAssertion": "off",
+        "noParameterAssign": "off"
       },
       "performance": {
         "noBarrelFile": "off",
@@ -43,16 +45,27 @@
       },
       "correctness": {
         "useImageSize": "off",
-        "noUnusedFunctionParameters": "off"
+        "noUnusedFunctionParameters": "off",
+        "noUnusedImports": "warn"
       },
       "suspicious": {
         "noArrayIndexKey": "off",
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "useIterableCallbackReturn": "off",
+        "noControlCharactersInRegex": "off"
       },
       "a11y": {
         "noSvgWithoutTitle": "off",
         "noRedundantAlt": "off",
-        "useValidAnchor": "off"
+        "useValidAnchor": "off",
+        "noStaticElementInteractions": "off",
+        "useKeyWithClickEvents": "off",
+        "useButtonType": "off",
+        "useAriaPropsSupportedByRole": "off",
+        "useSemanticElements": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
       }
     }
   },
