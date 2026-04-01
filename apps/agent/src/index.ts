@@ -500,12 +500,16 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
   const toolApprovalConfig: ToolApprovalConfig =
     config.configurable?.tool_approval || getDefaultToolApprovalConfig();
 
+  // Extract checkpoint_id for branching support
+  const checkpointId = config.configurable?.checkpoint_id;
+
   const runConfig = {
     configurable: {
       thread_id: threadId,
       user_id: config.configurable?.user_id,
       tool_approval: toolApprovalConfig,
       model_config: modelConfigFromBody,
+      ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
     },
     streamMode: streamMode as any,
     recursionLimit: 150,

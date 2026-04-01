@@ -1,17 +1,42 @@
 /**
- * Shell Executor - Core command execution engine using Bun's shell
+ * Shell Executor - Core command execution engine with dual shell support
  *
- * Bun's shell ($`command`) is a cross-platform bash-like implementation:
- * - Built-in Unix commands work on all platforms (ls, cat, rm, mkdir, grep, etc.)
- * - Safe interpolation - variables are auto-escaped
- * - Pipe and redirection support
- * - Environment variable and working directory control
+ * Supports two execution modes:
+ * - Bun shell: Uses Bun's $`command` for advanced shell features
+ * - Node spawn: Uses child_process.spawn for compatibility with Node.js environments
+ *
+ * When running under LangGraph CLI (Node.js), Node spawn is automatically used
+ * to avoid conflicts with Bun's runtime.
  */
 
-import { $ } from "bun";
+import { spawn as nodeSpawn } from "node:child_process";
 import { ExitError, PermissionError, ShellError, TimeoutError } from "./errors.js";
 import { CommandHistory } from "./history.js";
 import { getPlatformInfo, type PlatformInfo } from "./platform.js";
+
+let bunAvailable = false;
+let bunImport: typeof import("bun") | null = null;
+
+async function tryImportBun(): Promise<boolean> {
+  if (bunAvailable) return true;
+  try {
+    bunImport = await import("bun");
+    bunAvailable = true;
+    return true;
+  } catch {
+    bunAvailable = false;
+    return false;
+  }
+}
+
+function isNodeEnvironment(): boolean {
+  return (
+    process.env.LANGGRAPH_CLI === "true" ||
+    process.env.USING_LANGGRAPH_CLI === "true" ||
+    process.env.NODE_ENV === "test" ||
+    !bunAvailable
+  );
+}
 
 export type ApprovalMode = "always" | "never" | "dangerous" | "custom";
 
@@ -29,6 +54,7 @@ export interface ShellConfig {
   onStderr?: (data: string) => void;
   onStart?: (command: string, id: string) => void;
   onComplete?: (result: ExecutionResult) => void;
+  useBunShell?: boolean;
 }
 
 export interface ApprovalContext {
@@ -76,14 +102,32 @@ const DEFAULT_DANGEROUS_PATTERNS: RegExp[] = [
 
 export class ShellExecutor {
   private readonly config: Required<
-    Omit<ShellConfig, "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete">
+    Omit<
+      ShellConfig,
+      "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete" | "useBunShell"
+    >
   > &
-    Pick<ShellConfig, "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete">;
+    Pick<
+      ShellConfig,
+      "approvalFn" | "onStdout" | "onStderr" | "onStart" | "onComplete" | "useBunShell"
+    >;
   private readonly history: CommandHistory;
   private readonly platform: PlatformInfo;
+  private readonly useBun: boolean;
 
   constructor(config: ShellConfig = {}) {
     this.platform = getPlatformInfo();
+
+    const shouldUseBun = config.useBunShell ?? !isNodeEnvironment();
+    if (shouldUseBun) {
+      tryImportBun().then((available) => {
+        if (!available) {
+          console.warn("[ShellExecutor] Bun not available, falling back to Node spawn");
+        }
+      });
+    }
+
+    this.useBun = shouldUseBun && bunAvailable;
 
     this.config = {
       cwd: config.cwd ?? process.cwd(),
@@ -157,6 +201,88 @@ export class ShellExecutor {
     }
   }
 
+  private async executeWithBun(
+    command: string,
+    cwd: string,
+    env: Record<string, string>
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+    if (!bunImport) {
+      throw new Error("Bun shell not available");
+    }
+
+    const $ = bunImport.$;
+    const result = await $`${{ raw: command }}`.cwd(cwd).env(env);
+
+    return {
+      stdout: result.stdout.toString(),
+      stderr: result.stderr.toString(),
+      exitCode: result.exitCode,
+    };
+  }
+
+  private async executeWithNodeSpawn(
+    command: string,
+    cwd: string,
+    env: Record<string, string>,
+    timeout: number
+  ): Promise<{ stdout: string; stderr: string; exitCode: number; signal?: string }> {
+    return new Promise((resolve, reject) => {
+      const isWindows = this.platform.isWindows;
+      const shell = isWindows ? "cmd.exe" : "/bin/sh";
+      const shellArgs = isWindows ? ["/c", command] : ["-c", command];
+
+      let stdout = "";
+      let stderr = "";
+      let killed = false;
+
+      const child = nodeSpawn(shell, shellArgs, {
+        cwd,
+        env,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+
+      const timer = setTimeout(() => {
+        killed = true;
+        child.kill("SIGTERM");
+      }, timeout);
+
+      child.stdout?.on("data", (data: Buffer) => {
+        const str = data.toString();
+        if (stdout.length + str.length <= this.config.maxOutputSize) {
+          stdout += str;
+        }
+        if (this.config.onStdout) {
+          this.config.onStdout(str);
+        }
+      });
+
+      child.stderr?.on("data", (data: Buffer) => {
+        const str = data.toString();
+        if (stderr.length + str.length <= this.config.maxOutputSize) {
+          stderr += str;
+        }
+        if (this.config.onStderr) {
+          this.config.onStderr(str);
+        }
+      });
+
+      child.on("close", (code, signal) => {
+        clearTimeout(timer);
+        resolve({
+          stdout,
+          stderr,
+          exitCode: killed ? 124 : (code ?? 0),
+          signal: killed ? "SIGTERM" : (signal ?? undefined),
+        });
+      });
+
+      child.on("error", (err) => {
+        clearTimeout(timer);
+        reject(new ShellError(err.message, { command, cwd }));
+      });
+    });
+  }
+
   async execute(
     command: string,
     options: {
@@ -168,7 +294,7 @@ export class ShellExecutor {
   ): Promise<ExecutionResult> {
     const cwd = options.cwd ?? this.config.cwd;
     const env = { ...this.config.env, ...options.env };
-    const _timeout = options.timeout ?? this.config.timeout;
+    const timeout = options.timeout ?? this.config.timeout;
 
     const { isDangerous, matchedPatterns } = this.checkDangerous(command);
 
@@ -201,30 +327,21 @@ export class ShellExecutor {
     let stdout = "";
     let stderr = "";
     let exitCode = 0;
+    let signal: string | undefined;
 
     try {
-      let result: {
-        stdout: { toString(): string };
-        stderr: { toString(): string };
-        exitCode: number;
-      };
+      let result: { stdout: string; stderr: string; exitCode: number; signal?: string };
 
-      if (this.platform.isWindows) {
-        result = await $`${{ raw: command }}`.cwd(cwd).env(env);
+      if (this.useBun) {
+        result = await this.executeWithBun(command, cwd, env);
       } else {
-        result = await $`${{ raw: command }}`.cwd(cwd).env(env);
+        result = await this.executeWithNodeSpawn(command, cwd, env, timeout);
       }
 
-      stdout = result.stdout.toString();
-      stderr = result.stderr.toString();
+      stdout = result.stdout;
+      stderr = result.stderr;
       exitCode = result.exitCode;
-
-      if (stdout && this.config.onStdout) {
-        this.config.onStdout(stdout);
-      }
-      if (stderr && this.config.onStderr) {
-        this.config.onStderr(stderr);
-      }
+      signal = result.signal;
     } catch (error) {
       if (error instanceof TimeoutError) {
         throw error;
@@ -265,6 +382,7 @@ export class ShellExecutor {
       duration,
       cwd,
       truncated,
+      signal,
       approved: true,
     };
 
@@ -346,5 +464,9 @@ export class ShellExecutor {
 
   configure(updates: Partial<ShellConfig>): void {
     Object.assign(this.config, updates);
+  }
+
+  isUsingBunShell(): boolean {
+    return this.useBun;
   }
 }

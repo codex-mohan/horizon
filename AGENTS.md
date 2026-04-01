@@ -345,10 +345,11 @@ This project uses Git for version control with a **commit-per-feature/fix** poli
 
 #### Commit Policy
 
-- **Commit after completing each distinct feature, fix, or change** — don't batch multiple unrelated changes into one commit.
+- **Always commit and push after completing each distinct feature, fix, or change** — don't batch multiple unrelated changes into one commit.
 - **One logical change per commit** — if two features are independent, they should be separate commits.
 - **Run `bun x ultracite fix` before committing** — most formatting and lint issues are auto-fixable.
 - **Never commit secrets, API keys, or `.env` files.**
+- **Always push** after committing to keep the remote up-to-date.
 
 #### Commit Message Format
 
