@@ -1,6 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import { v4 as uuidv4 } from "uuid";
-import { z } from "zod";
+import { z } from "zod/v4";
 import type { SubAgentConfig, SubAgentResult } from "../state.js";
 import { runWorkersSequentially, spawnWorkers } from "../subgraphs/index.js";
 
@@ -102,7 +102,7 @@ Sub-agents are fully configurable by the main agent with custom prompts, tools, 
             modelConfig: z.any().optional().describe("Optional model config override"),
             timeout: z.number().optional().describe("Timeout in ms (default: 300000)"),
             context: z
-              .record(z.any())
+              .record(z.string(), z.any())
               .optional()
               .describe("Additional context to pass to the worker"),
           })

@@ -520,7 +520,7 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
     let stream: any;
 
     if (command) {
-      const resumeCommand = new Command(command);
+      const resumeCommand = new Command(command) as any;
       stream = await graph.stream(resumeCommand, runConfig);
     } else {
       stream = await graph.stream(input, runConfig);
@@ -645,7 +645,7 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
       );
     }
 
-    const resumeCommand = new Command({ resume: true });
+    const resumeCommand = new Command({ resume: true }) as any;
 
     if (body.stream !== false) {
       const stream = await graph.stream(resumeCommand, runConfig);
@@ -728,7 +728,7 @@ app.post("/threads/:threadId/runs", async (c) => {
     let result: any;
 
     if (command) {
-      const resumeCommand = new Command(command);
+      const resumeCommand = new Command(command) as any;
       result = await graph.invoke(resumeCommand, runConfig);
     } else {
       result = await graph.invoke(input, runConfig);

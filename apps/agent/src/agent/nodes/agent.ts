@@ -3,7 +3,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import { agentConfig } from "../../lib/config.js";
 import { createLLM, createRuntimeLLM, type RuntimeModelConfig } from "../../lib/llm.js";
 import { SYSTEM_PROMPT } from "../prompt.js";
-import type { AgentState } from "../state.js";
+import type { AgentGraphNode, AgentState } from "../state.js";
 import { tools } from "../tools/index.js";
 
 function isMultimodalContent(content: unknown): boolean {
@@ -33,10 +33,10 @@ function isVisionModel(modelName: string): boolean {
   return visionModels.some((vm) => lowerModel.includes(vm));
 }
 
-export async function AgentNode(
+export const AgentNode: AgentGraphNode = async (
   state: AgentState,
   _config: RunnableConfig
-): Promise<Partial<AgentState>> {
+): Promise<Partial<AgentState>> => {
   const modelConfig = _config.configurable?.model_config as RuntimeModelConfig | undefined;
   const modelSettings = _config.configurable?.model_settings as Record<string, unknown> | undefined;
 
@@ -143,4 +143,4 @@ export async function AgentNode(
   const response = await llmWithTools.invoke(sanitizedMessages);
 
   return { messages: [response], model_calls: 1 };
-}
+};

@@ -43,51 +43,12 @@ export class FileSystemCheckpointer extends BaseCheckpointSaver {
   private load() {
     try {
       if (fs.existsSync(this.filePath)) {
-        const raw = JSON.parse(fs.readFileSync(this.filePath, "utf-8"));
-        this.checkpoints = this.migrateToNewFormat(raw);
+        this.checkpoints = JSON.parse(fs.readFileSync(this.filePath, "utf-8"));
       }
     } catch (e) {
       console.error("[FileSystemCheckpointer] Failed to load checkpoints:", e);
       this.checkpoints = {};
     }
-  }
-
-  private migrateToNewFormat(raw: unknown): Record<string, ThreadCheckpoints> {
-    if (!raw || typeof raw !== "object") return {};
-    const result: Record<string, ThreadCheckpoints> = {};
-
-    for (const [threadId, value] of Object.entries(raw)) {
-      if (Array.isArray(value)) {
-        // Old format: threadId -> [checkpoint, checkpoint, ...]
-        const checkpoints: Record<string, StoredCheckpoint> = {};
-        let latestId: string | null = null;
-        let latestTs = 0;
-
-        for (const item of value) {
-          if (item?.checkpoint?.id) {
-            checkpoints[item.checkpoint.id] = {
-              checkpoint: item.checkpoint,
-              metadata: item.metadata ?? {},
-              parentConfig: item.parentConfig ?? null,
-              createdAt: item.checkpoint.ts ? new Date(item.checkpoint.ts).getTime() : Date.now(),
-            };
-            // Track latest by timestamp
-            const ts = item.checkpoint.ts ? new Date(item.checkpoint.ts).getTime() : 0;
-            if (ts >= latestTs) {
-              latestTs = ts;
-              latestId = item.checkpoint.id;
-            }
-          }
-        }
-
-        result[threadId] = { checkpoints, latestId };
-      } else if (typeof value === "object" && value !== null && "checkpoints" in value) {
-        // Already new format
-        result[threadId] = value as ThreadCheckpoints;
-      }
-    }
-
-    return result;
   }
 
   private save() {

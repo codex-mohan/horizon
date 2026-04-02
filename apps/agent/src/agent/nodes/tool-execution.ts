@@ -2,7 +2,7 @@ import { type AIMessage, ToolMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { v4 as uuidv4 } from "uuid";
 import { agentConfig } from "../../lib/config.js";
-import type { AgentState, UIMessage } from "../state.js";
+import type { AgentGraphNode, AgentState, UIMessage } from "../state.js";
 import { toolMap } from "../tools/index.js";
 
 async function emitUIEvent(config: RunnableConfig, uiMessage: UIMessage): Promise<void> {
@@ -23,10 +23,10 @@ async function emitUIEvent(config: RunnableConfig, uiMessage: UIMessage): Promis
  * - This node only executes tools that don't have ToolMessage responses yet
  * - Finds the AI message with tool calls and executes tools not already handled
  */
-export async function ToolExecution(
+export const ToolExecution: AgentGraphNode = async (
   state: AgentState,
   config: RunnableConfig
-): Promise<Partial<AgentState>> {
+): Promise<Partial<AgentState>> => {
   // Find the last AI message with tool calls
   const aiMessage = [...state.messages]
     .reverse()
@@ -201,4 +201,4 @@ export async function ToolExecution(
   }
 
   return updates;
-}
+};

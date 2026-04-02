@@ -40,8 +40,16 @@ export const AgentConfigSchema = z.object({
  * Full Horizon configuration schema
  */
 export const HorizonConfigSchema = z.object({
-  workspace: WorkspaceConfigSchema.default({}),
-  agent: AgentConfigSchema.default({}),
+  workspace: WorkspaceConfigSchema.default(() => ({
+    defaultPath: null,
+    allowOverride: true,
+    restrictedPaths: [],
+    allowedExtensions: [],
+  })),
+  agent: AgentConfigSchema.default(() => ({
+    maxRetries: 3,
+    timeout: 30000,
+  })),
 });
 
 export type WorkspaceConfig = z.infer<typeof WorkspaceConfigSchema>;

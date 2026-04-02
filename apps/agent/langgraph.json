@@ -8,5 +8,7 @@
     "../../packages/agent-memory",
     "../../packages/agent-tools",
     "../../packages/shared-utils"
-  ]
+  ],
+  "env": ".env",
+  "checkCompatibility": false
 }

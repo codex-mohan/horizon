@@ -1,6 +1,6 @@
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { agentConfig } from "../../lib/config.js";
-import type { AgentState } from "../state.js";
+import type { AgentGraphNode, AgentState } from "../state.js";
 
 /**
  * StartMiddleware Node
@@ -9,10 +9,10 @@ import type { AgentState } from "../state.js";
  * - Sets start time
  * - PII Detection
  */
-export async function StartMiddleware(
+export const StartMiddleware: AgentGraphNode = async (
   state: AgentState,
   _config: RunnableConfig
-): Promise<Partial<AgentState>> {
+): Promise<Partial<AgentState>> => {
   const updates: Partial<AgentState> = {};
 
   // Set start time
@@ -53,4 +53,4 @@ export async function StartMiddleware(
   }
 
   return updates;
-}
+};

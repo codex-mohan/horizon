@@ -77,21 +77,18 @@ export const graph = new StateGraph(AgentStateAnnotation)
   .addEdge("MemoryRetrieval", "AgentNode")
 
   // AgentNode -> ApprovalGate (if tools) or EndMiddleware (if no tools)
-  // @ts-expect-error Type mismatch with StateGraph 1.x
   .addConditionalEdges("AgentNode", routeAfterAgent, {
     ApprovalGate: "ApprovalGate",
     EndMiddleware: "EndMiddleware",
   })
 
   // ApprovalGate -> ToolExecution (approved) or AgentNode (rejected with feedback)
-  // @ts-expect-error Type mismatch with StateGraph 1.x
   .addConditionalEdges("ApprovalGate", routeAfterApproval, {
     ToolExecution: "ToolExecution",
     AgentNode: "AgentNode",
   })
 
   // ToolExecution -> AgentNode (always continue loop)
-  // @ts-expect-error Type mismatch with StateGraph 1.x
   .addConditionalEdges("ToolExecution", shouldContinue, {
     AgentNode: "AgentNode",
   })
