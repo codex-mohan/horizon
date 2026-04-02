@@ -83,8 +83,12 @@ bun dev
 
 # Or start individually
 bun dev:web      # Frontend only (port 3000)
-bun dev:agent    # Agent only (port 2024)
+bun dev:agent    # Agent only using LangGraph CLI (port 2024)
 ```
+
+> **Note:** The agent uses `bunx @langchain/langgraph-cli dev` which provides hot-reload
+> and proper checkpointing support. The shell executor automatically detects this
+> environment and uses Node.js spawn instead of bun shell to prevent crashes.
 
 ### 5. Access the Application
 
@@ -94,7 +98,7 @@ bun dev:agent    # Agent only (port 2024)
 
 ## Project Structure
 
-This is a **Turborepo monorepo** with pnpm workspaces.
+This is a **Turborepo monorepo** with Bun workspaces.
 
 ```
 Horizon/
@@ -110,9 +114,7 @@ Horizon/
 │       │   ├── agent/        # Graph, nodes, tools
 │       │   ├── assistants/   # Assistant management
 │       │   └── lib/          # Config, utilities
-│       └── langgraph.json    # LangGraph config
-│   │
-│   └── backend-py-legacy/     # Python FastAPI (reference)
+│       └── langgraph.json    # LangGraph CLI config
 │
 ├── packages/
 │   ├── ui/                    # Shared shadcn/ui components
@@ -127,7 +129,7 @@ Horizon/
 │
 ├── docs/                      # Documentation
 ├── turbo.json                 # Turborepo config
-└── pnpm-workspace.yaml        # Workspace definition
+└── pnpm-workspace.yaml        # Workspace definition (for pnpm compatibility)
 ```
 
 ## Development Workflow
@@ -215,18 +217,6 @@ bun test
 
 # Run specific test file
 bun test path/to/test.ts
-```
-
-### Python Tests (Legacy Backend)
-
-```bash
-cd apps/backend-py-legacy
-
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=src
 ```
 
 ## Debugging

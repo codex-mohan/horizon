@@ -614,24 +614,22 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         submitOptions.optimisticValues = options.optimisticValues;
       }
 
+      // Add checkpoint for branching support - pass at top level for SDK
+      if (options?.checkpoint) {
+        const cp = options.checkpoint;
+        if (typeof cp === "object" && cp !== null) {
+          submitOptions.checkpoint = cp;
+        } else {
+          submitOptions.checkpoint = { checkpoint_id: cp };
+        }
+      }
+
       const config: { configurable: Record<string, unknown>; recursion_limit: number } = {
         configurable: {
           ...(options?.configurable || {}),
         },
         recursion_limit: 150,
       };
-
-      // Add checkpoint_id to configurable for branching support
-      if (options?.checkpoint) {
-        const cp = options.checkpoint;
-        if (typeof cp === "object" && cp !== null && "checkpoint_id" in cp) {
-          config.configurable.checkpoint_id = (cp as { checkpoint_id: string }).checkpoint_id;
-        } else if (typeof cp === "object" && cp !== null && "id" in cp) {
-          config.configurable.checkpoint_id = (cp as { id: string }).id;
-        } else if (typeof cp === "string") {
-          config.configurable.checkpoint_id = cp;
-        }
-      }
 
       if (userId) {
         config.configurable.user_id = userId;
