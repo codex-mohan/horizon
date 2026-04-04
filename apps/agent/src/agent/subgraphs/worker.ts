@@ -1,22 +1,38 @@
-import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
-import { v4 as uuidv4 } from "uuid";
+import type { AgentTool } from "@mariozechner/pi-agent-core";
+import { Agent } from "@mariozechner/pi-agent-core";
 import { agentConfig } from "../../lib/config.js";
-import { createRuntimeLLM } from "../../lib/llm.js";
-import type { SubAgentConfig, SubAgentResult } from "../state.js";
+import type { RuntimeModelConfig } from "../../lib/model.js";
+import { createModel, getThinkingLevel } from "../../lib/model.js";
 import { toolMap } from "../tools/index.js";
 import { workerEventEmitter } from "./events.js";
+import type { SubAgentConfig, SubAgentResult } from "./types.js";
 
-/**
- * Get tools by name from the global tool map
- */
-function getToolsForNames(names: string[]) {
-  return names.map((name) => toolMap[name]).filter((tool) => tool !== undefined);
+function getToolsForNames(names: string[]): AgentTool<any>[] {
+  return names
+    .map((name) => toolMap[name])
+    .filter((tool) => tool !== undefined) as AgentTool<any>[];
 }
 
-/**
- * Worker function - executes a single task
- * This is a generic agent that can be fully configured by the main agent
- */
+function buildFallbackModelConfig(): RuntimeModelConfig {
+  return {
+    provider: agentConfig.MODEL_PROVIDER as any,
+    modelName: agentConfig.MODEL_NAME,
+    apiKey:
+      agentConfig.MODEL_PROVIDER === "openai"
+        ? agentConfig.OPENAI_API_KEY
+        : agentConfig.MODEL_PROVIDER === "anthropic"
+          ? agentConfig.ANTHROPIC_API_KEY
+          : agentConfig.MODEL_PROVIDER === "google"
+            ? agentConfig.GOOGLE_API_KEY
+            : agentConfig.MODEL_PROVIDER === "groq"
+              ? agentConfig.GROQ_API_KEY
+              : agentConfig.MODEL_PROVIDER === "nvidia_nim"
+                ? agentConfig.NVIDIA_NIM_API_KEY
+                : undefined,
+    baseUrl: agentConfig.BASE_URL,
+  };
+}
+
 export async function runWorker(config: SubAgentConfig): Promise<SubAgentResult> {
   const startTime = Date.now();
 
@@ -27,42 +43,10 @@ export async function runWorker(config: SubAgentConfig): Promise<SubAgentResult>
 
   try {
     const timeoutMs = config.timeout || 300000;
-    let isTimedOut = false;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        isTimedOut = true;
-        reject(new Error(`Worker timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-    });
-
-    const llm = await createRuntimeLLM(
-      config.modelConfig || {
-        provider: agentConfig.MODEL_PROVIDER as any,
-        modelName: agentConfig.MODEL_NAME,
-        apiKey:
-          agentConfig.MODEL_PROVIDER === "openai"
-            ? agentConfig.OPENAI_API_KEY
-            : agentConfig.MODEL_PROVIDER === "anthropic"
-              ? agentConfig.ANTHROPIC_API_KEY
-              : agentConfig.MODEL_PROVIDER === "google"
-                ? agentConfig.GOOGLE_API_KEY
-                : agentConfig.MODEL_PROVIDER === "groq"
-                  ? agentConfig.GROQ_API_KEY
-                  : agentConfig.MODEL_PROVIDER === "nvidia_nim"
-                    ? agentConfig.NVIDIA_NIM_API_KEY
-                    : undefined,
-        baseUrl: agentConfig.BASE_URL,
-      }
-    );
-
-    workerEventEmitter.emitWorkerProgress(
-      config.id,
-      config.name,
-      "initializing",
-      "Creating LLM instance"
-    );
-
+    const modelConfig = config.modelConfig || buildFallbackModelConfig();
+    const model = createModel(modelConfig);
     const availableTools = getToolsForNames(config.tools);
+
     console.log(`[Worker ${config.id}] Bound ${availableTools.length} tools`);
 
     workerEventEmitter.emitWorkerProgress(
@@ -72,109 +56,30 @@ export async function runWorker(config: SubAgentConfig): Promise<SubAgentResult>
       `${availableTools.length} tools bound`
     );
 
-    // biome-ignore: LangChain LLM typing requires any here
-    const llmWithTools = (llm as any).bindTools ? (llm as any).bindTools(availableTools) : llm;
-
-    const systemMessage = new AIMessage({
-      content: config.systemPrompt,
+    const agent = new Agent({
+      initialState: {
+        systemPrompt: config.systemPrompt,
+        model,
+        thinkingLevel: getThinkingLevel(modelConfig),
+        tools: availableTools,
+        messages: [],
+      },
     });
 
-    // biome-ignore: Messages typed as any for LangChain compatibility
-    let messages: any[] = [
-      systemMessage,
-      new HumanMessage({ content: config.context?.task_description || config.name }),
-    ];
-
-    const maxIterations = 15;
-    let iteration = 0;
-
     const executeWorker = async () => {
-      while (iteration < maxIterations) {
-        if (isTimedOut) throw new Error(`Worker timed out after ${timeoutMs}ms`);
-        iteration++;
+      await agent.prompt(config.context?.task_description || config.name);
+      await agent.waitForIdle();
 
-        workerEventEmitter.emitWorkerProgress(
-          config.id,
-          config.name,
-          "running",
-          `Iteration ${iteration}/${maxIterations}`
-        );
-
-        const response = await llmWithTools.invoke(messages);
-
-        messages = [...messages, response];
-
-        if (!response.tool_calls || response.tool_calls.length === 0) {
-          console.log(`[Worker ${config.id}] No more tool calls, finishing.`);
-          break;
-        }
-
-        for (const toolCall of response.tool_calls) {
-          if (isTimedOut) throw new Error(`Worker timed out after ${timeoutMs}ms`);
-          workerEventEmitter.emitWorkerProgress(
-            config.id,
-            config.name,
-            "tool_call",
-            `Calling ${toolCall.name}`,
-            {
-              name: toolCall.name,
-              args: toolCall.args as Record<string, unknown>,
-            }
-          );
-
-          const tool = toolMap[toolCall.name];
-          if (!tool) {
-            const errorMsg = `Tool not found: ${toolCall.name}`;
-            console.error(`[Worker ${config.id}] ${errorMsg}`);
-            messages = [
-              ...messages,
-              new ToolMessage({
-                content: errorMsg,
-                tool_call_id: toolCall.id,
-                name: toolCall.name,
-              }),
-            ];
-            continue;
-          }
-
-          try {
-            const args = toolCall.args as Record<string, unknown>;
-            // biome-ignore: LangChain tool typing requires any
-            const result = await (tool as any).invoke(args);
-
-            const resultStr = typeof result === "string" ? result : JSON.stringify(result);
-            messages = [
-              ...messages,
-              new ToolMessage({
-                content: resultStr,
-                tool_call_id: toolCall.id,
-                name: toolCall.name,
-              }),
-            ];
-
-            workerEventEmitter.emitWorkerProgress(
-              config.id,
-              config.name,
-              "running",
-              `Completed ${toolCall.name}`
-            );
-          } catch (toolError) {
-            const errorMsg = toolError instanceof Error ? toolError.message : String(toolError);
-            console.error(`[Worker ${config.id}] Tool error: ${errorMsg}`);
-            messages = [
-              ...messages,
-              new ToolMessage({
-                content: `Error: ${errorMsg}`,
-                tool_call_id: toolCall.id,
-                name: toolCall.name,
-              }),
-            ];
-          }
-        }
-      }
-
-      const lastMessage = messages[messages.length - 1];
-      const output = (lastMessage?.content as string) || "";
+      const lastMessage = agent.state.messages.at(-1);
+      const output =
+        typeof lastMessage?.content === "string"
+          ? lastMessage.content
+          : Array.isArray(lastMessage?.content)
+            ? lastMessage.content
+                .filter((b) => b.type === "text")
+                .map((b) => (b as { text: string }).text)
+                .join("")
+            : "";
 
       const executionTime = Date.now() - startTime;
       console.log(`[Worker ${config.id}] Completed in ${executionTime}ms`);
@@ -193,6 +98,12 @@ export async function runWorker(config: SubAgentConfig): Promise<SubAgentResult>
 
       return result;
     };
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Worker timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
 
     return await Promise.race([executeWorker(), timeoutPromise]);
   } catch (error) {
@@ -216,9 +127,6 @@ export async function runWorker(config: SubAgentConfig): Promise<SubAgentResult>
   }
 }
 
-/**
- * Create a worker configuration
- */
 export function createWorkerConfig(
   taskId: string,
   name: string,
@@ -228,7 +136,7 @@ export function createWorkerConfig(
   modelConfig?: SubAgentConfig["modelConfig"]
 ): SubAgentConfig {
   return {
-    id: taskId || uuidv4(),
+    id: taskId || crypto.randomUUID(),
     name,
     systemPrompt,
     tools,
@@ -240,9 +148,6 @@ export function createWorkerConfig(
   };
 }
 
-/**
- * Spawn multiple workers and run them in parallel
- */
 export async function spawnWorkers(configs: SubAgentConfig[]): Promise<SubAgentResult[]> {
   console.log(`[SubAgentManager] Spawning ${configs.length} workers in parallel`);
 
@@ -273,9 +178,6 @@ export async function spawnWorkers(configs: SubAgentConfig[]): Promise<SubAgentR
 
 export { workerEventEmitter } from "./events.js";
 
-/**
- * Run workers sequentially with dependency support
- */
 export async function runWorkersSequentially(configs: SubAgentConfig[]): Promise<SubAgentResult[]> {
   console.log(`[SubAgentManager] Running ${configs.length} workers sequentially`);
 

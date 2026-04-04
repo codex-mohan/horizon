@@ -15,6 +15,7 @@ interface FetchUrlToolProps {
   result?: string;
   error?: string;
   isLoading?: boolean;
+  displayTitle?: string;
 }
 
 export function FetchUrlTool({
@@ -24,6 +25,7 @@ export function FetchUrlTool({
   result,
   error,
   isLoading,
+  displayTitle,
 }: FetchUrlToolProps) {
   const [expanded, setExpanded] = useState(false);
   const [isContentExpanded, setIsContentExpanded] = useState(false);
@@ -58,28 +60,31 @@ export function FetchUrlTool({
           <div className={cn("rounded-lg p-1.5", config.icon.bgColor)}>
             <Globe className={cn("h-4 w-4", config.icon.color)} />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">
+          <div className="flex flex-col">
+            {displayTitle && (
+              <span className="text-[0.9rem] font-medium leading-snug text-foreground/90">
+                {displayTitle}
+              </span>
+            )}
+            <span className="font-mono text-xs text-muted-foreground">
               {url
                 ? `${url.replace(/^https?:\/\//, "").slice(0, 25)}${url.length > 40 ? "..." : ""}`
                 : "Fetch URL"}
             </span>
-            {result && status === "completed" && (
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-xs",
-                  isLight ? "bg-primary/10 text-primary" : "bg-primary/20 text-primary-foreground"
-                )}
-              >
-                {result.length.toLocaleString()} chars
-              </span>
-            )}
           </div>
+          {result && status === "completed" && (
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs",
+                isLight ? "bg-primary/10 text-primary" : "bg-primary/20 text-primary-foreground"
+              )}
+            >
+              {result.length.toLocaleString()} chars
+            </span>
+          )}
         </div>
         <ToolStatusBadge status={status} />
       </div>
-
-      {/* Expandable Content */}
       <AnimatePresence>
         {expanded && (
           <motion.div

@@ -38,6 +38,11 @@ function renderGenerativeUI(toolCall: ToolCall, isLoading: boolean): React.React
     completedAt: toolCall.completedAt,
     error: toolCall.error,
     isLoading: isLoading && toolCall.status === "loading",
+    displayTitle:
+      toolCall.displayTitle ||
+      ((toolCall.arguments as Record<string, unknown> | undefined)?.displayTitle as
+        | string
+        | undefined),
   };
 
   switch (toolName) {

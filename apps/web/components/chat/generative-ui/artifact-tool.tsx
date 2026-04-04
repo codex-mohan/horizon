@@ -25,6 +25,7 @@ interface ArtifactToolProps {
   result?: string;
   error?: string;
   isLoading?: boolean;
+  displayTitle?: string;
 }
 
 const TYPE_ICONS: Record<string, typeof Globe> = {

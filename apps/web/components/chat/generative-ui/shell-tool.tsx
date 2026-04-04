@@ -25,6 +25,7 @@ interface ShellToolProps {
   result?: string;
   error?: string;
   isLoading?: boolean;
+  displayTitle?: string;
 }
 
 const ANSI_COLORS: Record<string, string> = {
@@ -130,7 +131,15 @@ function parseResult(result?: string): ShellResult | null {
   return null;
 }
 
-export function ShellTool({ toolName, status, args, result, error, isLoading }: ShellToolProps) {
+export function ShellTool({
+  toolName,
+  status,
+  args,
+  result,
+  error,
+  isLoading,
+  displayTitle,
+}: ShellToolProps) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const config = getToolUIConfig(toolName);
@@ -183,27 +192,32 @@ export function ShellTool({ toolName, status, args, result, error, isLoading }: 
           <div className={cn("rounded-lg p-1.5", config.icon.bgColor)}>
             <Wrench className={cn("h-4 w-4", config.icon.color)} />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">
-              {command ? `"${command.slice(0, 25)}${command.length > 25 ? "..." : ""}"` : "Shell"}
-            </span>
-            {shellResult && (
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-xs font-medium",
-                  isSuccess
-                    ? isLight
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-emerald-500/20 text-emerald-400"
-                    : isLight
-                      ? "bg-red-100 text-red-700"
-                      : "bg-red-500/20 text-red-400"
-                )}
-              >
-                Exit {shellResult.exitCode}
+          <div className="flex flex-col">
+            {displayTitle && (
+              <span className="text-[0.9rem] font-medium leading-snug text-foreground/90">
+                {displayTitle}
               </span>
             )}
+            <span className="font-mono text-xs text-muted-foreground">
+              {command ? `"${command.slice(0, 30)}${command.length > 30 ? "..." : ""}"` : "Shell"}
+            </span>
           </div>
+          {shellResult && (
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-medium",
+                isSuccess
+                  ? isLight
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-emerald-500/20 text-emerald-400"
+                  : isLight
+                    ? "bg-red-100 text-red-700"
+                    : "bg-red-500/20 text-red-400"
+              )}
+            >
+              Exit {shellResult.exitCode}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {duration > 0 && (
@@ -212,8 +226,6 @@ export function ShellTool({ toolName, status, args, result, error, isLoading }: 
           <ToolStatusBadge status={status} />
         </div>
       </div>
-
-      {/* Expandable Content */}
       <AnimatePresence>
         {expanded && (
           <motion.div

@@ -26,6 +26,7 @@ export interface ToolCall {
   completedAt?: number;
   error?: string;
   namespace?: "special" | "generic";
+  displayTitle?: string;
 }
 
 interface ToolCallMessageProps {
@@ -268,6 +269,17 @@ export function ToolCallMessage({ toolCalls, isLoading = false, className }: Too
                       </motion.div>
 
                       <div className="pt-0.5">
+                        {toolCall.displayTitle && (
+                          <div
+                            className={cn(
+                              "mb-1.5 text-[0.95rem] font-medium leading-snug",
+                              isLightTheme ? "text-slate-700" : "text-foreground/90"
+                            )}
+                          >
+                            {toolCall.displayTitle}
+                          </div>
+                        )}
+
                         <div className="mb-1 flex items-center gap-2">
                           {ToolIcon && (
                             <ToolIcon

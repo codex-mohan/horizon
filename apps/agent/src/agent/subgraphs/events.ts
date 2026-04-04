@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import type { SubAgentConfig, SubAgentResult } from "../state.js";
+import type { SubAgentConfig, SubAgentResult } from "./types.js";
 
 export type WorkerEventType =
   | "worker_started"

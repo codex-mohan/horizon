@@ -34,6 +34,7 @@ interface WeatherToolProps {
   result?: string;
   error?: string;
   isLoading?: boolean;
+  displayTitle?: string;
 }
 
 const weatherIcons: Record<string, typeof Sun> = {

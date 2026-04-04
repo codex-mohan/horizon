@@ -45,6 +45,7 @@ interface WebSearchToolProps {
   completedAt?: number;
   error?: string;
   isLoading?: boolean;
+  displayTitle?: string;
 }
 
 /**
@@ -277,6 +278,7 @@ export function WebSearchTool({
   result,
   error,
   isLoading,
+  displayTitle,
 }: WebSearchToolProps) {
   const [expanded, setExpanded] = useState(false);
   const { themeMode } = useTheme();

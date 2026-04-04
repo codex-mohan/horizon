@@ -2,42 +2,27 @@ import fs from "node:fs";
 import path from "node:path";
 import { serve } from "@hono/node-server";
 import { getGlobalDataDir } from "@horizon/shared-utils";
-import { ToolMessage } from "@langchain/core/messages";
-import { Command } from "@langchain/langgraph";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
 import { v4 as uuidv4 } from "uuid";
 
-interface OllamaModel {
-  name: string;
-  model: string;
-  modified_at: string;
-  size: number;
-}
-
-interface OllamaPullProgress {
-  status: string;
-  digest?: string;
-  total?: number;
-  completed?: number;
-}
-
-import { checkpointer, graph } from "./agent/graph.js";
-import type { ToolApprovalConfig } from "./agent/state.js";
+import { agentManager } from "./agent/agent-manager.js";
 import { type WorkerEvent, workerEventEmitter } from "./agent/subgraphs/events.js";
 import { TOOL_CATEGORIES } from "./agent/tools/index.js";
 import { assistantsDb } from "./assistants/db.js";
 import assistantsRouter from "./assistants/router.js";
 import type { Assistant } from "./assistants/types.js";
+import { DEFAULT_TOOL_APPROVAL_CONFIG, type ToolApprovalConfig } from "./lib/approval.js";
 import { agentConfig } from "./lib/config.js";
 import { getHorizonConfig, resolveWorkspacePath } from "./lib/config-loader.js";
+import type { RuntimeModelConfig } from "./lib/model.js";
+import { threadStore } from "./lib/persistence.js";
 
 // ---------------------------------------------------------------------------
-// Thread Metadata Store — persists thread metadata to a JSON file
-// The checkpointer stores conversation state but not thread-level metadata
-// (title, user_id, created_at, etc.). This store fills that gap.
+// Thread Metadata Store
 // ---------------------------------------------------------------------------
+
 interface ThreadMetadata {
   thread_id: string;
   created_at: string;
@@ -60,8 +45,7 @@ class ThreadMetadataStore {
       if (fs.existsSync(this.filePath)) {
         this.threads = JSON.parse(fs.readFileSync(this.filePath, "utf-8"));
       }
-    } catch (e) {
-      console.error("[ThreadMetadataStore] Failed to load:", e);
+    } catch {
       this.threads = {};
     }
   }
@@ -69,8 +53,8 @@ class ThreadMetadataStore {
   private save() {
     try {
       fs.writeFileSync(this.filePath, JSON.stringify(this.threads, null, 2));
-    } catch (e) {
-      console.error("[ThreadMetadataStore] Failed to save:", e);
+    } catch {
+      // ignore
     }
   }
 
@@ -102,7 +86,6 @@ class ThreadMetadataStore {
       this.save();
       return existing;
     }
-    // If thread doesn't exist in metadata store, create it
     return this.create(threadId, metadata);
   }
 
@@ -120,7 +103,6 @@ class ThreadMetadataStore {
     this.load();
     let results = Object.values(this.threads);
 
-    // Apply metadata filter
     if (metadataFilter && Object.keys(metadataFilter).length > 0) {
       results = results.filter((thread) => {
         for (const [key, value] of Object.entries(metadataFilter)) {
@@ -132,41 +114,16 @@ class ThreadMetadataStore {
       });
     }
 
-    // Sort by updated_at descending (most recent first)
     results.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-
     return results.slice(offset, offset + limit);
-  }
-
-  /**
-   * Ensure threads from the checkpointer are reflected here.
-   * Call this on startup to sync any threads that exist in checkpoint storage
-   * but not in the metadata store.
-   */
-  syncFromCheckpointer(threadIds: string[]) {
-    this.load();
-    let dirty = false;
-    for (const id of threadIds) {
-      if (!this.threads[id]) {
-        this.threads[id] = {
-          thread_id: id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          metadata: {},
-          status: "idle",
-        };
-        dirty = true;
-      }
-    }
-    if (dirty) {
-      this.save();
-    }
   }
 }
 
-const threadStore = new ThreadMetadataStore();
-// Sync any pre-existing checkpoints into the thread metadata store
-threadStore.syncFromCheckpointer(checkpointer.getThreadIds());
+const threadMetadataStore = new ThreadMetadataStore();
+
+// ---------------------------------------------------------------------------
+// Hono App
+// ---------------------------------------------------------------------------
 
 interface Variables {
   db: {
@@ -183,8 +140,6 @@ interface Variables {
   };
 }
 
-const APPROVAL_TOOL_NAME = "__approval__";
-
 const app = new Hono<{ Variables: Variables }>();
 
 app.use(
@@ -198,11 +153,15 @@ app.use(
   })
 );
 
+// ---------------------------------------------------------------------------
+// Health
+// ---------------------------------------------------------------------------
+
 app.get("/health", (c) =>
   c.json({
     status: "healthy",
-    service: "backend-ts",
-    version: "enhanced-v2.0",
+    service: "horizon-agent",
+    version: "pi-mono-v1.0",
     features: {
       reasoning: true,
       human_in_the_loop: true,
@@ -215,6 +174,10 @@ app.get("/health", (c) =>
     tool_categories: TOOL_CATEGORIES,
   })
 );
+
+// ---------------------------------------------------------------------------
+// Worker Events SSE
+// ---------------------------------------------------------------------------
 
 app.get("/workers/events", (c) => {
   let eventCount = 0;
@@ -247,42 +210,36 @@ app.get("/workers/events", (c) => {
 });
 
 // ---------------------------------------------------------------------------
-// Thread Management Routes — implements the LangGraph Platform Thread API
-// These are the endpoints that @langchain/langgraph-sdk client expects.
+// Thread Management Routes
 // ---------------------------------------------------------------------------
 
-/** POST /threads — Create a new thread */
 app.post("/threads", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const threadId = body.thread_id || uuidv4();
   const metadata = body.metadata || {};
-  const thread = threadStore.create(threadId, metadata);
+  const thread = threadMetadataStore.create(threadId, metadata);
   return c.json(thread);
 });
 
-/** POST /threads/search — Search/list threads with optional metadata filter */
 app.post("/threads/search", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const metadataFilter = body.metadata as Record<string, unknown> | undefined;
   const limit = body.limit || 100;
   const offset = body.offset || 0;
-  const results = threadStore.search(metadataFilter, limit, offset);
+  const results = threadMetadataStore.search(metadataFilter, limit, offset);
   return c.json(results);
 });
 
-/** GET /threads/:threadId — Get a single thread */
 app.get("/threads/:threadId", async (c) => {
   const threadId = c.req.param("threadId");
-  const thread = threadStore.get(threadId);
+  const thread = threadMetadataStore.get(threadId);
   if (thread) {
     return c.json(thread);
   }
-  // Thread might exist in checkpointer but not metadata store
-  if (checkpointer.hasThread(threadId)) {
-    const created = threadStore.create(threadId, {});
+  if (threadStore.load(threadId)) {
+    const created = threadMetadataStore.create(threadId, {});
     return c.json(created);
   }
-  // Return a synthetic thread so the SDK doesn't crash
   return c.json({
     thread_id: threadId,
     created_at: new Date().toISOString(),
@@ -292,171 +249,73 @@ app.get("/threads/:threadId", async (c) => {
   });
 });
 
-/** PATCH /threads/:threadId — Update thread metadata */
 app.patch("/threads/:threadId", async (c) => {
   const threadId = c.req.param("threadId");
   const body = await c.req.json().catch(() => ({}));
   const metadata = body.metadata || {};
-  const thread = threadStore.update(threadId, metadata);
+  const thread = threadMetadataStore.update(threadId, metadata);
   return c.json(thread);
 });
 
-/** DELETE /threads/:threadId — Delete a thread */
 app.delete("/threads/:threadId", async (c) => {
   const threadId = c.req.param("threadId");
+  threadMetadataStore.delete(threadId);
   threadStore.delete(threadId);
-  await checkpointer.deleteThread(threadId);
+  await agentManager.destroy(threadId);
   return c.json({ success: true });
 });
 
 // ---------------------------------------------------------------------------
-// Helper: Convert LangGraph.js StateSnapshot → LangGraph Platform ThreadState
-// The SDK's useStream expects the Platform API format (checkpoint.checkpoint_id,
-// created_at, parent_checkpoint) — not the LangGraph.js internal StateSnapshot
-// format (config.configurable.checkpoint_id, createdAt, parentConfig).
-// Returning the wrong format causes onSuccess() to wipe stream values and the
-// UI to revert to an empty state after every response.
+// Thread State & History
 // ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// Helper: Serialize messages to LangGraph Platform format
-// LangChain BaseMessage objects have a .toJSON() that returns {"lc": 1, ...}
-// but the SDK UI expects raw objects like { type: "human", content: "..." }.
-// ---------------------------------------------------------------------------
-function serializeMessage(msg: any): any {
-  if (!msg) return msg;
 
-  if (msg.lc === 1 && msg.type === "constructor" && Array.isArray(msg.id)) {
-    const className = msg.id[msg.id.length - 1];
-    let type = "system";
-    if (className.includes("Human")) type = "human";
-    else if (className.includes("AI")) type = "ai";
-    else if (className.includes("Tool")) type = "tool";
-
-    return {
-      type,
-      id: msg.kwargs?.id ?? msg.id,
-      content: msg.kwargs?.content ?? "",
-      name: msg.kwargs?.name,
-      tool_calls: msg.kwargs?.tool_calls ?? msg.kwargs?.tool_call_chunks,
-      tool_call_id: msg.kwargs?.tool_call_id,
-      additional_kwargs: msg.kwargs?.additional_kwargs,
-      response_metadata: msg.kwargs?.response_metadata,
-      invalid_tool_calls: msg.kwargs?.invalid_tool_calls,
-      usage_metadata: msg.kwargs?.usage_metadata,
-    };
-  }
-
-  const type = typeof msg._getType === "function" ? msg._getType() : msg.type;
-  return {
-    type: type || "unknown",
-    id: msg.id,
-    content: msg.content ?? "",
-    name: msg.name,
-    tool_calls: msg.tool_calls ?? msg.tool_call_chunks,
-    tool_call_id: msg.tool_call_id,
-    additional_kwargs: msg.additional_kwargs,
-    response_metadata: msg.response_metadata,
-    invalid_tool_calls: msg.invalid_tool_calls,
-    usage_metadata: msg.usage_metadata,
-  };
-}
-
-function serializeMessagesInObject(obj: any): any {
-  if (!obj || typeof obj !== "object") return obj;
-  const result = { ...obj };
-  if (Array.isArray(result.messages)) {
-    result.messages = result.messages.map(serializeMessage);
-  } else if (result.messages) {
-    result.messages = serializeMessage(result.messages);
-  }
-  return result;
-}
-
-function snapshotToThreadState(snapshot: {
-  values: unknown;
-  next: string[];
-  config?: {
-    configurable?: { thread_id?: string; checkpoint_id?: string; checkpoint_ns?: string };
-  };
-  metadata?: unknown;
-  createdAt?: string;
-  parentConfig?: { configurable?: { thread_id?: string; checkpoint_id?: string } };
-  tasks?: unknown[];
-}) {
-  const cfg = snapshot.config?.configurable ?? {};
-  const parentCfg = snapshot.parentConfig?.configurable;
-  return {
-    values: serializeMessagesInObject(snapshot.values ?? {}),
-    next: snapshot.next ?? [],
-    config: snapshot.config,
-    checkpoint: {
-      checkpoint_id: cfg.checkpoint_id,
-      thread_id: cfg.thread_id,
-      checkpoint_ns: cfg.checkpoint_ns ?? "",
-    },
-    metadata: snapshot.metadata ?? {},
-    created_at: snapshot.createdAt ?? new Date().toISOString(),
-    parent_checkpoint: parentCfg
-      ? {
-          checkpoint_id: parentCfg.checkpoint_id,
-          thread_id: parentCfg.thread_id,
-          checkpoint_ns: "",
-        }
-      : null,
-    tasks: snapshot.tasks ?? [],
-  };
-}
-
-/** GET /threads/:threadId/state — Get current thread state */
 app.get("/threads/:threadId/state", async (c) => {
   const threadId = c.req.param("threadId");
-  try {
-    const state = await graph.getState({
-      configurable: { thread_id: threadId },
-    });
+  const agent = agentManager.get(threadId);
 
-    return c.json(snapshotToThreadState(state as any));
-  } catch (_e) {
+  if (agent) {
     return c.json({
-      values: {},
+      messages: agent.getMessages(),
       next: [],
       tasks: [],
-      checkpoint: null,
-      metadata: {},
-      created_at: new Date().toISOString(),
+      isStreaming: agent.isStreaming,
+      pendingToolCalls: [],
     });
   }
+
+  const messages = threadStore.load(threadId) || [];
+  return c.json({
+    messages,
+    next: [],
+    tasks: [],
+    isStreaming: false,
+    pendingToolCalls: [],
+  });
 });
 
-/** GET & POST /threads/:threadId/history — Get state history */
-const getHistoryHandler = async (c: any) => {
+app.get("/threads/:threadId/history", async (c) => {
   const threadId = c.req.param("threadId");
-  try {
-    const body = await c.req.json().catch(() => ({}));
-    const limit = body.limit ?? 100;
-    const history = [];
-    for await (const state of graph.getStateHistory(
-      { configurable: { thread_id: threadId } },
-      { limit }
-    )) {
-      history.push(snapshotToThreadState(state as any));
-    }
-    return c.json(history);
-  } catch (_e) {
-    return c.json([]);
-  }
-};
+  const messages = threadStore.load(threadId) || [];
+  return c.json(messages);
+});
 
-app.get("/threads/:threadId/history", getHistoryHandler);
-app.post("/threads/:threadId/history", getHistoryHandler);
+app.post("/threads/:threadId/history", async (c) => {
+  const threadId = c.req.param("threadId");
+  const messages = threadStore.load(threadId) || [];
+  return c.json(messages);
+});
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function getDefaultToolApprovalConfig(): ToolApprovalConfig {
-  return {
-    mode: "dangerous_only",
-    auto_approve_tools: [],
-    never_approve_tools: [],
-  };
+  return DEFAULT_TOOL_APPROVAL_CONFIG;
 }
+
+// ---------------------------------------------------------------------------
+// SSE Stream — Main Chat Endpoint
+// ---------------------------------------------------------------------------
 
 app.post("/threads/:threadId/runs/stream", async (c) => {
   const threadId = c.req.param("threadId");
@@ -464,145 +323,133 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
 
   const input = body.input || null;
   const config = body.config || {};
-  const command = body.command;
 
-  // ---------------------------------------------------------------------------
-  // Normalize stream_mode: the SDK sends LangGraph Platform-specific mode names
-  // (e.g. "messages-tuple") that LangGraph.js doesn't understand. Map them.
-  // Also always include "values" so the SDK's setStreamValues() gets called,
-  // which populates stream.values.messages — required for renders to show messages.
-  // ---------------------------------------------------------------------------
-  const PLATFORM_TO_LGJS: Record<string, string> = {
-    "messages-tuple": "messages",
-  };
-  const VALID_LGJS_MODES = new Set(["values", "updates", "messages", "debug", "custom"]);
-
-  const requestedModes: string[] = Array.isArray(body.stream_mode)
-    ? body.stream_mode
-    : body.stream_mode
-      ? [body.stream_mode]
-      : ["updates", "messages", "custom"];
-
-  const normalizedModeSet = new Set<string>();
-  for (const m of requestedModes) {
-    const mapped = PLATFORM_TO_LGJS[m] ?? m;
-    if (VALID_LGJS_MODES.has(mapped)) normalizedModeSet.add(mapped);
-  }
-  // Always include "values" — this is what the SDK uses to render messages
-  normalizedModeSet.add("values");
-
-  const streamMode = [...normalizedModeSet];
-
-  // Try multiple paths to find model_config - LangGraph SDK might send it differently
   const modelConfigFromBody =
     body.configurable?.model_config ?? body.model_config ?? config?.configurable?.model_config;
 
   const toolApprovalConfig: ToolApprovalConfig =
     config.configurable?.tool_approval || getDefaultToolApprovalConfig();
 
-  // Extract checkpoint_id for branching support
-  const checkpointId = config.configurable?.checkpoint_id;
+  if (!input?.messages?.length) {
+    return c.json({ error: "No messages provided" }, 400);
+  }
 
-  const runConfig = {
-    configurable: {
-      thread_id: threadId,
-      user_id: config.configurable?.user_id,
-      tool_approval: toolApprovalConfig,
-      model_config: modelConfigFromBody,
-      ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
-    },
-    streamMode: streamMode as any,
-    recursionLimit: 150,
-  };
+  const lastMessage = input.messages[input.messages.length - 1];
+  const userContent = lastMessage?.content || "";
 
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let stream: any;
+  const agent = agentManager.getOrCreate({
+    threadId,
+    modelConfig: modelConfigFromBody as RuntimeModelConfig,
+    toolApproval: toolApprovalConfig,
+    onEvent: () => {},
+  });
 
-    if (command) {
-      const resumeCommand = new Command(command) as any;
-      stream = await graph.stream(resumeCommand, runConfig);
-    } else {
-      stream = await graph.stream(input, runConfig);
-    }
+  const runId = uuidv4();
 
-    const runId = uuidv4();
-    return streamSSE(c, async (streamWriter) => {
-      // Send metadata event first — the SDK uses this to initialize run tracking
-      await streamWriter.writeSSE({
-        event: "metadata",
-        data: JSON.stringify({ run_id: runId }),
-      });
-      try {
-        for await (const chunk of stream) {
-          // When multiple streamModes are used (e.g. ["updates", "messages", "custom"]),
-          // graph.stream() yields [eventName, payload] tuples.
-          // When a single streamMode is used, it yields the payload directly.
-          let eventName: string;
-          let payload: unknown;
-
-          if (Array.isArray(chunk) && chunk.length === 2 && typeof chunk[0] === "string") {
-            // Multi-mode: chunk is [eventName, payload]
-            [eventName, payload] = chunk;
-          } else {
-            // Single-mode fallback: treat the whole chunk as an "updates" payload
-            eventName = "updates";
-            payload = chunk;
-          }
-
-          // Serialize message objects to simple POJOs
-          if (eventName === "values") {
-            payload = serializeMessagesInObject(payload);
-          } else if (eventName === "updates") {
-            const newPayload: any = {};
-            for (const key in payload as any) {
-              newPayload[key] = serializeMessagesInObject((payload as any)[key]);
-            }
-            payload = newPayload;
-          } else if (eventName === "messages" && Array.isArray(payload) && payload.length >= 1) {
-            payload = [serializeMessage(payload[0]), ...payload.slice(1)];
-          }
-
-          await streamWriter.writeSSE({
-            data: JSON.stringify(payload),
-            event: eventName,
-          });
-        }
-      } catch (streamError: unknown) {
-        const error = streamError as Error;
-        console.error(`[stream] thread=${threadId} error during streaming:`, error.message);
-        if (error.stack) console.error(error.stack);
-        await streamWriter.writeSSE({
-          data: JSON.stringify({ error: error.message, type: error.name }),
-          event: "error",
-        });
-      }
+  return streamSSE(c, async (streamWriter) => {
+    await streamWriter.writeSSE({
+      event: "metadata",
+      data: JSON.stringify({ run_id: runId }),
     });
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error(`[stream] thread=${threadId} failed to start:`, err.message);
-    if (err.stack) console.error(err.stack);
-    return c.json({ error: err.message, type: err.name }, 500);
-  }
+
+    try {
+      const eventQueue: { type: string; data: unknown }[] = [];
+
+      const drainEvents = async () => {
+        while (eventQueue.length > 0) {
+          const event = eventQueue.shift()!;
+
+          if (event.type === "interrupt") {
+            await streamWriter.writeSSE({
+              event: "interrupt",
+              data: JSON.stringify(event.data),
+            });
+          } else if (event.type === "tool_execution_end") {
+            await streamWriter.writeSSE({
+              event: "tool_execution_end",
+              data: JSON.stringify(event.data),
+            });
+          } else if (event.type === "message_update" || event.type === "text_delta") {
+            await streamWriter.writeSSE({
+              event: "message_update",
+              data: JSON.stringify(event.data),
+            });
+          } else if (event.type === "agent_end" || event.type === "turn_end") {
+            await streamWriter.writeSSE({
+              event: "agent_end",
+              data: JSON.stringify(event.data),
+            });
+          } else if (event.type === "error") {
+            await streamWriter.writeSSE({
+              event: "error",
+              data: JSON.stringify(event.data),
+            });
+          }
+        }
+      };
+
+      const unsubscribe = agent.subscribe(async (event: unknown) => {
+        const typedEvent = event as { type: string };
+        eventQueue.push({ type: typedEvent.type, data: event });
+        await drainEvents();
+      });
+
+      try {
+        let textContent = "";
+        const images: { data: string; mimeType: string }[] = [];
+
+        if (typeof userContent === "string") {
+          textContent = userContent;
+        } else if (Array.isArray(userContent)) {
+          for (const block of userContent) {
+            if (block.type === "text") {
+              textContent += block.text;
+            } else if (block.type === "image_url" || block.type === "image") {
+              const url = (block as any).image_url?.url || block.data;
+              const mimeType = (block as any).image_url
+                ? (block as any).image_url.url?.includes("data:")
+                  ? (block as any).image_url.url.split(";")[0].split(":")[1]
+                  : "image/png"
+                : block.mimeType || "image/png";
+              images.push({ data: url, mimeType });
+            }
+          }
+        }
+
+        await agent.prompt(textContent, images.length > 0 ? images : undefined);
+        await agent.waitForIdle();
+        await agent.saveState();
+
+        await streamWriter.writeSSE({
+          event: "agent_end",
+          data: JSON.stringify({
+            messages: agent.getMessages(),
+          }),
+        });
+      } catch (error) {
+        const err = error as Error;
+        console.error(`[stream] thread=${threadId} error:`, err.message);
+        await streamWriter.writeSSE({
+          event: "error",
+          data: JSON.stringify({ error: err.message, type: err.name }),
+        });
+      } finally {
+        unsubscribe();
+      }
+    } catch (streamError: unknown) {
+      const error = streamError as Error;
+      console.error(`[stream] thread=${threadId} stream error:`, error.message);
+      await streamWriter.writeSSE({
+        event: "error",
+        data: JSON.stringify({ error: error.message, type: error.name }),
+      });
+    }
+  });
 });
 
-app.post("/threads/:threadId/state", async (c) => {
-  const threadId = c.req.param("threadId");
-  const body = await c.req.json();
-  const values = body.values;
-  const asNode = body.asNode;
-
-  const config = { configurable: { thread_id: threadId } };
-
-  try {
-    const result = await graph.updateState(config, values, asNode);
-    return c.json(result);
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("Update state error:", err);
-    return c.json({ error: err.message }, 500);
-  }
-});
+// ---------------------------------------------------------------------------
+// Resume — Tool Approval
+// ---------------------------------------------------------------------------
 
 interface ApprovalPayload {
   approved: boolean;
@@ -615,132 +462,118 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
   const body = await c.req.json();
 
   const approval = body.approval as ApprovalPayload | undefined;
-  const checkpointId = body.checkpoint_id;
+  const agent = agentManager.get(threadId);
 
-  const runConfig = {
-    configurable: {
-      thread_id: threadId,
-      model_config: body.config?.configurable?.model_config,
-      ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
-    },
-    streamMode: body.stream_mode || ["updates", "messages", "custom"],
-    recursionLimit: 150,
-  };
+  if (!agent) {
+    return c.json({ error: "No active agent found for this thread" }, 404);
+  }
 
-  try {
-    if (approval) {
-      const toolMessage = new ToolMessage(
-        JSON.stringify({
-          approved: approval.approved,
-          reason: approval.reason,
-          approved_tools: approval.approved_tools,
+  if (approval?.approved) {
+    agent.approvePendingToolCall();
+  } else {
+    agent.rejectPendingToolCall();
+  }
+
+  const runId = uuidv4();
+
+  return streamSSE(c, async (streamWriter) => {
+    await streamWriter.writeSSE({
+      event: "metadata",
+      data: JSON.stringify({ run_id: runId }),
+    });
+
+    try {
+      await agent.waitForIdle();
+      await agent.saveState();
+
+      await streamWriter.writeSSE({
+        event: "agent_end",
+        data: JSON.stringify({
+          messages: agent.getMessages(),
         }),
-        APPROVAL_TOOL_NAME,
-        APPROVAL_TOOL_NAME
-      );
-
-      await graph.updateState(
-        { configurable: { thread_id: threadId } },
-        { messages: [toolMessage] }
-      );
-    }
-
-    const resumeCommand = new Command({ resume: true }) as any;
-
-    if (body.stream !== false) {
-      const stream = await graph.stream(resumeCommand, runConfig);
-
-      return streamSSE(c, async (streamWriter) => {
-        try {
-          for await (const chunk of stream) {
-            let eventName: string;
-            let payload: unknown;
-
-            if (Array.isArray(chunk) && chunk.length === 2 && typeof chunk[0] === "string") {
-              [eventName, payload] = chunk;
-            } else {
-              eventName = "updates";
-              payload = chunk;
-            }
-
-            // Serialize message objects to simple POJOs
-            if (eventName === "values") {
-              payload = serializeMessagesInObject(payload);
-            } else if (eventName === "updates") {
-              const newPayload: any = {};
-              for (const key in payload as any) {
-                newPayload[key] = serializeMessagesInObject((payload as any)[key]);
-              }
-              payload = newPayload;
-            } else if (eventName === "messages" && Array.isArray(payload) && payload.length >= 1) {
-              payload = [serializeMessage(payload[0]), ...payload.slice(1)];
-            }
-
-            await streamWriter.writeSSE({
-              data: JSON.stringify(payload),
-              event: eventName,
-            });
-          }
-        } catch (streamError: unknown) {
-          const error = streamError as Error;
-          console.error("Resume stream error:", error);
-          await streamWriter.writeSSE({
-            data: JSON.stringify({ error: error.message }),
-            event: "error",
-          });
-        }
+      });
+    } catch (error) {
+      const err = error as Error;
+      console.error("Resume stream error:", err);
+      await streamWriter.writeSSE({
+        event: "error",
+        data: JSON.stringify({ error: err.message }),
       });
     }
-
-    const result = await graph.invoke(resumeCommand, runConfig);
-    return c.json(result);
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("Resume error:", err);
-    return c.json({ error: err.message }, 500);
-  }
+  });
 });
+
+// ---------------------------------------------------------------------------
+// Non-streaming Invoke
+// ---------------------------------------------------------------------------
 
 app.post("/threads/:threadId/runs", async (c) => {
   const threadId = c.req.param("threadId");
   const body = await c.req.json();
   const input = body.input || {};
   const config = body.config || {};
-  const checkpointId = body.checkpoint_id || config.configurable?.checkpoint_id;
-  const command = body.command;
 
+  const modelConfigFromBody =
+    body.configurable?.model_config ?? body.model_config ?? config?.configurable?.model_config;
   const toolApprovalConfig: ToolApprovalConfig =
     config.configurable?.tool_approval || getDefaultToolApprovalConfig();
 
-  const runConfig = {
-    configurable: {
-      thread_id: threadId,
-      user_id: config.configurable?.user_id,
-      tool_approval: toolApprovalConfig,
-      model_config: config.configurable?.model_config,
-      ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
-    },
-    recursionLimit: 150,
-  };
+  if (!input?.messages?.length) {
+    return c.json({ error: "No messages provided" }, 400);
+  }
+
+  const lastMessage = input.messages[input.messages.length - 1];
+  const userContent = lastMessage?.content || "";
+
+  const agent = agentManager.getOrCreate({
+    threadId,
+    modelConfig: modelConfigFromBody as RuntimeModelConfig,
+    toolApproval: toolApprovalConfig,
+    onEvent: () => {},
+  });
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let result: any;
-
-    if (command) {
-      const resumeCommand = new Command(command) as any;
-      result = await graph.invoke(resumeCommand, runConfig);
-    } else {
-      result = await graph.invoke(input, runConfig);
+    let textContent = "";
+    if (typeof userContent === "string") {
+      textContent = userContent;
+    } else if (Array.isArray(userContent)) {
+      textContent = userContent
+        .filter((b: any) => b.type === "text")
+        .map((b: any) => b.text)
+        .join("\n");
     }
 
-    return c.json(result);
+    await agent.prompt(textContent);
+    await agent.waitForIdle();
+    await agent.saveState();
+
+    return c.json({
+      messages: agent.getMessages(),
+    });
   } catch (error: unknown) {
     const err = error as Error;
     console.error("Run error:", err);
     return c.json({ error: err.message }, 500);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Ollama
+// ---------------------------------------------------------------------------
+
+interface OllamaModel {
+  name: string;
+  model: string;
+  modified_at: string;
+  size: number;
+}
+
+interface OllamaPullProgress {
+  status: string;
+  digest?: string;
+  total?: number;
+  completed?: number;
+}
 
 app.get("/ollama/models", async (c) => {
   const baseUrl = agentConfig.OLLAMA_BASE_URL || "http://localhost:11434";
@@ -759,8 +592,7 @@ app.get("/ollama/models", async (c) => {
     const models = data.models.map((m) => m.name);
 
     return c.json({ models });
-  } catch (error) {
-    console.error("Ollama list models error:", error);
+  } catch {
     return c.json({ error: "Failed to connect to Ollama" }, { status: 500 });
   }
 });
@@ -829,6 +661,10 @@ app.post("/ollama/pull", async (c) => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+
 app.get("/config", (c) => {
   return c.json({
     model_provider: agentConfig.MODEL_PROVIDER,
@@ -852,13 +688,20 @@ app.get("/config", (c) => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Assistants
+// ---------------------------------------------------------------------------
+
 app.use("/assistants/*", async (c, next) => {
   c.set("db", { assistants: assistantsDb });
   await next();
 });
 app.route("/assistants", assistantsRouter);
 
-// Log workspace configuration
+// ---------------------------------------------------------------------------
+// Start Server
+// ---------------------------------------------------------------------------
+
 const horizonConfig = getHorizonConfig();
 const workspacePath = resolveWorkspacePath(horizonConfig);
 
