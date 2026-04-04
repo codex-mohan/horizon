@@ -1,4 +1,4 @@
-import type { AIMessage, Message } from "@langchain/langgraph-sdk";
+import type { Message } from "@/lib/types/message";
 
 /**
  * Extracts reasoning/thinking content from an AI message.

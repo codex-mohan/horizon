@@ -1,6 +1,6 @@
 "use client";
 
-import type { Message } from "@langchain/langgraph-sdk";
+import type { Message } from "@/lib/types/message";
 
 export function getContentString(content: Message["content"]): string {
   if (typeof content === "string") {

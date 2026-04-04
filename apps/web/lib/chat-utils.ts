@@ -1,4 +1,4 @@
-import type { Message } from "@langchain/langgraph-sdk";
+import type { Message } from "@/lib/types/message";
 
 export interface CombinedToolCall {
   id: string;

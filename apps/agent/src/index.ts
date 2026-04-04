@@ -16,8 +16,8 @@ import type { Assistant } from "./assistants/types.js";
 import { DEFAULT_TOOL_APPROVAL_CONFIG, type ToolApprovalConfig } from "./lib/approval.js";
 import { agentConfig } from "./lib/config.js";
 import { getHorizonConfig, resolveWorkspacePath } from "./lib/config-loader.js";
+import { conversationStore } from "./lib/conversation-db.js";
 import type { RuntimeModelConfig } from "./lib/model.js";
-import { threadStore } from "./lib/persistence.js";
 
 // ---------------------------------------------------------------------------
 // Thread Metadata Store
@@ -236,7 +236,7 @@ app.get("/threads/:threadId", async (c) => {
   if (thread) {
     return c.json(thread);
   }
-  if (threadStore.load(threadId)) {
+  if (conversationStore.getConversation(threadId)) {
     const created = threadMetadataStore.create(threadId, {});
     return c.json(created);
   }
@@ -260,7 +260,7 @@ app.patch("/threads/:threadId", async (c) => {
 app.delete("/threads/:threadId", async (c) => {
   const threadId = c.req.param("threadId");
   threadMetadataStore.delete(threadId);
-  threadStore.delete(threadId);
+  conversationStore.deleteConversation(threadId);
   await agentManager.destroy(threadId);
   return c.json({ success: true });
 });
@@ -283,7 +283,7 @@ app.get("/threads/:threadId/state", async (c) => {
     });
   }
 
-  const messages = threadStore.load(threadId) || [];
+  const messages = conversationStore.getMessages(threadId);
   return c.json({
     messages,
     next: [],
@@ -295,13 +295,13 @@ app.get("/threads/:threadId/state", async (c) => {
 
 app.get("/threads/:threadId/history", async (c) => {
   const threadId = c.req.param("threadId");
-  const messages = threadStore.load(threadId) || [];
+  const messages = conversationStore.getMessages(threadId);
   return c.json(messages);
 });
 
 app.post("/threads/:threadId/history", async (c) => {
   const threadId = c.req.param("threadId");
-  const messages = threadStore.load(threadId) || [];
+  const messages = conversationStore.getMessages(threadId);
   return c.json(messages);
 });
 

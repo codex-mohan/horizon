@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@horizon/ui/lib/utils";
-import type { Message as LangGraphMessage } from "@langchain/langgraph-sdk";
 import { ArrowDown, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -23,6 +22,7 @@ import { useConversationStore } from "@/lib/stores/conversation";
 import { createThreadsClient } from "@/lib/threads";
 import { generateConversationTitle } from "@/lib/title-utils";
 import { getToolUIConfig } from "@/lib/tool-config";
+import type { Message as LangGraphMessage } from "@/lib/types/message";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatIndex } from "./chat-index";
 import type { AttachedFile as ChatInputAttachedFile } from "./chat-input";

@@ -1,7 +1,7 @@
 "use client";
 
-import { useStream } from "@langchain/langgraph-sdk/react";
 import { useState } from "react";
+import { useChat } from "@/lib/chat";
 
 /**
  * Component for navigating between conversation branches.

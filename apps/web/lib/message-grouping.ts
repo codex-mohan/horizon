@@ -8,11 +8,11 @@
  * - Controls only appear at the end of the group
  */
 
-import type { AIMessage, Message as LangGraphMessage } from "@langchain/langgraph-sdk";
 import type { AttachedFile, Message } from "@/components/chat/chat-interface";
 import type { ToolCall } from "@/components/chat/tool-call-message";
 import { getReasoningFromMessage, getTextContent } from "@/lib/reasoning-utils";
 import { getToolUIConfig } from "@/lib/tool-config";
+import type { Message as LangGraphMessage } from "@/lib/types/message";
 
 /**
  * A single tool-call round inside a group.

@@ -14,21 +14,20 @@ interface ShimmerTextProps {
  */
 export function ShimmerText({ text, className }: ShimmerTextProps) {
   return (
-    <div className={cn("relative overflow-hidden", className)}>
-      <span className="relative z-10 bg-gradient-to-r from-slate-400 via-slate-200 to-slate-400 bg-clip-text text-transparent">
-        {text}
-      </span>
-      <motion.div
-        animate={{ x: "100%" }}
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent"
-        initial={{ x: "-100%" }}
-        transition={{
-          duration: 1.5,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: "linear",
-        }}
-      />
-    </div>
+    <motion.span
+      animate={{ backgroundPosition: ["100% 0", "-100% 0"] }}
+      className={cn(
+        "inline-block bg-[length:200%_100%] bg-gradient-to-r from-slate-500 via-slate-200 to-slate-500 bg-clip-text text-transparent",
+        className
+      )}
+      transition={{
+        duration: 1.5,
+        repeat: Number.POSITIVE_INFINITY,
+        ease: "linear",
+      }}
+    >
+      {text}
+    </motion.span>
   );
 }
 
