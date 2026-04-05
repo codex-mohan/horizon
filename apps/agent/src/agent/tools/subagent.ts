@@ -1,9 +1,12 @@
+import { createLogger } from "@horizon/shared-utils";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { Type } from "@mariozechner/pi-ai";
 import { v4 as uuidv4 } from "uuid";
 import type { RuntimeModelConfig } from "../../lib/model.js";
 import { runWorkersSequentially, spawnWorkers } from "../subgraphs/index.js";
 import type { SubAgentResult } from "../subgraphs/types.js";
+
+const logger = createLogger("SubAgents");
 
 export interface WorkerConfig {
   id?: string;
@@ -80,6 +83,8 @@ Sub-agents are fully configurable by the main agent with custom prompts, tools, 
     console.log(
       `[spawn_subagents] Received ${workers.length} workers, mode: ${runMode || "parallel"}`
     );
+    logger.info(`Spawning ${workers.length} workers, mode: ${runMode || "parallel"}`);
+    logger.info(`Spawning ${workers.length} workers, mode: ${runMode || "parallel"}`);
 
     const configs = workers.map((w) => ({
       id: w.id || uuidv4(),
@@ -94,7 +99,7 @@ Sub-agents are fully configurable by the main agent with custom prompts, tools, 
       },
     }));
 
-    console.log(`[spawn_subagents] Spawning ${configs.length} workers...`);
+    logger.info(`Spawning ${configs.length} workers...`);
 
     let results: SubAgentResult[];
 

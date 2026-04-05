@@ -1,6 +1,9 @@
+import { createLogger } from "@horizon/shared-utils";
 import type { ToolApprovalConfig } from "../lib/approval.js";
 import type { RuntimeModelConfig } from "../lib/model.js";
 import { HorizonAgent } from "./horizon-agent.js";
+
+const logger = createLogger("AgentManager");
 
 interface AgentEntry {
   agent: HorizonAgent;
@@ -28,6 +31,7 @@ class AgentManager {
 
     const agent = new HorizonAgent(options);
     this.agents.set(options.threadId, { agent, lastUsed: Date.now() });
+    logger.debug(`Agent created for thread ${options.threadId}`);
     return agent;
   }
 
@@ -41,6 +45,7 @@ class AgentManager {
       await entry.agent.saveState();
       entry.agent.abort();
       this.agents.delete(threadId);
+      logger.debug(`Agent destroyed for thread ${threadId}`);
     }
   }
 

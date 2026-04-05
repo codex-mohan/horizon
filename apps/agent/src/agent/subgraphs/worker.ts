@@ -1,3 +1,4 @@
+import { createLogger } from "@horizon/shared-utils";
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { Agent } from "@mariozechner/pi-agent-core";
 import { agentConfig } from "../../lib/config.js";
@@ -6,6 +7,8 @@ import { createModel, getThinkingLevel } from "../../lib/model.js";
 import { toolMap } from "../tools/index.js";
 import { workerEventEmitter } from "./events.js";
 import type { SubAgentConfig, SubAgentResult } from "./types.js";
+
+const logger = createLogger("Worker");
 
 function getToolsForNames(names: string[]): AgentTool<any>[] {
   return names
@@ -36,8 +39,7 @@ function buildFallbackModelConfig(): RuntimeModelConfig {
 export async function runWorker(config: SubAgentConfig): Promise<SubAgentResult> {
   const startTime = Date.now();
 
-  console.log(`[Worker ${config.id}] Starting task: ${config.name}`);
-  console.log(`[Worker ${config.id}] Tools: ${config.tools.join(", ")}`);
+  logger.info(`Worker ${config.id} starting task: ${config.name}`, { tools: config.tools });
 
   workerEventEmitter.emitWorkerStarted(config);
 
@@ -47,7 +49,7 @@ export async function runWorker(config: SubAgentConfig): Promise<SubAgentResult>
     const model = createModel(modelConfig);
     const availableTools = getToolsForNames(config.tools);
 
-    console.log(`[Worker ${config.id}] Bound ${availableTools.length} tools`);
+    logger.debug(`Worker ${config.id} bound ${availableTools.length} tools`);
 
     workerEventEmitter.emitWorkerProgress(
       config.id,

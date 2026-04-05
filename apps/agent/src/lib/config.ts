@@ -79,6 +79,13 @@ const EnvSchema = z.object({
   BACKOFF_FACTOR: z.string().default("2.0").transform(Number),
   INITIAL_DELAY: z.string().default("1.0").transform(Number),
 
+  // Logging
+  ENABLE_LOGGING: z
+    .string()
+    .default("true")
+    .transform((s) => s === "true"),
+  LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
+
   // Prompts
   CHARACTER: z.string().default("You are a helpful AI assistant."),
   CORE_BEHAVIOR: z.string().default("Be helpful, harmless, and honest."),

@@ -38,7 +38,9 @@
   "engines": {
     "node": ">=20"
   },
-  "dependencies": {},
+  "dependencies": {
+    "better-sqlite3": "^12.8.0"
+  },
   "resolutions": {
     "@lezer/highlight": "^1.2.3",
     "@codemirror/state": "6.5.4",

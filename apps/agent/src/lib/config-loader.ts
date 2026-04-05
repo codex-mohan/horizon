@@ -17,6 +17,7 @@ import { homedir } from "node:os";
 import { dirname, join, parse, resolve } from "node:path";
 import { getGlobalDataDir } from "@horizon/shared-utils";
 import { z } from "zod";
+import { logger } from "./logger.js";
 
 /**
  * Workspace configuration schema
@@ -160,26 +161,23 @@ export function resolveWorkspacePath(config: HorizonConfig): string {
   // 1. Check WORKSPACE_PATH environment variable
   if (process.env.WORKSPACE_PATH) {
     workspacePath = resolve(expandTilde(process.env.WORKSPACE_PATH));
-    console.log(`[Config] Using WORKSPACE_PATH: ${workspacePath}`);
-  }
-  // 2. Check config file defaultPath
-  else if (config.workspace.defaultPath) {
+    logger.debug(`Using WORKSPACE_PATH: ${workspacePath}`);
+  } else if (config.workspace.defaultPath) {
     workspacePath = resolve(expandTilde(config.workspace.defaultPath));
-    console.log(`[Config] Using configured workspace: ${workspacePath}`);
-  }
-  // 3. Fallback to current working directory
-  else {
+    logger.debug(`Using configured workspace: ${workspacePath}`);
+  } else {
     workspacePath = process.cwd();
-    console.log(`[Config] Using current directory as workspace: ${workspacePath}`);
+    logger.debug(`Using current directory as workspace: ${workspacePath}`);
   }
 
-  // Ensure workspace directory exists
   if (!existsSync(workspacePath)) {
     try {
       mkdirSync(workspacePath, { recursive: true });
-      console.log(`[Config] Created workspace directory: ${workspacePath}`);
+      logger.debug(`Created workspace directory: ${workspacePath}`);
     } catch (error) {
-      console.error(`[Config] Failed to create workspace directory ${workspacePath}:`, error);
+      logger.error(`Failed to create workspace directory ${workspacePath}`, {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -221,14 +219,18 @@ function loadConfigFile(configPath: string): HorizonConfig | null {
     const result = HorizonConfigSchema.safeParse(parsed);
 
     if (!result.success) {
-      console.error(`[Config] Invalid config at ${configPath}:`, result.error.issues);
+      logger.error(`Invalid config at ${configPath}`, {
+        issues: result.error.issues,
+      });
       return null;
     }
 
-    console.log(`[Config] Loaded configuration from: ${configPath}`);
+    logger.debug(`Loaded configuration from: ${configPath}`);
     return result.data;
   } catch (error) {
-    console.error(`[Config] Error loading ${configPath}:`, error);
+    logger.error(`Error loading ${configPath}`, {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
@@ -253,7 +255,7 @@ export function loadHorizonConfig(): HorizonConfig {
         return config;
       }
     }
-    console.warn(`[Config] HORIZON_CONFIG path does not exist: ${configPath}`);
+    logger.warn(`HORIZON_CONFIG path does not exist: ${configPath}`);
   }
 
   // 2. Check monorepo config directory
@@ -281,19 +283,19 @@ export function loadHorizonConfig(): HorizonConfig {
     try {
       if (!existsSync(targetPath)) {
         copyFileSync(examplePath, targetPath);
-        console.log(`[Config] Created configuration from example: ${targetPath}`);
+        logger.debug(`Created configuration from example: ${targetPath}`);
       }
       const config = loadConfigFile(targetPath);
       if (config) {
         return config;
       }
     } catch (error) {
-      console.error(`[Config] Failed to create config from example:`, error);
+      logger.error("Failed to create config from example", { error: String(error) });
     }
   }
 
   // 5. No config found, use defaults
-  console.log("[Config] No configuration file found, using defaults");
+  logger.debug("No configuration file found, using defaults");
   return DEFAULT_CONFIG;
 }
 

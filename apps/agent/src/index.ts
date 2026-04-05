@@ -17,6 +17,7 @@ import { DEFAULT_TOOL_APPROVAL_CONFIG, type ToolApprovalConfig } from "./lib/app
 import { agentConfig } from "./lib/config.js";
 import { getHorizonConfig, resolveWorkspacePath } from "./lib/config-loader.js";
 import { conversationStore } from "./lib/conversation-db.js";
+import { logger } from "./lib/logger.js";
 import type { RuntimeModelConfig } from "./lib/model.js";
 
 // ---------------------------------------------------------------------------
@@ -218,6 +219,7 @@ app.post("/threads", async (c) => {
   const threadId = body.thread_id || uuidv4();
   const metadata = body.metadata || {};
   const thread = threadMetadataStore.create(threadId, metadata);
+  logger.info("Thread created", { threadId });
   return c.json(thread);
 });
 
@@ -262,6 +264,7 @@ app.delete("/threads/:threadId", async (c) => {
   threadMetadataStore.delete(threadId);
   conversationStore.deleteConversation(threadId);
   await agentManager.destroy(threadId);
+  logger.info("Thread deleted", { threadId });
   return c.json({ success: true });
 });
 
@@ -336,6 +339,8 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
 
   const lastMessage = input.messages[input.messages.length - 1];
   const userContent = lastMessage?.content || "";
+
+  logger.info("Stream request", { threadId });
 
   const agent = agentManager.getOrCreate({
     threadId,
@@ -428,7 +433,7 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
         });
       } catch (error) {
         const err = error as Error;
-        console.error(`[stream] thread=${threadId} error:`, err.message);
+        logger.error("Stream error", { threadId, error: err.message });
         await streamWriter.writeSSE({
           event: "error",
           data: JSON.stringify({ error: err.message, type: err.name }),
@@ -438,7 +443,7 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
       }
     } catch (streamError: unknown) {
       const error = streamError as Error;
-      console.error(`[stream] thread=${threadId} stream error:`, error.message);
+      logger.error("Stream connection error", { threadId, error: error.message });
       await streamWriter.writeSSE({
         event: "error",
         data: JSON.stringify({ error: error.message, type: error.name }),
@@ -469,8 +474,10 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
   }
 
   if (approval?.approved) {
+    logger.info("Tool call approved", { threadId });
     agent.approvePendingToolCall();
   } else {
+    logger.info("Tool call rejected", { threadId });
     agent.rejectPendingToolCall();
   }
 
@@ -494,7 +501,7 @@ app.post("/threads/:threadId/runs/resume", async (c) => {
       });
     } catch (error) {
       const err = error as Error;
-      console.error("Resume stream error:", err);
+      logger.error("Resume error", { threadId, error: err.message });
       await streamWriter.writeSSE({
         event: "error",
         data: JSON.stringify({ error: err.message }),
@@ -552,7 +559,7 @@ app.post("/threads/:threadId/runs", async (c) => {
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Run error:", err);
+    logger.error("Run error", { threadId, error: err.message });
     return c.json({ error: err.message }, 500);
   }
 });
@@ -655,7 +662,7 @@ app.post("/ollama/pull", async (c) => {
       stream.write(`${JSON.stringify({ status: "complete", model: modelName })}\n`);
     } catch (error) {
       const err = error as Error;
-      console.error("Ollama pull error:", err);
+      logger.error("Ollama pull error", { error: err.message });
       stream.write(`${JSON.stringify({ status: "error", error: err.message })}\n`);
     }
   });
@@ -705,7 +712,12 @@ app.route("/assistants", assistantsRouter);
 const horizonConfig = getHorizonConfig();
 const workspacePath = resolveWorkspacePath(horizonConfig);
 
-console.log(`Horizon agent running on port ${agentConfig.PORT} | workspace: ${workspacePath}`);
+logger.info("Horizon agent starting", {
+  port: agentConfig.PORT,
+  workspace: workspacePath,
+  logging: agentConfig.ENABLE_LOGGING,
+  logLevel: agentConfig.LOG_LEVEL,
+});
 
 serve({
   fetch: app.fetch,
