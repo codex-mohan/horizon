@@ -346,13 +346,15 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
     return c.json({ error: "No model configuration provided" }, 400);
   }
 
-  const lastMessage = input.messages[input.messages.length - 1];
-  const userContent = lastMessage?.content || "";
+  const logMessage = input.messages[0];
+  const logContent =
+    typeof logMessage?.content === "string" ? logMessage.content : "Multimodal/Document input";
 
   logger.info("Stream request", {
     threadId,
     provider: modelConfigFromBody?.provider,
     model: modelConfigFromBody?.modelName,
+    contentPreview: logContent.substring(0, 50),
   });
 
   const agent = agentManager.getOrCreate({
@@ -416,20 +418,28 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
         let textContent = "";
         const images: { data: string; mimeType: string }[] = [];
 
-        if (typeof userContent === "string") {
-          textContent = userContent;
-        } else if (Array.isArray(userContent)) {
-          for (const block of userContent) {
-            if (block.type === "text") {
-              textContent += block.text;
-            } else if (block.type === "image_url" || block.type === "image") {
-              const url = (block as any).image_url?.url || block.data;
-              const mimeType = (block as any).image_url
-                ? (block as any).image_url.url?.includes("data:")
-                  ? (block as any).image_url.url.split(";")[0].split(":")[1]
-                  : "image/png"
-                : block.mimeType || "image/png";
-              images.push({ data: url, mimeType });
+        for (const msg of input.messages) {
+          const content = msg.content || "";
+
+          if (typeof content === "string") {
+            textContent += (textContent ? "\n\n" : "") + content;
+          } else if (Array.isArray(content)) {
+            let blockText = "";
+            for (const block of content) {
+              if (block.type === "text") {
+                blockText += block.text;
+              } else if (block.type === "image_url" || block.type === "image") {
+                const url = (block as any).image_url?.url || block.data;
+                const mimeType = (block as any).image_url
+                  ? (block as any).image_url.url?.includes("data:")
+                    ? (block as any).image_url.url.split(";")[0].split(":")[1]
+                    : "image/png"
+                  : block.mimeType || "image/png";
+                images.push({ data: url, mimeType });
+              }
+            }
+            if (blockText) {
+              textContent += (textContent ? "\n\n" : "") + blockText;
             }
           }
         }

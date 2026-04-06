@@ -5,7 +5,7 @@ import type { Message } from "@/lib/types/message";
  * Supports both OpenAI reasoning and Anthropic extended thinking.
  */
 export function getReasoningFromMessage(message: Message): string | undefined {
-  type MessageWithExtras = AIMessage & {
+  type MessageWithExtras = Message & {
     additional_kwargs?: {
       reasoning?: {
         summary?: Array<{ type: string; text: string }>;
@@ -35,11 +35,10 @@ export function getReasoningFromMessage(message: Message): string | undefined {
     }
   }
 
-  // Check for OpenAI reasoning in additional_kwargs
   if (additionalKwargs?.reasoning?.summary) {
     const content = additionalKwargs.reasoning.summary
-      .filter((item) => item.type === "summary_text")
-      .map((item) => item.text)
+      .filter((item: any) => item.type === "summary_text")
+      .map((item: any) => item.text)
       .join("");
     if (content.trim()) return content;
   }
@@ -47,8 +46,8 @@ export function getReasoningFromMessage(message: Message): string | undefined {
   // Check for Anthropic thinking in contentBlocks
   if (msg.contentBlocks?.length) {
     const thinking = msg.contentBlocks
-      .filter((b) => b.type === "thinking" && b.thinking)
-      .map((b) => b.thinking)
+      .filter((b: any) => b.type === "thinking" && b.thinking)
+      .map((b: any) => b.thinking)
       .join("\n");
     if (thinking) return thinking;
   }

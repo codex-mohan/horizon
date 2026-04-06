@@ -22,7 +22,7 @@ import { useConversationStore } from "@/lib/stores/conversation";
 import { createThreadsClient } from "@/lib/threads";
 import { generateConversationTitle } from "@/lib/title-utils";
 import { getToolUIConfig } from "@/lib/tool-config";
-import type { Message as LangGraphMessage } from "@/lib/types/message";
+import type { Message as HorizonMessage } from "@/lib/types/message";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatIndex } from "./chat-index";
 import type { AttachedFile as ChatInputAttachedFile } from "./chat-input";
@@ -149,7 +149,7 @@ export function ChatArea({
   // Chat options
   const chatOptions = useMemo<UseChatOptions>(
     () => ({
-      apiUrl: process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024",
+      apiUrl: process.env.NEXT_PUBLIC_AGENT_API_URL || "http://localhost:2024",
       assistantId: "agent",
       threadId: threadId ?? undefined,
       userId: user?.id,
@@ -181,7 +181,7 @@ export function ChatArea({
     const title = pendingTitleRef.current;
     pendingTitleRef.current = null; // consume immediately to avoid re-runs
     const client = createThreadsClient(
-      process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024"
+      process.env.NEXT_PUBLIC_AGENT_API_URL || "http://localhost:2024"
     );
     client
       .updateThread(chat.threadId, { title })
@@ -336,126 +336,42 @@ export function ChatArea({
   // ============================================================================
 
   const handleEdit = useCallback(
-    (messageId: string, content: string, isLastGroup: boolean) => {
-      const messageIndex = chat.messages.findIndex((m) => m.id === messageId);
-      const liveMessage = chat.messages[messageIndex];
-
+    (messageId: string, content: string, _isLastGroup: boolean) => {
+      const liveMessage = chat.messages.find((m) => m.id === messageId);
       if (!liveMessage) {
         toast.error("Message not found in current session");
         return;
       }
-
-      const metadata = chat.getMessagesMetadata(liveMessage);
-      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
-
-      if (!isLastGroup) {
-        const confirmMsg =
-          "This will replace all messages after this point. This action cannot be undone.";
-        if (!window.confirm(confirmMsg)) {
-          return;
-        }
-      }
-
-      if (parentCheckpoint) {
-        // Normal case: branch from the parent checkpoint (state before this message)
-        chat.submit({ messages: [{ type: "human", content }] }, { checkpoint: parentCheckpoint });
-        if (isLastGroup) {
-          toast.success("Created new branch from edited message");
-        } else {
-          toast.success("Replacing conversation from edited message");
-        }
-      } else if (messageIndex === 0) {
-        // First message: parent_checkpoint is null because it's the root.
-        // Use the message's own checkpoint (firstSeenState.checkpoint) to branch
-        // from the initial state. This creates a proper branch with the switcher
-        // instead of appending a duplicate message.
-        const rootCheckpoint = metadata?.firstSeenState?.checkpoint;
-        if (rootCheckpoint) {
-          chat.submit({ messages: [{ type: "human", content }] }, { checkpoint: rootCheckpoint });
-          if (isLastGroup) {
-            toast.success("Created new branch from edited message");
-          } else {
-            toast.success("Replacing conversation from edited message");
-          }
-        } else {
-          // Absolute fallback: no checkpoint metadata available at all
-          // This should rarely happen — only if history wasn't fetched
-          console.warn("[handleEdit] No checkpoint available for first message, appending");
-          chat.submit({ messages: [{ type: "human", content }] });
-          toast.success(isLastGroup ? "Message updated" : "Replacing conversation");
-        }
-      } else {
-        toast.error("Unable to edit: No checkpoint available");
-        console.error("Missing checkpoint for message:", liveMessage);
-      }
+      // Re-submit the edited message as a new user turn
+      chat.submit({ messages: [{ type: "human", content }] });
+      toast.success("Message updated");
     },
     [chat]
   );
 
   const handleRegenerate = useCallback(
-    (messageId: string, isLastGroup: boolean) => {
-      const liveMessage = chat.messages.find((m) => m.id === messageId);
-      if (!liveMessage) {
-        console.error("[handleRegenerate] Message not found:", messageId);
-        toast.error("Message not found in current session");
+    (_messageId: string, _isLastGroup: boolean) => {
+      // Resend the last user message to regenerate the response
+      const lastUser = [...chat.messages].reverse().find((m) => m.role === "user");
+      if (!lastUser) {
+        toast.error("No user message to regenerate from");
         return;
       }
-
-      const metadata = chat.getMessagesMetadata(liveMessage);
-      const parentCheckpoint = metadata?.firstSeenState?.parent_checkpoint;
-
-      if (!isLastGroup) {
-        const confirmMsg =
-          "This will replace all messages after this point. This action cannot be undone.";
-        if (!window.confirm(confirmMsg)) {
-          return;
-        }
-      }
-
-      if (parentCheckpoint) {
-        chat.submit(undefined, { checkpoint: parentCheckpoint });
-        toast.success(
-          isLastGroup ? "Regenerating response…" : "Replacing conversation from this point"
-        );
-      } else {
-        // parentCheckpoint is null for AI messages that follow the very first user message.
-        // Fall back to the message's own checkpoint (firstSeenState.checkpoint) so we can
-        // still branch from the root rather than failing silently.
-        const rootCheckpoint = metadata?.firstSeenState?.checkpoint;
-        if (rootCheckpoint) {
-          console.log(
-            "[handleRegenerate] No parent checkpoint, using root checkpoint:",
-            rootCheckpoint.checkpoint_id
-          );
-          chat.submit(undefined, { checkpoint: rootCheckpoint });
-          toast.success(
-            isLastGroup ? "Regenerating response…" : "Replacing conversation from this point"
-          );
-        } else {
-          console.error(
-            "[handleRegenerate] No checkpoint available for message:",
-            messageId,
-            "metadata:",
-            metadata
-          );
-          toast.error("Unable to regenerate: checkpoint data not available");
-        }
-      }
-    },
-    [chat]
-  );
-
-  const handleBranchChange = useCallback(
-    (branch: string) => {
-      chat.setBranch(branch);
+      const content =
+        typeof lastUser.content === "string"
+          ? lastUser.content
+          : (lastUser.content as Array<{ type: string; text?: string }>)
+              .filter((b) => b.type === "text")
+              .map((b) => b.text)
+              .join("");
+      chat.submit({ messages: [{ type: "human", content }] });
+      toast.success("Regenerating response…");
     },
     [chat]
   );
 
   const handleContinue = useCallback(
     (_messageId: string) => {
-      // Continue without creating a new branch
-      // Submit undefined to resume from current state
       chat.submit(undefined);
       toast.success("Continuing response...");
     },
@@ -601,10 +517,10 @@ export function ChatArea({
             ...(prev.messages ?? []),
             {
               id: `optimistic-${Date.now()}`,
-              type: "human",
+              role: "user",
               content: humanMessageContent,
               additional_kwargs: { file_metadata: fileMetadata },
-            } as unknown as LangGraphMessage,
+            } as unknown as HorizonMessage,
           ],
         }),
         configurable: {
@@ -627,7 +543,9 @@ export function ChatArea({
       // We cannot call updateThread here because chat.threadId is still null
       // for brand-new chats — the ID only arrives after chat.submit() begins
       // streaming. The useEffect above watches chat.threadId and flushes it.
-      const isFirstMessage = !chat.messages.some((m) => m.type === "human");
+      const isFirstMessage = !chat.messages.some(
+        (m) => m.role === "user" || (m as any).type === "human"
+      );
       if (isFirstMessage) {
         pendingTitleRef.current = generateConversationTitle(text);
       }
@@ -762,8 +680,6 @@ export function ChatArea({
                   return (
                     <MessageGroup
                       assistantMessage={group.assistantMessage}
-                      branch={group.branch}
-                      branchOptions={group.branchOptions}
                       firstAssistantMessageId={group.firstAssistantMessageId}
                       hasPendingTasks={chat.hasPendingTasks}
                       id={group.id}
@@ -771,7 +687,6 @@ export function ChatArea({
                       isLastGroup={isLastGroup}
                       isLoading={chat.isLoading}
                       key={group.id}
-                      onBranchChange={handleBranchChange}
                       onDelete={handleDelete}
                       onEdit={handleEdit}
                       onRegenerate={handleRegenerate}
@@ -826,7 +741,7 @@ export function ChatArea({
           {hasMessages && !isNearBottom && (
             <button
               onClick={scrollToBottom}
-              className="scroll-to-bottom-btn absolute bottom-4 left-1/2 z-20 flex h-10 w-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-[var(--gradient-from)] via-[var(--gradient-via)] to-[var(--gradient-to)] text-primary-foreground shadow-lg transition-shadow duration-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background active:scale-95"
+              className="scroll-to-bottom-btn absolute bottom-4 left-1/2 z-20 flex h-10 w-10 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full bg-linear-to-r from-(--gradient-from) via-(--gradient-via) to-(--gradient-to) text-primary-foreground shadow-lg transition-shadow duration-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background active:scale-95"
               title="Jump to latest"
               type="button"
             >

@@ -12,7 +12,7 @@ import type { AttachedFile, Message } from "@/components/chat/chat-interface";
 import type { ToolCall } from "@/components/chat/tool-call-message";
 import { getReasoningFromMessage, getTextContent } from "@/lib/reasoning-utils";
 import { getToolUIConfig } from "@/lib/tool-config";
-import type { Message as LangGraphMessage } from "@/lib/types/message";
+import type { Message as HorizonMessage } from "@/lib/types/message";
 
 /**
  * A single tool-call round inside a group.
@@ -41,8 +41,6 @@ export interface MessageGroup {
   /** ID of the first AI message in this group - used for regeneration */
   firstAssistantMessageId?: string;
   isLastGroup: boolean;
-  branch?: string;
-  branchOptions?: string[];
 }
 
 export type ChatHook = ReturnType<typeof import("@/lib/chat").useChat>;
@@ -53,7 +51,7 @@ export type ChatHook = ReturnType<typeof import("@/lib/chat").useChat>;
  * Extract attachments from message's additional_kwargs
  * This persists with the message through LangGraph's checkpointer
  */
-function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[] {
+function extractAttachments(msg: HorizonMessage, msgId: string): AttachedFile[] {
   if (msg.type !== "human") return [];
 
   const attachments: AttachedFile[] = [];
@@ -71,7 +69,7 @@ function extractAttachments(msg: LangGraphMessage, msgId: string): AttachedFile[
   }
 
   // Fallback: Check for attachments stored directly on the message (legacy optimistic updates)
-  const msgWithAttachments = msg as LangGraphMessage & { attachments?: AttachedFile[] };
+  const msgWithAttachments = msg as HorizonMessage & { attachments?: AttachedFile[] };
   if (msgWithAttachments.attachments && Array.isArray(msgWithAttachments.attachments)) {
     return msgWithAttachments.attachments;
   }
@@ -139,7 +137,7 @@ function extractToolCalls(chat: ChatHook, msg: unknown): ToolCall[] {
 }
 
 export function groupMessages(
-  messages: LangGraphMessage[],
+  messages: HorizonMessage[],
   chat: ChatHook,
   hiddenMessageIds: Set<string>
 ): MessageGroup[] {
@@ -160,8 +158,8 @@ export function groupMessages(
 
     if (msg.id && hiddenMessageIds.has(msg.id)) continue;
 
-    const metadata = chat.getMessagesMetadata(msg);
-    const reasoning = getReasoningFromMessage(msg as AIMessage);
+    const metadata = chat.getMessagesMetadata(msg as any);
+    const reasoning = getReasoningFromMessage(msg);
 
     // Let reasoning-utils handle text extraction and stripping
     const content = getTextContent(msg);
@@ -191,8 +189,6 @@ export function groupMessages(
         assistantMessage: null,
         firstAssistantMessageId: undefined,
         isLastGroup: false,
-        branch: metadata?.branch,
-        branchOptions: metadata?.branchOptions,
       };
     } else if (msg.type === "ai") {
       // Get tool calls for this AI message
@@ -257,11 +253,6 @@ export function groupMessages(
             currentGroup.assistantMessage = aiMessage;
           }
         }
-
-        // Update branch metadata
-        if (metadata?.branch !== undefined) currentGroup.branch = metadata.branch;
-        if (metadata?.branchOptions !== undefined)
-          currentGroup.branchOptions = metadata.branchOptions;
       } else {
         // AI message without preceding user (edge case)
         const aiMessage: Message = {
@@ -285,8 +276,6 @@ export function groupMessages(
           assistantMessage: hasToolCalls ? null : aiMessage,
           firstAssistantMessageId: msg.id || `msg-${i}`,
           isLastGroup: false,
-          branch: metadata?.branch,
-          branchOptions: metadata?.branchOptions,
         };
       }
     }

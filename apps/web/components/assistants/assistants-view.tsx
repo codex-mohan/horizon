@@ -37,7 +37,7 @@ interface AssistantsViewProps {
 
 export function AssistantsView({ onSelectAssistant, onClose }: AssistantsViewProps) {
   const { user } = useAuthStore();
-  const apiUrl = process.env.NEXT_PUBLIC_LANGGRAPH_API_URL || "http://localhost:2024";
+  const apiUrl = process.env.NEXT_PUBLIC_AGENT_API_URL || "http://localhost:2024";
 
   const {
     assistants,

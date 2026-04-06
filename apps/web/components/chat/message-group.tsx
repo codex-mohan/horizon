@@ -12,7 +12,6 @@ import { Bot, Copy, CornerDownRight, RefreshCw } from "lucide-react";
 import React from "react";
 import type { ToolStep } from "@/lib/message-grouping";
 import { hasCustomUI } from "@/lib/tool-config";
-import { BranchSwitcher } from "./branch-switcher";
 import { ChatBubble } from "./chat-bubble";
 import type { Message } from "./chat-interface";
 import { GenerativeUIRenderer } from "./generative-ui-renderer";
@@ -30,8 +29,6 @@ interface MessageGroupProps {
   /** ID of the first AI message in this group - used for regeneration */
   firstAssistantMessageId?: string;
   isLastGroup: boolean;
-  branch?: string;
-  branchOptions?: string[];
   isLoading: boolean;
   hasPendingTasks?: boolean;
   showToolCalls: boolean;
@@ -39,7 +36,6 @@ interface MessageGroupProps {
   onDelete: (id: string) => void;
   onRegenerate: (messageId: string, isLastGroup: boolean) => void;
   onContinue?: (messageId: string) => void;
-  onBranchChange: (branch: string) => void;
   /** When set, renders a ToolApprovalBanner inline at the bottom of the assistant section */
   interrupt?: {
     data: ToolApprovalData;
@@ -66,8 +62,6 @@ export const MessageGroup = React.memo(function MessageGroup({
   assistantMessage,
   firstAssistantMessageId,
   isLastGroup,
-  branch,
-  branchOptions,
   isLoading,
   hasPendingTasks,
   showToolCalls,
@@ -75,7 +69,6 @@ export const MessageGroup = React.memo(function MessageGroup({
   onDelete,
   onRegenerate,
   onContinue,
-  onBranchChange,
   interrupt,
 }: MessageGroupProps) {
   const hasAssistantContent = !!(assistantMessage || toolSteps.length > 0);
@@ -188,15 +181,6 @@ export const MessageGroup = React.memo(function MessageGroup({
             {/* Group-level Actions Bar */}
             {controlsMessage && (
               <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                {/* Branch Switcher - Only on last group */}
-                {isLastGroup && branchOptions && branchOptions.length > 1 && (
-                  <BranchSwitcher
-                    branch={branch}
-                    branchOptions={branchOptions}
-                    onSelect={onBranchChange}
-                  />
-                )}
-
                 {/* Regenerate Button */}
                 <TooltipProvider>
                   <Tooltip>
@@ -216,11 +200,7 @@ export const MessageGroup = React.memo(function MessageGroup({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>
-                        {isLastGroup
-                          ? "Regenerate response (creates new branch)"
-                          : "Regenerate response (replaces conversation from here)"}
-                      </p>
+                      <p>Regenerate response</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

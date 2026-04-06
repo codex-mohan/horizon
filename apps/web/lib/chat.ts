@@ -33,7 +33,7 @@ export interface MessageMetadata {
 export interface ToolApprovalConfig {
   mode: ToolApprovalMode;
   auto_approve_tools: string[];
-  never_approve_tools: string;
+  never_approve_tools: string[];
 }
 
 export interface UseChatOptions {
@@ -97,7 +97,7 @@ export interface Message {
   id: string;
   role: string;
   content: string | ContentBlock[];
-  tool_calls?: unknown[];
+  tool_calls?: { id: string; name: string; args: Record<string, unknown> }[];
   [key: string]: unknown;
 }
 

@@ -232,7 +232,7 @@ export const ChatBubble = React.memo(
                       variant="ghost"
                       title={
                         isLastGroup
-                          ? "Edit message (creates new branch)"
+                          ? "Edit message"
                           : "Edit message (replaces conversation from here)"
                       }
                     >
