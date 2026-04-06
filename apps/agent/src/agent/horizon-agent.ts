@@ -165,11 +165,7 @@ export class HorizonAgent {
   }
 
   async saveState() {
-    const messages = this.agent.state.messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
-
+    const messages = this.agent.state.messages as unknown as Array<Record<string, unknown>>;
     conversationStore.clearMessages(this.threadId);
     conversationStore.saveMessages(this.threadId, messages);
     conversationStore.updateConversation(this.threadId, {

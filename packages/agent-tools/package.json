@@ -31,12 +31,8 @@
   },
   "dependencies": {
     "@horizon/shared-utils": "workspace:*",
-    "@langchain/core": "^0.3.0",
-    "@langchain/community": "^0.3.0",
     "cheerio": "^1.0.0",
-    "picocolors": "^1.1.1",
-    "prettier": "^3.4.0",
-    "zod": "^3.23.0"
+    "prettier": "^3.4.0"
   },
   "devDependencies": {
     "@horizon/typescript-config": "workspace:*",

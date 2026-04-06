@@ -162,13 +162,15 @@ export const conversationStore = {
     }));
   },
 
-  saveMessages(threadId: string, messages: Array<{ role: string; content: unknown }>): void {
+  saveMessages(threadId: string, messages: Array<Record<string, unknown>>): void {
     const db = getDb();
     const insert = db.prepare("INSERT INTO messages (thread_id, role, content) VALUES (?, ?, ?)");
 
-    const insertMany = db.transaction((msgs: Array<{ role: string; content: unknown }>) => {
+    const insertMany = db.transaction((msgs: Array<Record<string, unknown>>) => {
       for (const msg of msgs) {
-        insert.run(threadId, msg.role, JSON.stringify(msg.content));
+        // Store the ENTIRE message object so all pi-agent fields are preserved:
+        // timestamp, id, stopReason, usage, toolCallId, toolName, content, etc.
+        insert.run(threadId, String(msg.role ?? ""), JSON.stringify(msg));
       }
     });
 
@@ -179,16 +181,25 @@ export const conversationStore = {
     );
   },
 
-  getMessages(threadId: string): Array<{ role: string; content: unknown }> {
+  getMessages(threadId: string): Array<Record<string, unknown>> {
     const db = getDb();
     const rows = db
       .prepare("SELECT role, content FROM messages WHERE thread_id = ? ORDER BY id ASC")
       .all(threadId) as Array<{ role: string; content: string }>;
 
-    return rows.map((row) => ({
-      role: row.role,
-      content: JSON.parse(row.content),
-    }));
+    return rows.map((row) => {
+      try {
+        const parsed = JSON.parse(row.content);
+        // New format: content column holds the entire message object
+        if (parsed && typeof parsed === "object" && "role" in parsed) {
+          return parsed as Record<string, unknown>;
+        }
+        // Old format: content column holds only the message content field
+        return { role: row.role, content: parsed, timestamp: Date.now() };
+      } catch {
+        return { role: row.role, content: row.content, timestamp: Date.now() };
+      }
+    });
   },
 
   clearMessages(threadId: string): void {

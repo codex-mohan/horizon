@@ -22,7 +22,8 @@
     "lint": "ultracite check"
   },
   "dependencies": {
-    "picocolors": "^1.1.1"
+    "chalk": "^5.4.1",
+    "cli-highlight": "^2.1.11"
   },
   "devDependencies": {
     "@types/bun": "latest",

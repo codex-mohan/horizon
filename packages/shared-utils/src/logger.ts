@@ -1,12 +1,66 @@
 /**
- * Logger module for Horizon - provides structured logging with different log levels,
- * contextual prefixes, emoji indicators, stylish formatting, and useful utilities
- * for easy debugging and tracing across the entire application.
+ * @horizon/shared-utils — Logger
+ *
+ * Structured, leveled terminal logger built on Chalk 5 (truecolor, ESM).
+ *
+ * Design principles:
+ *  - Color toggling uses Chalk's `level` API (3 = 16M colors, 0 = no color)
+ *    so rendering functions never need `colors ? x : y` ternaries.
+ *  - Two module-level Chalk instances are cached (COLOR / PLAIN) — no repeated
+ *    `new Chalk()` allocations in hot paths.
+ *  - A `T` (tokens) object holds palette helpers as (ChalkInstance) => ChalkInstance
+ *    so they compose cleanly via Chalk's fluent chaining API.
+ *  - JSON data blocks are highlighted with cli-highlight + the hex palette.
+ *  - Box, spinner, and table all use the same token system.
  */
 
-import picocolors from "picocolors";
+import { Chalk, type ChalkInstance } from "chalk";
+import { highlight } from "cli-highlight";
 
-/** Log levels in order of severity */
+// ─── Chalk instances ──────────────────────────────────────────────────────────
+
+/** Truecolor Chalk instance (16 million colors). */
+const COLOR = new Chalk({ level: 3 });
+
+/**
+ * No-color Chalk instance. `level: 0` makes every method a transparent
+ * pass-through, so `PLAIN.bold.hex("#fff")("text") === "text"`.
+ */
+const PLAIN = new Chalk({ level: 0 });
+
+/** Returns the appropriate Chalk instance based on the `colors` flag. */
+function ch(colors: boolean): ChalkInstance {
+  return colors ? COLOR : PLAIN;
+}
+
+// ─── Design tokens ────────────────────────────────────────────────────────────
+// Each token is `(ChalkInstance) => ChalkInstance` so it chains naturally:
+//   T.ctx(chalk)("my text")           — apply token
+//   T.ctx(chalk).underline("my text") — chain further modifiers
+
+const T = {
+  // Structural
+  ts: (c: ChalkInstance) => c.dim,
+  ctx: (c: ChalkInstance) => c.hex("#22D3EE"), // sky cyan
+  pfx: (c: ChalkInstance) => c.hex("#E879F9"), // vivid pink
+  caller: (c: ChalkInstance) => c.dim.italic,
+  jsonBorder: (c: ChalkInstance) => c.dim.hex("#4B5563"), // dark slate
+  // Table / box chrome
+  chrome: (c: ChalkInstance) => c.dim.hex("#6B7280"), // cool gray
+  tHead: (c: ChalkInstance) => c.bold.hex("#F9FAFB"), // near-white bold
+  tCell: (c: ChalkInstance) => c.hex("#D1D5DB"), // light gray
+  boxBorder: (c: ChalkInstance) => c.hex("#22D3EE"), // cyan border
+  boxTitle: (c: ChalkInstance) => c.bold.hex("#F0F9FF"), // bright title
+  // JSON theme helpers (return string → string so cli-highlight can use them)
+  jsonKey: (c: ChalkInstance) => (s: string) => c.hex("#67E8F9")(s), // sky cyan
+  jsonString: (c: ChalkInstance) => (s: string) => c.hex("#86EFAC")(s), // soft green
+  jsonNumber: (c: ChalkInstance) => (s: string) => c.hex("#93C5FD")(s), // soft blue
+  jsonLiteral: (c: ChalkInstance) => (s: string) => c.hex("#FCD34D")(s), // amber
+} as const;
+
+// ─── Log levels ───────────────────────────────────────────────────────────────
+
+/** Log levels in ascending severity order. */
 export enum LogLevel {
   TRACE = -1,
   DEBUG = 0,
@@ -17,47 +71,141 @@ export enum LogLevel {
   FATAL = 5,
 }
 
-const LEVEL_META: Record<
-  LogLevel,
-  { emoji: string; label: string; color: (s: string) => string; isError: boolean }
-> = {
-  [LogLevel.TRACE]: { emoji: "", label: "TRACE", color: picocolors.gray, isError: false },
-  [LogLevel.DEBUG]: { emoji: "", label: "DEBUG", color: picocolors.gray, isError: false },
-  [LogLevel.INFO]: { emoji: "ℹ", label: "INFO", color: picocolors.blue, isError: false },
-  [LogLevel.SUCCESS]: { emoji: "✔", label: "OK", color: picocolors.green, isError: false },
-  [LogLevel.WARN]: { emoji: "⚠", label: "WARN", color: picocolors.yellow, isError: false },
-  [LogLevel.ERROR]: { emoji: "✘", label: "ERROR", color: picocolors.red, isError: true },
+type LevelMeta = {
+  emoji: string;
+  label: string;
+  /** Applies message-text color. */
+  msg: (c: ChalkInstance) => ChalkInstance;
+  /** Returns a function that renders the colored pill badge. */
+  badge: (c: ChalkInstance) => (text: string) => string;
+  isError: boolean;
+};
+
+const LEVEL_META: Record<LogLevel, LevelMeta> = {
+  [LogLevel.TRACE]: {
+    emoji: "🔍",
+    label: "TRACE",
+    msg: (c) => c.hex("#9CA3AF"),
+    badge: (c) => (t) => c.bgHex("#374151").hex("#F9FAFB")(t),
+    isError: false,
+  },
+  [LogLevel.DEBUG]: {
+    emoji: "🐛",
+    label: "DEBUG",
+    msg: (c) => c.hex("#C084FC"),
+    badge: (c) => (t) => c.bgHex("#6D28D9").hex("#FAF5FF").bold(t),
+    isError: false,
+  },
+  [LogLevel.INFO]: {
+    emoji: "ℹ️",
+    label: "INFO ",
+    msg: (c) => c.hex("#93C5FD"),
+    badge: (c) => (t) => c.bgHex("#1D4ED8").hex("#EFF6FF").bold(t),
+    isError: false,
+  },
+  [LogLevel.SUCCESS]: {
+    emoji: "✨",
+    label: "READY",
+    msg: (c) => c.hex("#86EFAC"),
+    badge: (c) => (t) => c.bgHex("#15803D").hex("#F0FDF4").bold(t),
+    isError: false,
+  },
+  [LogLevel.WARN]: {
+    emoji: "⚠️",
+    label: "WARN ",
+    msg: (c) => c.hex("#FCD34D"),
+    badge: (c) => (t) => c.bgHex("#92400E").hex("#FFFBEB").bold(t),
+    isError: false,
+  },
+  [LogLevel.ERROR]: {
+    emoji: "❌",
+    label: "ERROR",
+    msg: (c) => c.hex("#FCA5A5"),
+    badge: (c) => (t) => c.bgHex("#991B1B").hex("#FFF1F2").bold(t),
+    isError: true,
+  },
   [LogLevel.FATAL]: {
-    emoji: "☠",
+    emoji: "💀",
     label: "FATAL",
-    color: (s: string) => picocolors.bgRed(picocolors.white(picocolors.bold(s))),
+    msg: (c) => c.bold.hex("#F87171"),
+    badge: (c) => (t) => c.bgHex("#7F1D1D").hex("#FFF1F2").bold.underline(t),
     isError: true,
   },
 };
 
-/** Output format modes */
+// ─── Public types ─────────────────────────────────────────────────────────────
+
+/** Output format modes. */
 export type FormatMode = "fancy" | "simple" | "quiet";
 
-/** Configuration options for the logger */
+/** Configuration options for the logger. */
 export interface LoggerOptions {
-  /** Minimum log level to output (default: INFO) */
+  /** Minimum log level to output (default: INFO). */
   minLevel?: LogLevel;
-  /** Whether to include timestamps (default: true) */
+  /** Include timestamps in output (default: true). */
   timestamps?: boolean;
-  /** Whether to colorize output (default: true, false in CI) */
+  /** Colorize output (default: true; auto-disabled in CI). */
   colors?: boolean;
-  /** Custom prefix for all log messages */
+  /** Prefix string shown after the context label. */
   prefix?: string;
-  /** Output format mode */
+  /** Output format — fancy (default), simple (CI default), or quiet (JSON). */
   format?: FormatMode;
-  /** Whether to show caller file:line (default: false) */
+  /** Annotate each line with the caller's file:line (default: false). */
   showCaller?: boolean;
-  /** Whether to include a trailing newline after each log (default: true) */
+  /** Append a blank line after each log entry (default: true). */
   trailingNewline?: boolean;
 }
 
-/** Default logger options */
-const DEFAULT_OPTIONS: Required<LoggerOptions> = {
+/** Argument type for structured data attached to a log line. */
+export type DataArg = Record<string, unknown> | undefined;
+
+/** Argument type for the error parameter on `.error()` / `.fatal()`. */
+export type ErrorArg = Error | DataArg | undefined;
+
+/** Handle returned by `logger.spinner()`. */
+export interface SpinnerInstance {
+  /** Update the spinner's text while it is running. */
+  text(msg: string): void;
+  /** Stop and print a green success line. */
+  success(msg?: string): void;
+  /** Stop and print a red failure line. */
+  fail(msg?: string): void;
+  /** Stop and print a yellow warning line. */
+  warn(msg?: string): void;
+  /** Stop the spinner silently. */
+  stop(): void;
+}
+
+/** Public logger interface. */
+export interface Logger {
+  trace(message: string, data?: DataArg): void;
+  debug(message: string, data?: DataArg): void;
+  info(message: string, data?: DataArg): void;
+  success(message: string, data?: DataArg): void;
+  warn(message: string, data?: DataArg): void;
+  error(message: string, error?: ErrorArg): void;
+  fatal(message: string, error?: ErrorArg): void;
+  /** Render a prominent bordered box with centered title. */
+  box(message: string, title?: string): void;
+  /** Start an animated terminal spinner. */
+  spinner(text: string): SpinnerInstance;
+  /** Render an ASCII table from an array of row objects. */
+  table(data: Record<string, unknown>[]): void;
+  setLevel(level: LogLevel): void;
+  getLevel(): LogLevel;
+  /** Create a child logger that shares config but adds a prefix segment. */
+  withPrefix(prefix: string): Logger;
+  /** Alias for `withPrefix` — semantically "tag" rather than "prefix". */
+  withTag(tag: string): Logger;
+}
+
+// ─── Defaults ─────────────────────────────────────────────────────────────────
+
+function isCI(): boolean {
+  return process.env.CI === "true" || process.env.NODE_ENV === "test";
+}
+
+const DEFAULTS: Required<LoggerOptions> = {
   minLevel: LogLevel.INFO,
   timestamps: true,
   colors: true,
@@ -67,477 +215,357 @@ const DEFAULT_OPTIONS: Required<LoggerOptions> = {
   trailingNewline: true,
 };
 
-/** Detect CI environment */
-function isCI(): boolean {
-  return (
-    process.env.CI === "true" ||
-    process.env.TERM_PROGRAM === "vscode" ||
-    process.env.NODE_ENV === "test"
-  );
-}
-
-/** Logger interface */
-export interface Logger {
-  trace(message: string, data?: DataArg): void;
-  debug(message: string, data?: DataArg): void;
-  info(message: string, data?: DataArg): void;
-  success(message: string, data?: DataArg): void;
-  warn(message: string, data?: DataArg): void;
-  error(message: string, error?: ErrorArg): void;
-  fatal(message: string, error?: ErrorArg): void;
-  box(message: string, title?: string): void;
-  spinner(text: string): SpinnerInstance;
-  table(data: Record<string, unknown>[]): void;
-  setLevel(level: LogLevel): void;
-  getLevel(): LogLevel;
-  withPrefix(prefix: string): Logger;
-  withTag(tag: string): Logger;
-}
-
-/** Union type for log data arguments */
-export type DataArg = Record<string, unknown> | undefined;
-
-/** Union type for error arguments */
-export type ErrorArg = Error | DataArg | undefined;
-
-/** Spinner instance returned by spinner() */
-export interface SpinnerInstance {
-  text: (msg: string) => void;
-  success: (msg?: string) => void;
-  fail: (msg?: string) => void;
-  warn: (msg?: string) => void;
-  stop: () => void;
-}
-
-const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+// ─── Factory ──────────────────────────────────────────────────────────────────
 
 /**
- * Creates a logger instance with the given context and options.
+ * Creates a typed, colored logger instance.
  *
  * @example
- * const logger = createLogger("Agent");
- * logger.info("Starting agent...");
- * logger.debug({ state: "initializing" });
- * logger.success("Connected to server");
- * logger.error("Failed to connect", new Error("Connection refused"));
- * logger.box("Deployment complete", "Summary");
+ * const log = createLogger("Agent");
+ * log.info("Server ready");
+ * log.warn("High memory", { used: "88%" });
+ * log.error("Connection failed", new Error("ECONNREFUSED"));
+ * log.box("All systems nominal\nUptime: 99.9%", "STATUS");
  *
- * // With prefix
- * const apiLogger = logger.withPrefix("API");
- * apiLogger.info("GET /users/123");
+ * const spin = log.spinner("Loading models...");
+ * spin.success("Done");
  *
- * // Spinner
- * const spin = logger.spinner("Loading...");
- * spin.success("Done!");
+ * const apiLog = log.withPrefix("API");
+ * apiLog.info("GET /health");
  */
 export function createLogger(context: string, options: LoggerOptions = {}): Logger {
-  const config = { ...DEFAULT_OPTIONS, ...options };
-
-  if (options.colors === undefined && isCI()) {
-    config.colors = false;
-  }
+  const cfg: Required<LoggerOptions> = { ...DEFAULTS, ...options };
+  if (options.colors === undefined && isCI()) cfg.colors = false;
 
   return {
-    trace(message: string, data?: DataArg): void {
-      log(LogLevel.TRACE, context, message, data, config);
+    trace: (m, d) => _log(LogLevel.TRACE, context, m, d, cfg),
+    debug: (m, d) => _log(LogLevel.DEBUG, context, m, d, cfg),
+    info: (m, d) => _log(LogLevel.INFO, context, m, d, cfg),
+    success: (m, d) => _log(LogLevel.SUCCESS, context, m, d, cfg),
+    warn: (m, d) => _log(LogLevel.WARN, context, m, d, cfg),
+    error: (m, e) => _log(LogLevel.ERROR, context, m, _err(e), cfg),
+    fatal: (m, e) => _log(LogLevel.FATAL, context, m, _err(e), cfg),
+    box: (m, t) => _box(context, m, t, cfg),
+    spinner: (t) => _spinner(context, t, cfg),
+    table: (d) => _table(context, d, cfg),
+    setLevel: (l) => {
+      cfg.minLevel = l;
     },
-
-    debug(message: string, data?: DataArg): void {
-      log(LogLevel.DEBUG, context, message, data, config);
-    },
-
-    info(message: string, data?: DataArg): void {
-      log(LogLevel.INFO, context, message, data, config);
-    },
-
-    success(message: string, data?: DataArg): void {
-      log(LogLevel.SUCCESS, context, message, data, config);
-    },
-
-    warn(message: string, data?: DataArg): void {
-      log(LogLevel.WARN, context, message, data, config);
-    },
-
-    error(message: string, error?: ErrorArg): void {
-      log(LogLevel.ERROR, context, message, extractErrorData(error), config);
-    },
-
-    fatal(message: string, error?: ErrorArg): void {
-      log(LogLevel.FATAL, context, message, extractErrorData(error), config);
-    },
-
-    box(message: string, title?: string): void {
-      printBox(context, message, title, config);
-    },
-
-    spinner(text: string): SpinnerInstance {
-      return createSpinner(context, text, config);
-    },
-
-    table(data: Record<string, unknown>[]): void {
-      printTable(context, data, config);
-    },
-
-    setLevel(level: LogLevel): void {
-      config.minLevel = level;
-    },
-
-    getLevel(): LogLevel {
-      return config.minLevel;
-    },
-
-    withPrefix(prefix: string): Logger {
-      return createLogger(context, {
-        ...config,
-        prefix: config.prefix ? `${config.prefix} ${prefix}` : prefix,
-      });
-    },
-
-    withTag(tag: string): Logger {
-      return createLogger(context, {
-        ...config,
-        prefix: config.prefix ? `${config.prefix} ${tag}` : tag,
-      });
-    },
+    getLevel: () => cfg.minLevel,
+    withPrefix: (p) =>
+      createLogger(context, { ...cfg, prefix: cfg.prefix ? `${cfg.prefix} ${p}` : p }),
+    withTag: (t) =>
+      createLogger(context, { ...cfg, prefix: cfg.prefix ? `${cfg.prefix} ${t}` : t }),
   };
 }
 
-function extractErrorData(error?: ErrorArg): Record<string, unknown> | undefined {
-  if (!error) return undefined;
-  if (error instanceof Error) {
-    return {
-      message: error.message,
-      name: error.name,
-      stack: error.stack,
-    };
-  }
-  return error;
+// ─── Internal helpers ─────────────────────────────────────────────────────────
+
+function _err(e?: ErrorArg): Record<string, unknown> | undefined {
+  if (!e) return undefined;
+  if (e instanceof Error) return { name: e.name, message: e.message, stack: e.stack };
+  return e;
 }
 
-function log(
+// ─── Core log renderer ────────────────────────────────────────────────────────
+
+function _log(
   level: LogLevel,
   context: string,
   message: string,
   data: Record<string, unknown> | undefined,
-  config: Required<LoggerOptions>
+  cfg: Required<LoggerOptions>
 ): void {
-  if (level < config.minLevel) return;
+  if (level < cfg.minLevel) return;
 
-  const { colors, timestamps, prefix, format, trailingNewline } = config;
   const meta = LEVEL_META[level];
-  const printFn = meta.isError ? console.error : console.log;
-  const end = trailingNewline ? "\n" : "";
+  const print = meta.isError ? console.error : console.log;
+  const nl = cfg.trailingNewline ? "\n" : "";
 
-  if (format === "quiet") {
-    if (data && Object.keys(data).length > 0) {
-      printFn(JSON.stringify({ level: meta.label, context, message, ...data }) + end);
-    } else {
-      printFn(message + end);
-    }
+  // ── quiet: machine-readable newline-delimited JSON ────────────────────────
+  if (cfg.format === "quiet") {
+    const row =
+      data && Object.keys(data).length > 0
+        ? { level: meta.label.trim(), context, message, ...data }
+        : { level: meta.label.trim(), context, message };
+    print(JSON.stringify(row) + nl);
     return;
   }
 
-  if (format === "simple") {
-    const ts = timestamps ? `[${formatTimestamp(new Date())}] ` : "";
-    const prefixStr = prefix ? `[${prefix}] ` : "";
-    const levelStr = `[${meta.label}] `;
-    const ctxStr = `[${context}] `;
-    let line = `${ts}${prefixStr}${levelStr}${ctxStr}${message}`;
-    if (meta.emoji) line = `${meta.emoji} ${line}`;
-    printFn(line + end);
-    if (data && Object.keys(data).length > 0) {
-      printFn(JSON.stringify(data, null, 2));
-    }
+  // ── simple: plain-text, emoji-prefixed, CI-safe ───────────────────────────
+  if (cfg.format === "simple") {
+    const ts = cfg.timestamps ? `[${_ts()}] ` : "";
+    const pfx = cfg.prefix ? `[${cfg.prefix}] ` : "";
+    print(`${meta.emoji} ${ts}${pfx}[${meta.label.trim()}] [${context}] ${message}${nl}`);
+    if (data && Object.keys(data).length > 0) print(JSON.stringify(data, null, 2));
     return;
   }
 
-  // Fancy format
-  const ts = timestamps ? `${picocolors.gray(formatTimestamp(new Date()))} ` : "";
-  const levelBadge = colors ? ` ${meta.color(`[${meta.label}]`)} ` : ` [${meta.label}] `;
-  const emoji = meta.emoji ? ` ${meta.emoji}` : "";
-  const ctxStr = colors ? picocolors.cyan(`[${context}]`) : `[${context}]`;
-  const prefixStr = prefix
-    ? colors
-      ? ` ${picocolors.magenta(`[${prefix}]`)}`
-      : ` [${prefix}]`
-    : "";
-  const msgStr = colors ? meta.color(message) : message;
-  const callerStr = config.showCaller ? ` ${picocolors.gray(getCallerLocation())}` : "";
+  // ── fancy: truecolor Chalk output ────────────────────────────────────────
+  const c = ch(cfg.colors);
+  const ts = cfg.timestamps ? T.ts(c)(_ts()) : "";
+  const badge = meta.badge(c)(` ${meta.label} `);
+  const ctx = T.ctx(c)(`[${context}]`);
+  const pfx = cfg.prefix ? T.pfx(c)(`[${cfg.prefix}]`) : "";
+  const msg = meta.msg(c)(message);
+  const loc = cfg.showCaller ? ` ${T.caller(c)(_caller())}` : "";
 
-  printFn(`${ts}${levelBadge}${emoji} ${ctxStr}${prefixStr} ${msgStr}${callerStr}${end}`);
+  print([ts, badge, ctx, pfx].filter(Boolean).join(" ") + ` ${msg}${loc}${nl}`);
 
   if (data && Object.keys(data).length > 0) {
-    const dataStr = colors
-      ? picocolors.gray(JSON.stringify(data, null, 2))
-      : JSON.stringify(data, null, 2);
-    printFn(`${dataStr}\n`);
+    const raw = JSON.stringify(data, null, 2);
+    const pretty = cfg.colors ? _json(raw, c) : raw;
+    const block = pretty
+      .split("\n")
+      .map((ln) => `  ${T.jsonBorder(c)("│")} ${ln}`)
+      .join("\n");
+    print(`${block}\n`);
   }
 }
 
-function formatTimestamp(date: Date): string {
-  const h = date.getHours().toString().padStart(2, "0");
-  const m = date.getMinutes().toString().padStart(2, "0");
-  const s = date.getSeconds().toString().padStart(2, "0");
-  const ms = date.getMilliseconds().toString().padStart(3, "0");
-  return `${h}:${m}:${s}.${ms}`;
+// ─── JSON highlighter ─────────────────────────────────────────────────────────
+
+function _json(raw: string, c: ChalkInstance): string {
+  return highlight(raw, {
+    language: "json",
+    ignoreIllegals: true,
+    theme: {
+      attr: T.jsonKey(c),
+      string: T.jsonString(c),
+      number: T.jsonNumber(c),
+      literal: T.jsonLiteral(c),
+    },
+  });
 }
 
-function getCallerLocation(): string {
+// ─── Box renderer ─────────────────────────────────────────────────────────────
+
+const BOX_W = 62; // inner content width (excluding │ borders)
+
+function _box(
+  context: string,
+  message: string,
+  title: string | undefined,
+  cfg: Required<LoggerOptions>
+): void {
+  if (cfg.minLevel > LogLevel.INFO) return;
+
+  const c = ch(cfg.colors);
+  const label = title ?? `${context}${cfg.prefix ? ` · ${cfg.prefix}` : ""}`;
+  const lines = _wrap(message, BOX_W - 2);
+  const B = (s: string) => T.boxBorder(c)(s);
+
+  const top = `${B("╭")}${B("─".repeat(BOX_W))}${B("╮")}`;
+  const bottom = `${B("╰")}${B("─".repeat(BOX_W))}${B("╯")}`;
+  const mid = `${B("├")}${B("─".repeat(BOX_W))}${B("┤")}`;
+  const side = B("│");
+  const blank = `${side}${" ".repeat(BOX_W)}${side}`;
+
+  // Centered title row
+  const visLen = label.length;
+  const pad = Math.max(0, BOX_W - visLen - 2);
+  const lp = Math.floor(pad / 2);
+  const rp = pad - lp;
+  const titleRow = `${side} ${" ".repeat(lp)}${T.boxTitle(c)(label)}${" ".repeat(rp)} ${side}`;
+
+  const bodyRows = lines.map((ln) => {
+    const padding = Math.max(0, BOX_W - 2 - _bare(ln).length);
+    return `${side} ${ln}${" ".repeat(padding)} ${side}`;
+  });
+
+  console.log(`\n${[top, blank, titleRow, blank, mid, ...bodyRows, blank, bottom].join("\n")}\n`);
+}
+
+// ─── Spinner ──────────────────────────────────────────────────────────────────
+
+const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+function _spinner(context: string, initial: string, cfg: Required<LoggerOptions>): SpinnerInstance {
+  const c = ch(cfg.colors);
+  const ctx = () => T.ctx(c)(`[${context}]`);
+  let text = initial;
+  let frame = 0;
+  let active = true;
+  let timer: ReturnType<typeof setInterval> | null = null;
+
+  function draw(): void {
+    if (!active || cfg.minLevel > LogLevel.INFO) return;
+    const f = FRAMES[frame % FRAMES.length];
+    process.stdout.write(
+      `\r${c.bold.hex("#22D3EE")(f)} ${T.ts(c)(ctx())} ${c.hex("#F9FAFB")(text)}  `
+    );
+  }
+
+  function stop(): void {
+    active = false;
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  timer = setInterval(() => {
+    frame++;
+    draw();
+  }, 80);
+
+  return {
+    text: (m) => {
+      text = m;
+      draw();
+    },
+    stop,
+    success: (m) => {
+      stop();
+      if (cfg.minLevel > LogLevel.INFO) return;
+      console.log(`\n${c.bold.hex("#22C55E")("✔")} ${ctx()} ${c.hex("#86EFAC")(m ?? text)}`);
+    },
+    fail: (m) => {
+      stop();
+      if (cfg.minLevel > LogLevel.INFO) return;
+      console.error(`\n${c.bold.hex("#EF4444")("✘")} ${ctx()} ${c.hex("#FCA5A5")(m ?? text)}`);
+    },
+    warn: (m) => {
+      stop();
+      if (cfg.minLevel > LogLevel.INFO) return;
+      console.log(`\n${c.bold.hex("#F59E0B")("⚠")} ${ctx()} ${c.hex("#FCD34D")(m ?? text)}`);
+    },
+  };
+}
+
+// ─── Table renderer ───────────────────────────────────────────────────────────
+
+function _table(
+  context: string,
+  data: Record<string, unknown>[],
+  cfg: Required<LoggerOptions>
+): void {
+  if (cfg.minLevel > LogLevel.INFO || data.length === 0) return;
+
+  const c = ch(cfg.colors);
+  const keys = Object.keys(data[0]);
+  const widths: Record<string, number> = {};
+
+  for (const k of keys) {
+    widths[k] = Math.min(Math.max(k.length, ...data.map((r) => String(r[k] ?? "").length)), 30);
+  }
+
+  const totalW = Object.values(widths).reduce((a, b) => a + b + 3, 0) + 1;
+  const rule = T.chrome(c)("─".repeat(Math.min(totalW, 120)));
+  const sep = T.chrome(c)("│");
+
+  console.log(`\n${T.ctx(c)(`[${context}]`)} ${rule}`);
+
+  const header = keys.map((k) => T.tHead(c)(k.padEnd(widths[k]))).join(` ${sep} `);
+  console.log(`  ${header} `);
+  console.log(T.chrome(c)("─".repeat(_bare(header).length + 4)));
+
+  for (const row of data) {
+    const cells = keys
+      .map((k) => {
+        const raw = String(row[k] ?? "");
+        const cell =
+          raw.length > widths[k] ? `${raw.slice(0, widths[k] - 3)}...` : raw.padEnd(widths[k]);
+        return T.tCell(c)(cell);
+      })
+      .join(` ${sep} `);
+    console.log(`  ${cells} `);
+  }
+
+  console.log(`${rule}\n`);
+}
+
+// ─── Micro-utilities ──────────────────────────────────────────────────────────
+
+/** Strip all ANSI escape codes to measure visible string width. */
+function _bare(s: string): string {
+  return s.replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+/** Current time as HH:MM:SS.mmm */
+function _ts(): string {
+  const d = new Date();
+  const p2 = (n: number) => n.toString().padStart(2, "0");
+  const p3 = (n: number) => n.toString().padStart(3, "0");
+  return `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}.${p3(d.getMilliseconds())}`;
+}
+
+/** Extract the caller's file:line from the current call stack. */
+function _caller(): string {
   const stack = new Error().stack;
   if (!stack) return "";
-  const lines = stack.split("\n").slice(4);
-  for (const line of lines) {
-    const match = line.match(/at\s+(.+)\s+\((.+):(\d+):(\d+)\)/);
-    if (match) {
-      return `${match[2]}:${match[3]}`;
-    }
+  for (const ln of stack.split("\n").slice(4)) {
+    const m = ln.match(/at\s+.+\s+\((.+):(\d+):\d+\)/);
+    if (m) return `${m[1]}:${m[2]}`;
   }
   return "";
 }
 
-function printBox(
-  context: string,
-  message: string,
-  title: string | undefined,
-  config: Required<LoggerOptions>
-): void {
-  if (config.minLevel > LogLevel.INFO) return;
-
-  const { colors, prefix } = config;
-  const width = 60;
-  const lines = wrapText(message, width - 4);
-  const header = title
-    ? colors
-      ? picocolors.bold(picocolors.cyan(` ${title} `))
-      : ` ${title} `
-    : colors
-      ? picocolors.bold(picocolors.cyan(` ${context}${prefix ? ` [${prefix}]` : ""} `))
-      : ` ${context}${prefix ? ` [${prefix}]` : ""} `;
-  const headerLine = colors ? `┌${picocolors.cyan("═".repeat(width))}┐` : `┌${"═".repeat(width)}┐`;
-  const footerLine = colors ? `└${picocolors.cyan("═".repeat(width))}┘` : `└${"═".repeat(width)}┘`;
-  const midLine = colors ? `├${picocolors.cyan("═".repeat(width))}┤` : `├${"═".repeat(width)}┤`;
-  const sep = colors ? picocolors.cyan("│") : "│";
-  const blankLine = `${sep}${" ".repeat(width)}${sep}`;
-
-  const titlePad = width - header.length + 1;
-  const titleLine = `${sep}${header}${" ".repeat(Math.max(0, titlePad))}${sep}`;
-
-  const linesOut: string[] = [headerLine, blankLine, titleLine, blankLine, midLine];
-
-  for (const line of lines) {
-    const content = ` ${line}${" ".repeat(Math.max(0, width - line.length - 1))}`;
-    linesOut.push(`${sep}${content}${sep}`);
-  }
-
-  linesOut.push(blankLine);
-  linesOut.push(footerLine);
-
-  console.log(`${linesOut.join("\n")}\n`);
-}
-
-function wrapText(text: string, maxWidth: number): string[] {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let current = "";
-
-  for (const word of words) {
-    if ((current + word).length <= maxWidth) {
-      current += (current ? " " : "") + word;
-    } else {
-      if (current) lines.push(current);
-      current = word.length > maxWidth ? word.slice(0, maxWidth) : word;
+/** Word-wrap `text` to `maxW` visible characters per line. */
+function _wrap(text: string, maxW: number): string[] {
+  const out: string[] = [];
+  for (const raw of text.split("\n")) {
+    if (!raw) {
+      out.push("");
+      continue;
     }
-  }
-  if (current) lines.push(current);
-  return lines;
-}
-
-function createSpinner(
-  context: string,
-  initialText: string,
-  config: Required<LoggerOptions>
-): SpinnerInstance {
-  let current = initialText;
-  let frameIndex = 0;
-  let active = true;
-  let intervalId: ReturnType<typeof setInterval> | null = null;
-
-  function stop(): void {
-    active = false;
-    if (intervalId !== null) {
-      clearInterval(intervalId);
-      intervalId = null;
+    let cur = "";
+    for (const word of raw.split(" ")) {
+      const next = cur ? `${cur} ${word}` : word;
+      if (_bare(next).length <= maxW) {
+        cur = next;
+      } else {
+        if (cur) out.push(cur);
+        cur = word;
+      }
     }
+    if (cur) out.push(cur);
   }
-
-  function render(text: string): void {
-    if (!active || config.minLevel > LogLevel.INFO) return;
-    const frame = SPINNER_FRAMES[frameIndex % SPINNER_FRAMES.length];
-    const spinnerPart = config.colors ? picocolors.cyan(frame) : frame;
-    const ctxPart = config.colors ? picocolors.cyan(`[${context}]`) : `[${context}]`;
-    const msgPart = config.colors ? picocolors.white(text) : text;
-    process.stdout.write(`\r${spinnerPart} ${ctxPart} ${msgPart}  `);
-  }
-
-  intervalId = setInterval(() => {
-    frameIndex++;
-    render(current);
-  }, 80);
-
-  return {
-    text(msg: string): void {
-      current = msg;
-      render(current);
-    },
-    success(msg?: string): void {
-      stop();
-      if (config.minLevel > LogLevel.INFO) return;
-      const check = config.colors ? picocolors.green("✔") : "✔";
-      const ctxPart = config.colors ? picocolors.cyan(`[${context}]`) : `[${context}]`;
-      const msgPart = config.colors ? picocolors.green(msg ?? current) : (msg ?? current);
-      console.log(`\n${check} ${ctxPart} ${msgPart}`);
-    },
-    fail(msg?: string): void {
-      stop();
-      if (config.minLevel > LogLevel.INFO) return;
-      const cross = config.colors ? picocolors.red("✘") : "✘";
-      const ctxPart = config.colors ? picocolors.cyan(`[${context}]`) : `[${context}]`;
-      const msgPart = config.colors ? picocolors.red(msg ?? current) : (msg ?? current);
-      console.error(`\n${cross} ${ctxPart} ${msgPart}`);
-    },
-    warn(msg?: string): void {
-      stop();
-      if (config.minLevel > LogLevel.INFO) return;
-      const warnEmoji = config.colors ? picocolors.yellow("⚠") : "⚠";
-      const ctxPart = config.colors ? picocolors.cyan(`[${context}]`) : `[${context}]`;
-      const msgPart = config.colors ? picocolors.yellow(msg ?? current) : (msg ?? current);
-      console.log(`\n${warnEmoji} ${ctxPart} ${msgPart}`);
-    },
-    stop,
-  };
+  return out;
 }
 
-function printTable(
-  context: string,
-  data: Record<string, unknown>[],
-  config: Required<LoggerOptions>
-): void {
-  if (config.minLevel > LogLevel.INFO || data.length === 0) return;
-
-  const { colors } = config;
-  const keys = Object.keys(data[0]);
-  const colWidths: Record<string, number> = {};
-
-  for (const key of keys) {
-    const maxVal = Math.max(key.length, ...data.map((row) => String(row[key] ?? "").length));
-    colWidths[key] = Math.min(maxVal, 30);
-  }
-
-  const totalWidth = Object.values(colWidths).reduce((a, b) => a + b + 3, 0) + 1;
-  const border = colors
-    ? picocolors.gray("─".repeat(Math.min(totalWidth, 120)))
-    : "─".repeat(Math.min(totalWidth, 120));
-
-  const printFn = console.log;
-  const ctxPart = colors ? picocolors.cyan(`[${context}]`) : `[${context}]`;
-
-  printFn(`\n${ctxPart} ${border}`);
-
-  const header = keys
-    .map((k) => {
-      const cell = k.padEnd(colWidths[k]);
-      return colors ? picocolors.bold(picocolors.white(cell)) : cell;
-    })
-    .join(" │ ");
-  printFn(`  ${header} `);
-  printFn(colors ? picocolors.gray("─".repeat(header.length + 4)) : "─".repeat(header.length + 4));
-
-  for (const row of data) {
-    const line = keys
-      .map((k) => {
-        const raw = String(row[k] ?? "");
-        const cell =
-          raw.length > colWidths[k]
-            ? `${raw.slice(0, colWidths[k] - 3)}...`
-            : raw.padEnd(colWidths[k]);
-        return colors ? picocolors.white(cell) : cell;
-      })
-      .join(" │ ");
-    printFn(`  ${line} `);
-  }
-
-  printFn(`${border}\n`);
-}
+// ─── Public extras ────────────────────────────────────────────────────────────
 
 /**
- * Creates a child logger that inherits the parent logger's configuration
- * but has a different context name (appended with a colon separator).
+ * Creates a child logger whose context is the parent's context tagged with
+ * `childCtx`.
  *
  * @example
  * const parent = createLogger("Agent");
- * const child = childLogger(parent, "Memory");
- * child.info("Retrieving memories"); // Outputs with "Agent:Memory" context
+ * const child  = childLogger(parent, "Memory");
+ * child.info("Retrieving"); // rendered as [Agent] [Memory]
  */
-export function childLogger(parent: Logger, childContext: string): Logger {
-  return parent.withTag(childContext);
+export function childLogger(parent: Logger, childCtx: string): Logger {
+  return parent.withTag(childCtx);
 }
 
 /**
- * Create a logger that writes to a file (via a callback) instead of console.
- * Useful for production environments where you want to integrate with
- * external logging services or file rotation.
+ * Creates a logger that routes all output through `writeFn` instead of the
+ * console — useful for file rotation, remote log sinks, or testing.
  */
 export function createFileLogger(
-  _context: string,
+  context: string,
   writeFn: (level: LogLevel, message: string, data?: Record<string, unknown>) => void,
   options: LoggerOptions = {}
 ): Logger {
-  const base = createLogger(_context, { ...options, colors: false, format: "quiet" });
-
+  const base = createLogger(context, { ...options, colors: false, format: "quiet" });
   return {
-    trace(message: string, data?: DataArg): void {
-      writeFn(LogLevel.TRACE, message, data);
-    },
-    debug(message: string, data?: DataArg): void {
-      writeFn(LogLevel.DEBUG, message, data);
-    },
-    info(message: string, data?: DataArg): void {
-      writeFn(LogLevel.INFO, message, data);
-    },
-    success(message: string, data?: DataArg): void {
-      writeFn(LogLevel.SUCCESS, message, data);
-    },
-    warn(message: string, data?: DataArg): void {
-      writeFn(LogLevel.WARN, message, data);
-    },
-    error(message: string, error?: ErrorArg): void {
-      writeFn(LogLevel.ERROR, message, extractErrorData(error));
-    },
-    fatal(message: string, error?: ErrorArg): void {
-      writeFn(LogLevel.FATAL, message, extractErrorData(error));
-    },
-    box(message: string, title?: string): void {
-      base.box(message, title);
-    },
-    spinner(text: string): SpinnerInstance {
-      return base.spinner(text);
-    },
-    table(data: Record<string, unknown>[]): void {
-      base.table(data);
-    },
-    setLevel(level: LogLevel): void {
-      base.setLevel(level);
-    },
-    getLevel(): LogLevel {
-      return base.getLevel();
-    },
-    withPrefix(prefix: string): Logger {
-      return base.withPrefix(prefix);
-    },
-    withTag(tag: string): Logger {
-      return base.withTag(tag);
-    },
+    trace: (m, d) => writeFn(LogLevel.TRACE, m, d),
+    debug: (m, d) => writeFn(LogLevel.DEBUG, m, d),
+    info: (m, d) => writeFn(LogLevel.INFO, m, d),
+    success: (m, d) => writeFn(LogLevel.SUCCESS, m, d),
+    warn: (m, d) => writeFn(LogLevel.WARN, m, d),
+    error: (m, e) => writeFn(LogLevel.ERROR, m, _err(e)),
+    fatal: (m, e) => writeFn(LogLevel.FATAL, m, _err(e)),
+    box: (m, t) => base.box(m, t),
+    spinner: (t) => base.spinner(t),
+    table: (d) => base.table(d),
+    setLevel: (l) => base.setLevel(l),
+    getLevel: () => base.getLevel(),
+    withPrefix: (p) => base.withPrefix(p),
+    withTag: (t) => base.withTag(t),
   };
 }
 
+/** Convenience alias for `LogLevel`. */
 export { LogLevel as Level };

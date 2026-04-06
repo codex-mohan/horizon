@@ -256,6 +256,7 @@ app.patch("/threads/:threadId", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const metadata = body.metadata || {};
   const thread = threadMetadataStore.update(threadId, metadata);
+  logger.info("Thread updated", { threadId });
   return c.json(thread);
 });
 
@@ -328,7 +329,10 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
   const config = body.config || {};
 
   const modelConfigFromBody =
-    body.configurable?.model_config ?? body.model_config ?? config?.configurable?.model_config;
+    body.configurable?.model_config ??
+    body.model_config ??
+    config?.configurable?.model_config ??
+    config?.model_config;
 
   const toolApprovalConfig: ToolApprovalConfig =
     config.configurable?.tool_approval || getDefaultToolApprovalConfig();
@@ -337,10 +341,19 @@ app.post("/threads/:threadId/runs/stream", async (c) => {
     return c.json({ error: "No messages provided" }, 400);
   }
 
+  if (!modelConfigFromBody) {
+    logger.error("Stream rejected: no model config", { threadId });
+    return c.json({ error: "No model configuration provided" }, 400);
+  }
+
   const lastMessage = input.messages[input.messages.length - 1];
   const userContent = lastMessage?.content || "";
 
-  logger.info("Stream request", { threadId });
+  logger.info("Stream request", {
+    threadId,
+    provider: modelConfigFromBody?.provider,
+    model: modelConfigFromBody?.modelName,
+  });
 
   const agent = agentManager.getOrCreate({
     threadId,
@@ -529,6 +542,11 @@ app.post("/threads/:threadId/runs", async (c) => {
     return c.json({ error: "No messages provided" }, 400);
   }
 
+  if (!modelConfigFromBody) {
+    logger.error("Run rejected: no model config", { threadId });
+    return c.json({ error: "No model configuration provided" }, 400);
+  }
+
   const lastMessage = input.messages[input.messages.length - 1];
   const userContent = lastMessage?.content || "";
 
@@ -712,12 +730,24 @@ app.route("/assistants", assistantsRouter);
 const horizonConfig = getHorizonConfig();
 const workspacePath = resolveWorkspacePath(horizonConfig);
 
-logger.info("Horizon agent starting", {
-  port: agentConfig.PORT,
-  workspace: workspacePath,
-  logging: agentConfig.ENABLE_LOGGING,
-  logLevel: agentConfig.LOG_LEVEL,
-});
+const b = "\x1b[1m",
+  g = "\x1b[32m",
+  c = "\x1b[36m",
+  y = "\x1b[33m",
+  r = "\x1b[0m";
+logger.box(
+  [
+    `🚀 ${b}Horizon Agent Runtime (v1.0)${r}`,
+    ``,
+    `📡 Port       : ${g}${agentConfig.PORT}${r}`,
+    `📂 Workspace  : ${c}${workspacePath}${r}`,
+    `📝 Log Level  : ${y}${agentConfig.LOG_LEVEL.toUpperCase()}${r}`,
+    `🛡️  Features   : Reasoning, HITL, Tool Approval`,
+  ].join("\n"),
+  "SYSTEM STARTUP"
+);
+
+logger.success(`Agent server is ready and listening on port ${agentConfig.PORT}`);
 
 serve({
   fetch: app.fetch,

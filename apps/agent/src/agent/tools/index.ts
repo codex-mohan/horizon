@@ -196,13 +196,14 @@ function createArtifactAdapter(): AgentTool<typeof ArtifactParams> {
     description:
       "Create a renderable artifact (HTML page, SVG graphic, Mermaid diagram, React component, or code file). Always provide a short displayTitle (10-15 words) describing what you're building, like 'Building interactive dashboard with charts' or 'Creating responsive landing page layout'.",
     parameters: ArtifactParams,
-    execute: async (_toolCallId, params, _signal, _onUpdate) => {
+    execute: async (toolCallId, params, _signal, _onUpdate) => {
       const result = await createArtifactTool.invoke({
         title: params.title,
         fileName: params.fileName,
         type: params.type,
         content: params.content,
         language: params.language,
+        threadId: toolCallId?.split(":")?.[0] || "unknown",
       });
       return {
         content: [
