@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Mic, Sparkles, ChevronDown } from "lucide-react";
 import { HorizonWaveform } from "@/components/typing-indicators";
+import { get } from "@/lib/api";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -32,9 +33,8 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask Horizon anythin
   useEffect(() => {
     if (fetched.current) return;
     fetched.current = true;
-    fetch("/v1/models/", { credentials: "include" })
-      .then((r) => r.json())
-      .then((data: { providers: typeof providers }) => setProviders(data.providers || []))
+    get<{ providers: Array<{ provider: string; label: string; models: Array<{ id: string; name: string }> }> }>("/v1/models/all")
+      .then((data) => setProviders(data.providers || []))
       .catch(() => {});
   }, []);
 

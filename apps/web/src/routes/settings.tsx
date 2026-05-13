@@ -95,6 +95,17 @@ const FALLBACK_PROVIDERS: ProviderGroup[] = [
       { id: "01-ai/yi-large", name: "Yi Large", contextLength: 32768, inputPrice: 3, outputPrice: 3, modality: "text->text", isModerated: false },
     ],
   },
+  {
+    provider: "groq",
+    label: "Groq",
+    models: [
+      { id: "groq/llama-3.3-70b-versatile", name: "Llama 3.3 70B", contextLength: 128000, inputPrice: 0, outputPrice: 0, modality: "text->text", isModerated: false },
+      { id: "groq/llama-3.1-8b-instant", name: "Llama 3.1 8B Instant", contextLength: 128000, inputPrice: 0, outputPrice: 0, modality: "text->text", isModerated: false },
+      { id: "groq/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill Llama 70B", contextLength: 128000, inputPrice: 0, outputPrice: 0, modality: "text->text", isModerated: false },
+      { id: "groq/mixtral-8x7b-32768", name: "Mixtral 8x7B", contextLength: 32768, inputPrice: 0, outputPrice: 0, modality: "text->text", isModerated: false },
+      { id: "groq/gemma2-9b-it", name: "Gemma 2 9B", contextLength: 8192, inputPrice: 0, outputPrice: 0, modality: "text->text", isModerated: false },
+    ],
+  },
 ];
 
 type ThemeMode = "dark" | "light";
@@ -165,7 +176,7 @@ export function SettingsPage() {
       try {
         setModelsLoading(true);
         setModelsError("");
-        const data = await get<ModelsResponse>("/v1/models/");
+        const data = await get<ModelsResponse>("/v1/models/all");
         if (!cancelled) {
           setProviders(data.providers);
           // Auto-expand first 3 providers
