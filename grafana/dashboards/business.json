@@ -1,0 +1,130 @@
+{
+  "dashboard": {
+    "title": "Horizon Business Metrics",
+    "uid": "horizon-business",
+    "tags": ["horizon", "business", "stripe", "mrr"],
+    "style": "dark",
+    "timezone": "utc",
+    "schemaVersion": 39,
+    "refresh": "1m",
+    "time": { "from": "now-7d", "to": "now" },
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "type": "datasource",
+          "query": "prometheus",
+          "current": { "text": "Prometheus", "value": "prometheus" },
+          "hide": 0
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Active Users by Tier",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(horizon_active_users) by (tier)",
+            "legendFormat": "{{tier}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] }
+        }
+      },
+      {
+        "id": 2,
+        "title": "MRR Trend (Placeholder)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "horizon_mrr_usd",
+            "legendFormat": "MRR ($)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 }
+          },
+          "overrides": []
+        },
+        "description": "Placeholder metric. To populate:\n1. Export MRR from Stripe to Prometheus via stripe-exporter or custom script.\n2. Or expose a /metrics endpoint in the relay that queries the billing DB."
+      },
+      {
+        "id": 3,
+        "title": "Conversion Rate (Placeholder)",
+        "type": "stat",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "(sum(rate(horizon_signups_total[1d])) / sum(rate(horizon_visitors_total[1d]))) * 100",
+            "legendFormat": "Conversion %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 5 },
+                { "color": "green", "value": 15 }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "description": "Placeholder metric. Requires:\n- `horizon_signups_total` counter\n- `horizon_visitors_total` counter\nExpose these from the relay or analytics pipeline."
+      },
+      {
+        "id": 4,
+        "title": "Churn Rate (Placeholder)",
+        "type": "stat",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "targets": [
+          {
+            "expr": "(sum(rate(horizon_churned_users_total[1d])) / sum(horizon_active_users)) * 100",
+            "legendFormat": "Churn %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 5 },
+                { "color": "red", "value": 10 }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "description": "Placeholder metric. Requires:\n- `horizon_churned_users_total` counter\n- `horizon_active_users` gauge\nPopulate via Stripe webhook → relay → Prometheus or a billing exporter."
+      }
+    ]
+  },
+  "overwrite": true
+}

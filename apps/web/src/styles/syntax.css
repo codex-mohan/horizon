@@ -1,0 +1,51 @@
+/* ──────────────────────────────────────────────
+   Code Syntax Highlighting Theme
+   VS Code Dark+ inspired — monochrome-adjusted
+   Used by CodeMirror in markdown code blocks
+   ────────────────────────────────────────────── */
+
+:root {
+  --cm-background: #1E1E1E;
+  --cm-foreground: #D4D4D4;
+  --cm-caret: #D4D4D4;
+  --cm-selection: rgba(255, 255, 255, 0.12);
+  --cm-gutter-bg: #121212;
+  --cm-gutter-fg: #858585;
+  --cm-keyword: #569CD6;
+  --cm-variable: #D4D4D4;
+  --cm-property: #9CDCFE;
+  --cm-function: #DCDCAA;
+  --cm-constant: #4FC1FF;
+  --cm-type: #4EC9B0;
+  --cm-number: #B5CEA8;
+  --cm-operator: #D4D4D4;
+  --cm-regexp: #D16969;
+  --cm-comment: #6A9955;
+  --cm-string: #CE9178;
+  --cm-tag: #569CD6;
+  --cm-attribute: #9CDCFE;
+  --cm-punctuation: #D4D4D4;
+}
+
+[data-theme-mode="light"] {
+  --cm-background: #F5F5F5;
+  --cm-foreground: #333333;
+  --cm-caret: #333333;
+  --cm-selection: rgba(0, 0, 0, 0.08);
+  --cm-gutter-bg: #E8E8E8;
+  --cm-gutter-fg: #999999;
+  --cm-keyword: #0000FF;
+  --cm-variable: #333333;
+  --cm-property: #795E26;
+  --cm-function: #795E26;
+  --cm-constant: #0000FF;
+  --cm-type: #267F99;
+  --cm-number: #098658;
+  --cm-operator: #333333;
+  --cm-regexp: #A31515;
+  --cm-comment: #008000;
+  --cm-string: #A31515;
+  --cm-tag: #800000;
+  --cm-attribute: #800000;
+  --cm-punctuation: #333333;
+}
