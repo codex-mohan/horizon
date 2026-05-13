@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -8,7 +8,6 @@ import {
   CreditCard,
   Bot,
   Loader2,
-  Search,
   ChevronDown,
   User,
   Lock,
@@ -130,9 +129,9 @@ export function SettingsPage() {
       return "";
     }
   });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [showProviderDropdown, setShowProviderDropdown] = useState(false);
+  const [selectedProviderForSettings, setSelectedProviderForSettings] = useState("");
+  const [selectedProviderLabel, setSelectedProviderLabel] = useState("");
 
   // Profile editing
   const [editingProfile, setEditingProfile] = useState(false);
@@ -179,9 +178,6 @@ export function SettingsPage() {
         const data = await get<ModelsResponse>("/v1/models/all");
         if (!cancelled) {
           setProviders(data.providers);
-          // Auto-expand first 3 providers
-          const toExpand = new Set(data.providers.slice(0, 3).map((p) => p.provider));
-          setExpandedProviders(toExpand);
           // Set default selection if none
           const firstProvider = data.providers[0];
           if (!selectedModel && firstProvider && firstProvider.models[0]) {
@@ -192,8 +188,6 @@ export function SettingsPage() {
         if (!cancelled) {
           setModelsError("Failed to load models. Using fallback list.");
           setProviders(FALLBACK_PROVIDERS);
-          const toExpand = new Set(FALLBACK_PROVIDERS.slice(0, 3).map((p) => p.provider));
-          setExpandedProviders(toExpand);
           const fbFirst = FALLBACK_PROVIDERS[0];
           if (!selectedModel && fbFirst && fbFirst.models[0]) {
             setSelectedModel(fbFirst.models[0].id);
@@ -234,32 +228,21 @@ export function SettingsPage() {
   }, [selectedModel]);
 
   // Filtered providers based on search
-  const filteredProviders = useMemo(() => {
-    if (!searchQuery.trim()) return providers;
-    const q = searchQuery.toLowerCase();
-    return providers
-      .map((group) => ({
-        ...group,
-        models: group.models.filter(
-          (m) =>
-            m.name.toLowerCase().includes(q) ||
-            m.id.toLowerCase().includes(q)
-        ),
-      }))
-      .filter((group) => group.models.length > 0);
-  }, [providers, searchQuery]);
-
-  const toggleProvider = useCallback((provider: string) => {
-    setExpandedProviders((prev) => {
-      const next = new Set(prev);
-      if (next.has(provider)) {
-        next.delete(provider);
-      } else {
-        next.add(provider);
+  // Set initial provider from saved model
+  useEffect(() => {
+    if (selectedModel && providers.length > 0) {
+      const slashIdx = selectedModel.indexOf("/");
+      const prefix = slashIdx > 0 ? selectedModel.slice(0, slashIdx) : "";
+      const group = providers.find((g) => g.provider === prefix || (prefix === "openrouter" && g.provider === "openrouter"));
+      if (group) {
+        setSelectedProviderForSettings(group.provider);
+        setSelectedProviderLabel(group.label);
+      } else if (providers[0]) {
+        setSelectedProviderForSettings(providers[0].provider);
+        setSelectedProviderLabel(providers[0].label);
       }
-      return next;
-    });
-  }, []);
+    }
+  }, [selectedModel, providers]);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
@@ -356,13 +339,13 @@ export function SettingsPage() {
     }
   };
 
-  const selectedModelInfo = useMemo(() => {
+  const selectedModelInfo = (() => {
     for (const group of providers) {
       const model = group.models.find((m) => m.id === selectedModel);
       if (model) return { ...model, providerLabel: group.label };
     }
     return null;
-  }, [providers, selectedModel]);
+  })();
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -543,7 +526,7 @@ export function SettingsPage() {
               Model
             </h2>
             <div className="bg-bg-surface border border-border-subtle">
-              {/* Header */}
+              {/* Header + Provider dropdown */}
               <div className="p-4 border-b border-border-subtle">
                 <div className="flex items-center gap-2 mb-3">
                   <Bot size={16} className="text-text-secondary" />
@@ -555,24 +538,37 @@ export function SettingsPage() {
                   )}
                 </div>
 
-                {/* Search */}
-                <div className="flex items-center gap-2 bg-bg-elevated border border-border-subtle px-3 py-2 focus-within:border-border-hover transition-colors">
-                  <Search size={14} className="text-text-muted shrink-0" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search models..."
-                    className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => { setSearchQuery(""); searchInputRef.current?.focus(); }}
-                      className="text-text-muted hover:text-text-secondary transition-colors text-xs"
-                    >
-                      Clear
-                    </button>
+                {/* Provider dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowProviderDropdown(!showProviderDropdown)}
+                    className="w-full flex items-center justify-between gap-2 bg-bg-elevated border border-border-subtle px-3 py-2.5 text-sm text-text-primary hover:border-border-hover transition-colors text-left"
+                  >
+                    <span>{selectedProviderLabel || "Select a provider..."}</span>
+                    <ChevronDown size={14} className={`text-text-muted transition-transform ${showProviderDropdown ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {showProviderDropdown && (
+                    <div className="absolute left-0 top-full mt-1 w-full bg-bg-elevated border border-border-subtle z-[200] shadow-lg max-h-[260px] overflow-y-auto">
+                      {providers.map((g) => (
+                        <button
+                          key={g.provider}
+                          onClick={() => {
+                            setSelectedProviderForSettings(g.provider);
+                            setSelectedProviderLabel(g.label);
+                            setShowProviderDropdown(false);
+                          }}
+                          className={`w-full text-left px-3 py-2.5 text-sm transition-colors duration-150 ${
+                            selectedProviderForSettings === g.provider
+                              ? "bg-white/[0.06] text-text-primary"
+                              : "text-text-secondary hover:bg-white/[0.03] hover:text-text-primary"
+                          }`}
+                        >
+                          <span>{g.label}</span>
+                          <span className="ml-2 text-xs text-text-muted">({g.models.length})</span>
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
 
@@ -608,73 +604,30 @@ export function SettingsPage() {
                 </div>
               )}
 
-              {/* Provider groups */}
+              {/* Model list for selected provider */}
               <div className="max-h-[420px] overflow-y-auto">
                 {modelsLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 size={20} className="animate-spin text-text-muted" />
                   </div>
-                ) : filteredProviders.length === 0 ? (
+                ) : !selectedProviderForSettings ? (
                   <div className="text-center py-8 text-sm text-text-muted">
-                    No models match your search.
+                    Select a provider above to see available models.
                   </div>
+                ) : selectedProviderForSettings === "openrouter" ? (
+                  /* OpenRouter: models grouped by sub-provider */
+                  <OpenRouterModelList
+                    models={providers.find((p) => p.provider === "openrouter")?.models || []}
+                    selectedModel={selectedModel}
+                    onSelect={setSelectedModel}
+                  />
                 ) : (
-                  filteredProviders.map((group) => (
-                    <div key={group.provider} className="border-b border-border-subtle last:border-b-0">
-                      <button
-                        onClick={() => toggleProvider(group.provider)}
-                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-elevated/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-text-primary">{group.label}</span>
-                          <span className="text-xs text-text-muted">({group.models.length})</span>
-                        </div>
-                        <ChevronDown
-                          size={14}
-                          className={`text-text-muted transition-transform ${
-                            expandedProviders.has(group.provider) ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-
-                      <AnimatePresence initial={false}>
-                        {expandedProviders.has(group.provider) && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 px-4 pb-3">
-                              {group.models.map((model) => (
-                                <button
-                                  key={model.id}
-                                  onClick={() => setSelectedModel(model.id)}
-                                  className={`flex flex-col items-start px-3 py-2.5 border text-left transition-colors ${
-                                    selectedModel === model.id
-                                      ? "border-white/20 bg-white/[0.03]"
-                                      : "border-border-subtle bg-bg-elevated hover:border-border-hover"
-                                  }`}
-                                >
-                                  <span className="text-sm text-text-primary truncate w-full">
-                                    {model.name}
-                                  </span>
-                                  <span className="text-xs text-text-muted mt-0.5">
-                                    {model.contextLength > 0
-                                      ? `${(model.contextLength / 1000).toFixed(0)}k ctx`
-                                      : "Unknown ctx"}
-                                    {" · "}
-                                    ${model.inputPrice}/M
-                                  </span>
-                                </button>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))
+                  /* Direct provider: flat model list */
+                  <ProviderModelList
+                    models={providers.find((p) => p.provider === selectedProviderForSettings)?.models || []}
+                    selectedModel={selectedModel}
+                    onSelect={setSelectedModel}
+                  />
                 )}
               </div>
             </div>
@@ -895,6 +848,137 @@ function PasswordInput({
           {show ? <EyeOff size={15} /> : <Eye size={15} />}
         </button>
       </div>
+    </div>
+  );
+}
+
+function getSubProvider(id: string): string {
+  const after = id.startsWith("openrouter/") ? id.slice("openrouter/".length) : id;
+  return after.includes("/") ? after.split("/")[0] ?? "other" : "other";
+}
+
+function getSubProviderLabel(prefix: string): string {
+  const labels: Record<string, string> = {
+    openai: "OpenAI",
+    anthropic: "Anthropic",
+    groq: "Groq",
+    google: "Google",
+    "x-ai": "xAI",
+    "meta-llama": "Meta",
+    mistralai: "Mistral",
+    deepseek: "DeepSeek",
+    "01-ai": "01.AI",
+    minimax: "MiniMax",
+    moonshotai: "Kimi",
+    qwen: "Qwen",
+    cohere: "Cohere",
+    perplexity: "Perplexity",
+    microsoft: "Microsoft",
+  };
+  return labels[prefix] || prefix.charAt(0).toUpperCase() + prefix.slice(1);
+}
+
+interface ModelListProps {
+  models: Array<{ id: string; name: string; contextLength?: number; inputPrice?: number; outputPrice?: number }>;
+  selectedModel: string;
+  onSelect: (id: string) => void;
+}
+
+function ProviderModelList({ models, selectedModel, onSelect }: ModelListProps) {
+  if (models.length === 0) {
+    return <div className="text-center py-8 text-sm text-text-muted">No models available for this provider.</div>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-4">
+      {models.map((model) => (
+        <button
+          key={model.id}
+          onClick={() => onSelect(model.id)}
+          className={`flex flex-col items-start px-3 py-2.5 border text-left transition-colors ${
+            selectedModel === model.id
+              ? "border-white/20 bg-white/[0.03]"
+              : "border-border-subtle bg-bg-elevated hover:border-border-hover"
+          }`}
+        >
+          <span className="text-sm text-text-primary truncate w-full">{model.name}</span>
+          {model.contextLength != null && (
+            <span className="text-xs text-text-muted mt-0.5">
+              {model.contextLength > 0 ? `${(model.contextLength / 1000).toFixed(0)}k ctx` : "Unknown ctx"}
+              {model.inputPrice != null && ` · $${model.inputPrice}/M`}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function OpenRouterModelList({ models, selectedModel, onSelect }: ModelListProps) {
+  // Group OpenRouter models by sub-provider
+  const grouped = new Map<string, typeof models>();
+  for (const m of models) {
+    const sub = getSubProvider(m.id);
+    if (!grouped.has(sub)) grouped.set(sub, []);
+    grouped.get(sub)!.push(m);
+  }
+
+  const entries = Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  const [expanded, setExpanded] = useState<string[]>(entries.slice(0, 5).map((e) => e[0]));
+
+  const toggle = (sub: string) => {
+    setExpanded((prev) => prev.includes(sub) ? prev.filter((s) => s !== sub) : [...prev, sub]);
+  };
+
+  if (entries.length === 0) {
+    return <div className="text-center py-8 text-sm text-text-muted">No OpenRouter models available.</div>;
+  }
+
+  return (
+    <div className="divide-y divide-border-subtle">
+      {entries.map(([sub, subModels]) => {
+        const isExpanded = expanded.includes(sub);
+        return (
+          <div key={sub}>
+            <button
+              onClick={() => toggle(sub)}
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-elevated/50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-text-primary">{getSubProviderLabel(sub)}</span>
+                <span className="text-xs text-text-muted">({subModels.length})</span>
+              </div>
+              <ChevronDown
+                size={14}
+                className={`text-text-muted transition-transform ${isExpanded ? "rotate-180" : ""}`}
+              />
+            </button>
+            {isExpanded && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 px-4 pb-3">
+                {subModels.map((model) => (
+                  <button
+                    key={model.id}
+                    onClick={() => onSelect(model.id)}
+                    className={`flex flex-col items-start px-3 py-2.5 border text-left transition-colors ${
+                      selectedModel === model.id
+                        ? "border-white/20 bg-white/[0.03]"
+                        : "border-border-subtle bg-bg-elevated hover:border-border-hover"
+                    }`}
+                  >
+                    <span className="text-sm text-text-primary truncate w-full">{model.name}</span>
+                    {model.contextLength != null && (
+                      <span className="text-xs text-text-muted mt-0.5">
+                        {model.contextLength > 0 ? `${(model.contextLength / 1000).toFixed(0)}k ctx` : "Unknown ctx"}
+                        {model.inputPrice != null && ` · $${model.inputPrice}/M`}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
