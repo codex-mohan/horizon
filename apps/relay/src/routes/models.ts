@@ -190,11 +190,16 @@ function groupByProvider(models: ModelInfo[], filterProviders?: string[]): Provi
 
 const modelsRouter = new Hono();
 
-// GET /v1/models — all available models (curated direct + OpenRouter)
-async function handleAllModels(c: any) {
+// GET /v1/models/all — all available models (curated direct + OpenRouter)
+modelsRouter.get("/all", async (c) => {
   try {
     const openrouterModels = await getCachedOrFetchModels();
-    const allModels = [...CURATED_DIRECT_MODELS, ...openrouterModels];
+    // Prefix OpenRouter model IDs so resolveModel routes them through OpenRouter
+    const prefixed = openrouterModels.map((m) => ({
+      ...m,
+      id: `openrouter/${m.id}`,
+    }));
+    const allModels = [...CURATED_DIRECT_MODELS, ...prefixed];
     return c.json({ providers: groupByProvider(allModels) });
   } catch (err) {
     logger.error("Models route error", {
@@ -202,9 +207,7 @@ async function handleAllModels(c: any) {
     });
     return c.json({ error: "Failed to fetch models" }, 502);
   }
-}
-modelsRouter.get("/", handleAllModels);
-modelsRouter.get("", handleAllModels);
+});
 
 // GET /v1/models/openrouter — all OpenRouter models grouped by provider
 modelsRouter.get("/openrouter", async (c) => {

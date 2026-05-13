@@ -37,6 +37,10 @@ function resolveModel(modelId: string): Model {
     const providerPrefix = modelId.slice(0, slashIndex);
     const modelName = modelId.slice(slashIndex + 1);
 
+    // openrouter/ prefix means route through OpenRouter
+    if (providerPrefix === "openrouter") {
+      return { id: modelName, name: modelName, provider: "openrouter", api: "openrouter" };
+    }
     if (providerPrefix === "openai") {
       return { id: modelName, name: modelName, provider: "openai-completions", api: "openai" };
     }
