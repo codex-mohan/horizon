@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic } from "lucide-react";
+import { Send, Mic, Sparkles, ChevronDown } from "lucide-react";
 import { HorizonWaveform } from "@/components/typing-indicators";
 
 interface ChatInputProps {
@@ -8,9 +8,46 @@ interface ChatInputProps {
   placeholder?: string;
 }
 
+const LS_KEY = "horizon:default-model";
+
+function getSavedModel(): string {
+  if (typeof window === "undefined") return "openai/gpt-4o";
+  return localStorage.getItem(LS_KEY) || "openai/gpt-4o";
+}
+
 export function ChatInput({ onSend, disabled, placeholder = "Ask Horizon anything..." }: ChatInputProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Embedded model selector state
+  const [showModelPicker, setShowModelPicker] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(getSavedModel);
+  const [pickStep, setPickStep] = useState<"provider" | "model">("provider");
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [providers, setProviders] = useState<Array<{ provider: string; label: string; models: Array<{ id: string; name: string }> }>>([]);
+  const modelPickerRef = useRef<HTMLDivElement>(null);
+  const fetched = useRef(false);
+
+  // Fetch models once
+  useEffect(() => {
+    if (fetched.current) return;
+    fetched.current = true;
+    fetch("/v1/models/", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data: { providers: typeof providers }) => setProviders(data.providers || []))
+      .catch(() => {});
+  }, []);
+
+  // Close picker on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (modelPickerRef.current && !modelPickerRef.current.contains(e.target as Node)) {
+        setShowModelPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -37,6 +74,38 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask Horizon anythin
   };
 
   const hasText = value.trim().length > 0;
+
+  const selectProvider = (provider: string) => {
+    setSelectedProvider(provider);
+    setPickStep("model");
+  };
+
+  const selectModel = (id: string) => {
+    setSelectedModel(id);
+    localStorage.setItem(LS_KEY, id);
+    setShowModelPicker(false);
+    setPickStep("provider");
+  };
+
+  const openPicker = () => {
+    setShowModelPicker(true);
+    setPickStep("provider");
+    setSelectedProvider("");
+  };
+
+  // Resolve display label
+  let displayLabel = selectedModel;
+  for (const g of providers) {
+    if (g.provider && selectedModel.startsWith(g.provider + "/")) {
+      const m = g.models.find((m) => m.id === selectedModel);
+      displayLabel = m ? `${g.label} / ${m.name}` : selectedModel;
+      break;
+    }
+  }
+
+  const currentProviderModels = selectedProvider
+    ? providers.find((g) => g.provider === selectedProvider)?.models || []
+    : [];
 
   return (
     <div className="w-full">
@@ -97,6 +166,58 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask Horizon anythin
               <Mic size={16} />
             </button>
           )}
+        </div>
+
+        {/* Model selector bar */}
+        <div className="relative flex items-center gap-1 px-[16px] pb-2">
+          <div ref={modelPickerRef} className="relative">
+            <button
+              onClick={openPicker}
+              className="flex items-center gap-1.5 px-2 py-0.5 bg-white/[0.03] border border-white/[0.06] text-text-muted text-[11px] hover:text-text-secondary hover:border-white/[0.12] transition-all duration-200"
+            >
+              <Sparkles size={10} />
+              <span className="truncate max-w-[160px]">{displayLabel}</span>
+              <ChevronDown size={10} />
+            </button>
+
+            {showModelPicker && (
+              <div className="absolute left-0 bottom-full mb-1 w-[280px] max-h-[320px] overflow-y-auto bg-bg-elevated border border-border-subtle z-[200] shadow-lg">
+                {pickStep === "provider" ? (
+                  providers.map((group) => (
+                    <button
+                      key={group.provider}
+                      onClick={() => selectProvider(group.provider)}
+                      className="w-full text-left px-3 py-2 text-[13px] text-text-secondary hover:bg-white/[0.03] hover:text-text-primary transition-colors duration-150"
+                    >
+                      {group.label}
+                    </button>
+                  ))
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setPickStep("provider")}
+                      className="w-full text-left px-3 py-1.5 text-[11px] text-text-muted hover:text-text-secondary border-b border-border-subtle"
+                    >
+                      &larr; Back to providers
+                    </button>
+                    {currentProviderModels.map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => selectModel(m.id)}
+                        className={`w-full text-left px-3 py-2 text-[13px] transition-colors duration-150 ${
+                          selectedModel === m.id
+                            ? "bg-white/[0.06] text-text-primary"
+                            : "text-text-secondary hover:bg-white/[0.03] hover:text-text-primary"
+                        }`}
+                      >
+                        {m.name}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -165,7 +165,7 @@ export function SettingsPage() {
       try {
         setModelsLoading(true);
         setModelsError("");
-        const data = await get<ModelsResponse>("/v1/models/openrouter");
+        const data = await get<ModelsResponse>("/v1/models/");
         if (!cancelled) {
           setProviders(data.providers);
           // Auto-expand first 3 providers

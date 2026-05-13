@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { Sparkles, Bug, Code2, BookOpen, MoreHorizontal } from "lucide-react";
 import { HorizonLogo } from "@/components/animated-logo";
 import { ChatInput } from "@/components/chat-input";
-import { ModelSelector } from "@/components/model-selector";
 
 const suggestions = [
   { label: "Explain quantum computing", icon: Sparkles },
@@ -38,11 +37,7 @@ export function ChatWelcome({ onSend, disabled }: ChatWelcomeProps) {
           Deep reasoning, creative exploration, technical execution — all within a cinematic atmospheric workspace.
         </p>
 
-        <div className="flex items-center justify-start w-full mt-8 mb-3">
-          <ModelSelector />
-        </div>
-
-        <div className="w-full">
+        <div className="w-full mt-8">
           <ChatInput onSend={onSend} disabled={disabled} />
         </div>
 
