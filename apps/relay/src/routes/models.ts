@@ -45,6 +45,24 @@ export interface ProviderGroup {
   models: ModelInfo[];
 }
 
+// Curated models for direct providers (not through OpenRouter)
+const CURATED_DIRECT_MODELS: ModelInfo[] = [
+  // OpenAI
+  { id: "openai/gpt-4o", name: "GPT-4o", contextLength: 128000, inputPrice: 2.5, outputPrice: 10, modality: "text->text", isModerated: false },
+  { id: "openai/gpt-4o-mini", name: "GPT-4o Mini", contextLength: 128000, inputPrice: 0.15, outputPrice: 0.6, modality: "text->text", isModerated: false },
+  { id: "openai/o1", name: "o1", contextLength: 200000, inputPrice: 15, outputPrice: 60, modality: "text->text", isModerated: false },
+  { id: "openai/o3-mini", name: "o3 Mini", contextLength: 200000, inputPrice: 1.1, outputPrice: 4.4, modality: "text->text", isModerated: false },
+  // Anthropic
+  { id: "anthropic/claude-sonnet-4-20250514", name: "Claude Sonnet 4", contextLength: 200000, inputPrice: 3, outputPrice: 15, modality: "text->text", isModerated: false },
+  { id: "anthropic/claude-3-5-haiku-20250219", name: "Claude 3.5 Haiku", contextLength: 200000, inputPrice: 0.8, outputPrice: 4, modality: "text->text", isModerated: false },
+  // Groq
+  { id: "groq/llama-3.3-70b-versatile", name: "Llama 3.3 70B", contextLength: 128000, inputPrice: 0, outputPrice: 0, modality: "text->text", isModerated: false },
+  { id: "groq/llama-3.1-8b-instant", name: "Llama 3.1 8B Instant", contextLength: 128000, inputPrice: 0, outputPrice: 0, modality: "text->text", isModerated: false },
+  { id: "groq/deepseek-r1-distill-llama-70b", name: "DeepSeek R1 Distill Llama 70B", contextLength: 128000, inputPrice: 0, outputPrice: 0, modality: "text->text", isModerated: false },
+  { id: "groq/mixtral-8x7b-32768", name: "Mixtral 8x7B", contextLength: 32768, inputPrice: 0, outputPrice: 0, modality: "text->text", isModerated: false },
+  { id: "groq/gemma2-9b-it", name: "Gemma 2 9B", contextLength: 8192, inputPrice: 0, outputPrice: 0, modality: "text->text", isModerated: false },
+];
+
 function getProviderPrefix(modelId: string): string {
   const slashIndex = modelId.indexOf("/");
   if (slashIndex === -1) return "other";
@@ -55,6 +73,7 @@ function getProviderLabel(prefix: string): string {
   const labels: Record<string, string> = {
     "anthropic": "Anthropic",
     "openai": "OpenAI",
+    "groq": "Groq",
     "google": "Google",
     "x-ai": "xAI",
     "meta-llama": "Meta",
@@ -148,7 +167,7 @@ function groupByProvider(models: ModelInfo[], filterProviders?: string[]): Provi
   }
 
   const priorityProviders = [
-    "anthropic", "openai", "deepseek", "x-ai", "meta-llama",
+    "anthropic", "openai", "groq", "deepseek", "x-ai", "meta-llama",
     "mistralai", "google", "01-ai", "minimax", "moonshotai",
   ];
 
@@ -171,6 +190,20 @@ function groupByProvider(models: ModelInfo[], filterProviders?: string[]): Provi
 
 const modelsRouter = new Hono();
 
+// GET /v1/models — all available models (curated direct + OpenRouter)
+modelsRouter.get("/", async (c) => {
+  try {
+    const openrouterModels = await getCachedOrFetchModels();
+    const allModels = [...CURATED_DIRECT_MODELS, ...openrouterModels];
+    return c.json({ providers: groupByProvider(allModels) });
+  } catch (err) {
+    logger.error("Models route error", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return c.json({ error: "Failed to fetch models" }, 502);
+  }
+});
+
 // GET /v1/models/openrouter — all OpenRouter models grouped by provider
 modelsRouter.get("/openrouter", async (c) => {
   try {
@@ -184,7 +217,7 @@ modelsRouter.get("/openrouter", async (c) => {
   }
 });
 
-// GET /v1/models/static — curated provider list (also dynamic from OpenRouter)
+// GET /v1/models/static — curated provider list (direct + OpenRouter)
 modelsRouter.get("/static", async (c) => {
   try {
     const models = await getCachedOrFetchModels();
@@ -192,7 +225,10 @@ modelsRouter.get("/static", async (c) => {
       "anthropic", "openai", "groq", "deepseek",
       "01-ai", "minimax", "moonshotai",
     ];
-    return c.json({ providers: groupByProvider(models, curatedProviders) });
+    const filtered = [...CURATED_DIRECT_MODELS, ...models].filter((m) =>
+      curatedProviders.includes(getProviderPrefix(m.id))
+    );
+    return c.json({ providers: groupByProvider(filtered) });
   } catch (err) {
     logger.error("Static models route error", {
       error: err instanceof Error ? err.message : String(err),
@@ -201,13 +237,14 @@ modelsRouter.get("/static", async (c) => {
   }
 });
 
-// GET /v1/models/search?q=... — search across all OpenRouter models
+// GET /v1/models/search?q=... — search across all models
 modelsRouter.get("/search", async (c) => {
   try {
     const q = c.req.query("q")?.toLowerCase() || "";
-    const models = await getCachedOrFetchModels();
+    const openrouterModels = await getCachedOrFetchModels();
+    const allModels = [...CURATED_DIRECT_MODELS, ...openrouterModels];
 
-    const filtered = models.filter((m) =>
+    const filtered = allModels.filter((m) =>
       m.name.toLowerCase().includes(q) ||
       m.id.toLowerCase().includes(q) ||
       getProviderLabel(getProviderPrefix(m.id)).toLowerCase().includes(q)

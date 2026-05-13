@@ -31,40 +31,34 @@ interface ChatBody {
 // ---------------------------------------------------------------------------
 
 function resolveModel(modelId: string): Model {
-  // OpenRouter format: provider/model-name
+  // Format: "provider/model-name" — parse provider prefix explicitly
   if (modelId.includes("/")) {
-    return {
-      id: modelId,
-      name: modelId,
-      provider: "openrouter",
-      api: "openrouter",
-    };
+    const slashIndex = modelId.indexOf("/");
+    const providerPrefix = modelId.slice(0, slashIndex);
+    const modelName = modelId.slice(slashIndex + 1);
+
+    if (providerPrefix === "openai") {
+      return { id: modelName, name: modelName, provider: "openai-completions", api: "openai" };
+    }
+    if (providerPrefix === "anthropic") {
+      return { id: modelName, name: modelName, provider: "anthropic", api: "anthropic-messages" };
+    }
+    if (providerPrefix === "groq") {
+      return { id: modelName, name: modelName, provider: "groq", api: "groq" };
+    }
+    // Everything else with a / goes through OpenRouter
+    return { id: modelId, name: modelId, provider: "openrouter", api: "openrouter" };
   }
-  // Direct Anthropic
+
+  // Legacy bare model IDs (backward compatible)
   if (modelId.startsWith("claude")) {
-    return {
-      id: modelId,
-      name: modelId,
-      provider: "anthropic",
-      api: "anthropic-messages",
-    };
+    return { id: modelId, name: modelId, provider: "anthropic", api: "anthropic-messages" };
   }
-  // Direct OpenAI
   if (modelId.startsWith("gpt-") || modelId.startsWith("o1") || modelId.startsWith("o3")) {
-    return {
-      id: modelId,
-      name: modelId,
-      provider: "openai-completions",
-      api: "openai",
-    };
+    return { id: modelId, name: modelId, provider: "openai-completions", api: "openai" };
   }
-  // Default to OpenRouter for unknown models (safer fallback)
-  return {
-    id: modelId,
-    name: modelId,
-    provider: "openrouter",
-    api: "openrouter",
-  };
+  // Default to OpenRouter for unknown models
+  return { id: modelId, name: modelId, provider: "openrouter", api: "openrouter" };
 }
 
 // ---------------------------------------------------------------------------
@@ -202,6 +196,8 @@ async function resolveApiKey(user: User, provider: string): Promise<string | und
   let serverKey: string | undefined;
   if (provider === "anthropic") {
     serverKey = process.env.ANTHROPIC_API_KEY;
+  } else if (provider === "groq") {
+    serverKey = process.env.GROQ_API_KEY;
   } else if (provider === "openrouter") {
     serverKey = process.env.OPENROUTER_API_KEY;
   } else {
