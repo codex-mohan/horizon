@@ -18,7 +18,7 @@ interface ChatWelcomeProps {
 
 export function ChatWelcome({ onSend, disabled }: ChatWelcomeProps) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="flex-1 flex flex-col items-center justify-center relative">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
